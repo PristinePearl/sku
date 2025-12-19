@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Current Stock – Depot Wise</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: { primary: '#0ea5a4' },
+      fontFamily: { sans: ['Inter','system-ui'] }
+    }
+  }
+}
+</script>
+
+<style>
+.table-wrap { overflow-x:auto; max-height:520px; }
+</style>
+</head>
+
+<body class="bg-gray-50 p-6">
+
+<div class="max-w-7xl mx-auto">
+
+<!-- HEADER -->
+<div class="flex items-center gap-4 mb-6 border-b pb-4">
+  <div class="w-14 h-14 bg-emerald-100 text-emerald-700 rounded-xl flex items-center justify-center font-bold text-xl">
+    CS
+  </div>
+  <div>
+    <h1 class="text-3xl font-extrabold">Current Stock Upload</h1>
+    <p class="text-gray-500">Merged column-wise stock</p>
+  </div>
+</div>
+
+<!-- FILTERS -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+  <input type="date" id="dateFilter" class="border rounded p-2">
+  <input type="text" id="searchBox" placeholder="Search Item / Code"
+         class="border rounded p-2">
+  <input type="file" id="fileInput" multiple
+         class="border rounded p-2 bg-white">
+</div>
+
+<!-- BUTTONS -->
+<div class="flex flex-wrap gap-3 mb-6">
+  <button onclick="processFiles()"
+    class="bg-primary text-white px-4 py-2 rounded font-semibold">
+    Import & Merge
+  </button>
+
+  <button onclick="downloadFormat()"
+    class="border px-4 py-2 rounded font-semibold">
+    Download Format
+  </button>
+
+  <button onclick="exportExcel()"
+    class="border px-4 py-2 rounded font-semibold">
+    Export Excel
+  </button>
+
+  <button onclick="saveToSheet()"
+    class="bg-emerald-600 text-white px-4 py-2 rounded font-semibold">
+    Save to Google Sheet
+  </button>
+</div>
+
+<!-- SUMMARY -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+  <div class="bg-white p-4 rounded shadow">
+    <div class="text-gray-500">Total Quantity</div>
+    <div id="sumQty" class="text-2xl font-bold">0</div>
+  </div>
+</div>
+
+<!-- TABLE -->
+<div id="tableContainer" class="table-wrap bg-white rounded shadow"></div>
+
+</div>
+
+<script>
+/* ================= CONFIG ==	=============== */
+const SCRIPT_URL =
+"https://script.google.com/macros/s/AKfycbzW_NpWGgBFK2qLdeLiCpdF4XmalmrA-_YcAaXc_l-5olzSRBp4cHO8i7pzEzseFhVWEw/exec";
+
+/* ================= GLOBALS ================= */
+let RAW = [];
+let MERGED = [];
+let DEPOTS = [];
+
+/* ================= EXCEL DATE FIX ================= */
+function excelDateToJS(n){
+  if (typeof n !== 'number') return n || '';
+  const d = new Date(Math.round((n - 25569) * 86400 * 1000));
+  return moment(d).format('DD-MM-YYYY');
+}
+
+/* ================= IMPORT ================= */
+async function processFiles(){
+  RAW = [];
+  MERGED = [];
+  DEPOTS = [];
+
+  const files = document.getElementById("fileInput").files;
+  if (!files.length) {
+    alert("Select Excel file");
+    return;
+  }
+
+  for (const file of files) {
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type:'array' });
+    const rows = XLSX.utils.sheet_to_json(
+      wb.Sheets[wb.SheetNames[0]],
+      { defval:'' }
+    );
+
+    rows.forEach(r => {
+      const depot = r['Depot Name'];
+
+      if (depot && !DEPOTS.includes(depot)) {
+        DEPOTS.push(depot);
+      }
+
+      RAW.push({
+        date: excelDateToJS(r['Date']),
+        depot: depot,
+        div_code: r['Div Code'],
+        div_name: r['Div Name'],
+        item_code: r['Item Code'],
+        item_name: r['Item Name'],
+        packing: r['Packing'],
+        mfr: r['MFR'],
+        item_group: r['Item Group'],
+        qty: Number(r['Total Quantity'] || 0)
+      });
+    });
+  }
+
+  mergeDepotWise();
+  render();
+}
+
+/* ================= MERGE DEPOT WISE ================= */
+function mergeDepotWise(){
+  const map = {};
+
+  RAW.forEach(r => {
+    const key = [r.date, r.div_code, r.item_code].join('|');
+
+    if (!map[key]) {
+      map[key] = {
+        Date: r.date,
+        "Div Code": r.div_code,
+        "Div Name": r.div_name,
+        "Item Code": r.item_code,
+        "Item Name": r.item_name,
+        Packing: r.packing,
+        MFR: r.mfr,
+        "Item Group": r.item_group,
+        depots: {},
+        "Total Quantity": 0
+      };
+    }
+
+    map[key].depots[r.depot] =
+      (map[key].depots[r.depot] || 0) + r.qty;
+
+    map[key]["Total Quantity"] += r.qty;
+  });
+
+  MERGED = Object.values(map);
+}
+
+/* ================= FILTER & RENDER ================= */
+document.getElementById("searchBox").oninput =
+document.getElementById("dateFilter").onchange = render;
+
+function render(){
+  const s = document.getElementById("searchBox").value.toLowerCase();
+  const d = document.getElementById("dateFilter").value
+    ? moment(document.getElementById("dateFilter").value).format('DD-MM-YYYY')
+    : '';
+
+  const rows = MERGED.filter(r =>
+    (!d || r.Date === d) &&
+    (!s ||
+      r["Item Name"].toLowerCase().includes(s) ||
+      r["Item Code"].toLowerCase().includes(s))
+  );
+
+  document.getElementById("sumQty").textContent =
+    rows.reduce((a,b)=>a+b["Total Quantity"],0);
+
+  if (!rows.length) {
+    document.getElementById("tableContainer").innerHTML =
+      `<div class="p-4 text-gray-500 italic">No data</div>`;
+    return;
+  }
+
+  let html = `<table class="min-w-full text-sm">
+  <thead class="bg-gray-100 sticky top-0">
+    <tr>
+      <th class="p-2">Date</th>
+      <th class="p-2">Div Code</th>
+      <th class="p-2">Div Name</th>
+      <th class="p-2">Item Code</th>
+      <th class="p-2">Item Name</th>
+      <th class="p-2">Packing</th>
+      <th class="p-2">MFR</th>
+      <th class="p-2">Item Group</th>`;
+
+  DEPOTS.forEach(d => html += `<th class="p-2">${d}</th>`);
+
+  html += `<th class="p-2 font-bold">Total Quantity</th>
+    </tr></thead><tbody>`;
+
+  rows.forEach(r => {
+    html += `<tr class="border-b hover:bg-gray-50">
+      <td class="p-2">${r.Date}</td>
+      <td class="p-2">${r["Div Code"]}</td>
+      <td class="p-2">${r["Div Name"]}</td>
+      <td class="p-2 font-medium">${r["Item Code"]}</td>
+      <td class="p-2">${r["Item Name"]}</td>
+      <td class="p-2">${r.Packing}</td>
+      <td class="p-2">${r.MFR}</td>
+      <td class="p-2">${r["Item Group"]}</td>`;
+
+    DEPOTS.forEach(d => {
+      html += `<td class="p-2 text-right">${r.depots[d] || 0}</td>`;
+    });
+
+    html += `<td class="p-2 font-bold text-right">${r["Total Quantity"]}</td>
+    </tr>`;
+  });
+
+  html += `</tbody></table>`;
+  document.getElementById("tableContainer").innerHTML = html;
+}
+
+/* ================= SAVE TO SHEET ================= */
+function saveToSheet(){
+  if (!MERGED.length) {
+    alert("No data to save");
+    return;
+  }
+
+  const payload = MERGED.map(r => ({
+    Date: r.Date,
+    "Div Code": r["Div Code"],
+    "Div Name": r["Div Name"],
+    "Item Code": r["Item Code"],
+    "Item Name": r["Item Name"],
+    Packing: r.Packing,
+    MFR: r.MFR,
+    "Item Group": r["Item Group"],
+    depots: r.depots,
+    "Total Quantity": r["Total Quantity"]
+  }));
+
+  fetch(SCRIPT_URL, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  })
+  .then(() => alert("✅ Data saved to Google Sheet"))
+  .catch(() => alert("❌ Failed to save"));
+}
+
+/* ================= EXPORT ================= */
+function exportExcel(){
+  const out = MERGED.map(r => {
+    const row = {
+      Date: r.Date,
+      "Div Code": r["Div Code"],
+      "Div Name": r["Div Name"],
+      "Item Code": r["Item Code"],
+      "Item Name": r["Item Name"],
+      Packing: r.Packing,
+      MFR: r.MFR,
+      "Item Group": r["Item Group"]
+    };
+    DEPOTS.forEach(d => row[d] = r.depots[d] || 0);
+    row["Total Quantity"] = r["Total Quantity"];
+    return row;
+  });
+
+  const ws = XLSX.utils.json_to_sheet(out);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Current Stock");
+  XLSX.writeFile(wb, "Current_Stock_Depot_Wise.xlsx");
+}
+
+/* ================= FORMAT ================= */
+function downloadFormat(){
+  const sample = [{
+    "Date": "01-01-2025",
+    "Depot Name": "Coimbatore",
+    "Div Code": "A",
+    "Div Name": "Division A",
+    "Item Code": "PRL001",
+    "Item Name": "PRL SAMPLE TAB",
+    "Packing": "10x10",
+    "MFR": "PRISTINE",
+    "Item Group": "TABLET",
+    "Total Quantity": 100
+  }];
+
+  const ws = XLSX.utils.json_to_sheet(sample);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Format");
+  XLSX.writeFile(wb, "Current_Stock_Format.xlsx");
+}
+</script>
+
+</body>
+</html>

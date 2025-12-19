@@ -1,0 +1,801 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Merged Depot Stock</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Use Inter font family for a clean look -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { 
+            sans: ["Inter", "sans-serif"] 
+          },
+        }
+      }
+    };
+  </script>
+  <style>
+    /* Ensure the table scrolls nicely without breaking layout */
+    .table-container {
+        /* Max height on larger screens, allowing space for filters/buttons */
+        max-height: calc(100vh - 350px); 
+    }
+    
+    /* Style for the single-select arrow */
+    select:not([multiple]) {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%236B7280'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd' /%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 1.5em 1.5em;
+        padding-right: 2.5rem;
+    }
+
+    /* Custom styles for the spinner's stroke */
+    .spinner-path {
+        stroke-dasharray: 1, 200;
+        stroke-dashoffset: 0;
+        animation: dash 1.5s ease-in-out infinite, color 6s ease-in-out infinite;
+    }
+
+    /* Keyframes for the spinner animation (using Tailwind's built-in animate-spin utility is cleaner, but this provides more control over the SVG path) */
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    .animate-spin-custom {
+        animation: spin 1s linear infinite;
+    }
+
+  </style>
+</head>
+
+<body class="bg-gray-50 text-gray-800">
+
+  <!-- Main Container -->
+  <div class="container mx-auto px-4 py-8">
+    
+    <!-- Loading Spinner (Visible by default, hidden by JS on load) -->
+    <div id="loadingSpinner" class="flex flex-col items-center justify-center h-[70vh] text-indigo-600">
+        <svg class="animate-spin-custom w-16 h-16 mb-4" viewBox="0 0 50 50">
+            <circle class="spinner-path" cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="4"></circle>
+        </svg>
+        <p class="text-xl font-semibold text-gray-700">Loading stock data, please wait...</p>
+    </div>
+
+    <!-- Dashboard Card (Hidden by default, shown by JS after load) -->
+    <div id="dashboardContent" class="hidden bg-white p-6 md:p-10 rounded-xl shadow-2xl border border-gray-100 max-w-7xl mx-auto">
+
+      <!-- Title -->
+      <h1 class="text-4xl font-extrabold mb-8 text-center text-gray-900 border-b pb-4">
+        Simple View of Depot Stock
+      </h1>
+
+      <!-- Filters -->
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-8">
+        
+        <!-- 0. Data Source Switch (New Element) -->
+        <div class="md:col-span-2 lg:col-span-1">
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Data Source:</label>
+          <div class="flex items-center space-x-2 bg-gray-100 p-1 rounded-xl shadow-inner">
+            <button id="switchBatch" data-source="BATCH" class="flex-1 p-2 text-sm font-semibold rounded-lg transition duration-150 transform active:scale-95">Batch Wise</button>
+            <button id="switchCurrent" data-source="CURRENT" class="flex-1 p-2 text-sm font-semibold rounded-lg transition duration-150 transform active:scale-95">Current Stock</button>
+          </div>
+        </div>
+
+        <!-- 1. From Date -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">From Date:</label>
+          <input type="date" id="fromDate" class="w-full p-3 border border-gray-300 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 transition duration-150 disabled:bg-gray-100 disabled:opacity-70" />
+        </div>
+        <!-- 2. To Date -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">To Date:</label>
+          <input type="date" id="toDate" class="w-full p-3 border border-gray-300 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 transition duration-150 disabled:bg-gray-100 disabled:opacity-70" />
+        </div>
+        <!-- 3. Depot -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Depot:</label>
+          <select id="depotFilter" class="w-full p-3 border border-gray-300 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 transition duration-150">
+            <option value="">All Depots</option>
+          </select>
+        </div>
+        
+        <!-- 4. Division Code (CHECKBOXES) -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Division Code:</label>
+          <div id="divCodeFilterContainer" class="w-full p-3 border border-gray-300 rounded-lg max-h-40 overflow-y-auto bg-white shadow-inner focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 transition duration-150">
+            <!-- Checkboxes populated by JavaScript -->
+          </div>
+        </div>
+        
+        <!-- 5. Product -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Product:</label>
+          <select id="productFilter" class="w-full p-3 border border-gray-300 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 transition duration-150">
+            <option value="">All Products</option>
+          </select>
+        </div>
+        
+        <!-- 6. Expiry Type (CHECKBOXES) -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Expiry Type:</label>
+          <div id="expiryTypeFilterContainer" class="w-full p-3 border border-gray-300 rounded-lg max-h-40 overflow-y-auto bg-white shadow-inner focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 transition duration-150">
+            <!-- Checkboxes populated by JavaScript -->
+          </div>
+        </div>
+        
+        <!-- 7. View Mode -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1">View Mode:</label>
+          <select id="viewModeFilter" class="w-full p-3 border border-gray-300 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 transition duration-150">
+            <option value="Consolidated">Consolidated</option>
+            <option value="Detailed">Detailed</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Buttons -->
+      <div class="flex flex-wrap gap-4 mb-8 justify-center sm:justify-start">
+        <!-- Button Styling: Indigo theme, shadows, hover effect with scale -->
+        <button id="applyFilter" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition duration-300 transform hover:scale-[1.02] active:scale-[0.98] flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414A1 1 0 0012 15.414V21l-2-2v-5.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+            Apply Filter
+        </button>
+        <button id="clearFilter" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition duration-300 transform hover:scale-[1.02] active:scale-[0.98] flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            Clear
+        </button>
+        <button id="exportExcel" class="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition duration-300 transform hover:scale-[1.02] active:scale-[0.98] flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 014 9H7z"></path></svg>
+            Export XLSX
+        </button>
+      </div>
+
+      <!-- Message Box Styling: Enhanced appearance for feedback -->
+      <div id="messageBox" class="hidden p-4 mb-6 rounded-lg font-medium shadow-md"></div>
+
+      <!-- Table Container: Responsive overflow, shadow-inner, and fixed height for scrolling -->
+      <div class="overflow-x-auto border border-gray-200 rounded-xl shadow-inner table-container">
+        <table class="min-w-full text-sm">
+          <!-- Table Header will be generated dynamically -->
+          <thead id="reportTableHeader" class="bg-gray-800 text-white sticky top-0 z-20 shadow-lg">
+            <!-- Headers injected by JavaScript -->
+          </thead>
+          <tbody id="reportTable" class="divide-y divide-gray-200">
+            <!-- Data rows will be injected here by JavaScript -->
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Product Detail Panel (Initially hidden) -->
+  <div id="productDetailPanel" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 z-50 overflow-y-auto" onclick="closeProductDetailsPanel(event)">
+    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-11/12 md:w-3/4 lg:w-2/3 max-h-[90vh] bg-white p-6 rounded-xl shadow-2xl border border-gray-100 transition duration-300 ease-in-out" onclick="event.stopPropagation()">
+        <div class="flex justify-between items-center border-b pb-3 mb-4">
+            <h2 id="detailPanelTitle" class="text-2xl font-bold text-gray-900">Batch Details</h2>
+            <button onclick="closeProductDetailsPanel()" class="text-gray-400 hover:text-gray-600 transition duration-150 p-1 rounded-full hover:bg-gray-100">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div id="detailPanelContent" class="overflow-x-auto max-h-[70vh]">
+            <!-- Detailed batch table will be injected here -->
+        </div>
+    </div>
+  </div>
+
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <script>
+    // Constants and Global Variables
+    const BATCH_URL = "https://script.google.com/macros/s/AKfycbx4hqFN0DhMDm22q0_EkS_E4EAApVavgZz8FEZEdUV0Jg0uMVaUUg3S8FyL9vy3H5KM/exec"; 
+    const CURRENT_URL = "https://script.google.com/macros/s/AKfycbzW_NpWGgBFK2qLdeLiCpdF4XmalmrA-_YcAaXc_l-5olzSRBp4cHO8i7pzEzseFhVWEw/exec";
+    
+    let CURRENT_DATA_SOURCE = "BATCH"; // Default to batch wise
+    let MERGED_SAVED = [];
+    let FILTERED_DATA = []; // Always holds the detailed, batch-wise filtered data
+    
+    const dashboardContent = document.getElementById("dashboardContent");
+    const loadingSpinner = document.getElementById("loadingSpinner");
+    const fromDateInput = document.getElementById("fromDate");
+    const toDateInput = document.getElementById("toDate");
+    const switchBatch = document.getElementById("switchBatch");
+    const switchCurrent = document.getElementById("switchCurrent");
+
+
+    /**
+     * Converts a date string into a reliable YYYY-MM-DD format for filtering, 
+     * preventing timezone issues from shifting the day.
+     * @param {string} dateString - The date string from the data.
+     * @returns {string} Date in 'YYYY-MM-DD' format or empty string.
+     */
+    function getFormattedDate(dateString) {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        // Check if date is valid
+        if (isNaN(date)) return ''; 
+
+        // Use local time methods to prevent timezone conversion from shifting the day
+        const year = date.getFullYear();
+        // Month is 0-indexed, so add 1
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    /**
+     * Displays a styled message box for user feedback.
+     */
+    function showMessage(msg, type = 'info') {
+      const box = document.getElementById("messageBox");
+      box.innerText = msg;
+      box.classList.remove('hidden');
+
+      if (type === 'error') {
+        box.className = 'p-4 mb-6 rounded-lg font-medium shadow-md bg-red-100 border border-red-400 text-red-700';
+      } else {
+        box.className = 'p-4 mb-6 rounded-lg font-medium shadow-md bg-green-100 border border-green-400 text-green-700';
+      }
+      
+      setTimeout(() => box.classList.add('hidden'), 4000);
+    }
+
+    /**
+     * Groups data for the Consolidated view and SORTS it by Item Name.
+     */
+    function groupDataConsolidated(data) {
+        const aggregated = {};
+
+        data.forEach(r => {
+            // Group by item code and division code
+            const key = r["Item Code"] + "||" + r["Div Code"]; 
+            
+            if (!aggregated[key]) {
+                aggregated[key] = {
+                    "Date": r["Date"],
+                    "Div Code": r["Div Code"],
+                    "Div Name": r["Div Name"],
+                    "Item Code": r["Item Code"],
+                    "Item Name": r["Item Name"],
+                    "MRP": r["MRP"], // Keep one MRP (assuming it's constant per item)
+                    "Kerala": 0,
+                    "Palepu": 0,
+                    "Coimbatore": 0,
+                    "Bangalore": 0,
+                    "Total Quantity": 0,
+                };
+            }
+
+            // Sum up the quantities
+            aggregated[key]["Kerala"] += Number(r["Kerala"] || 0);
+            aggregated[key]["Palepu"] += Number(r["Palepu"] || 0);
+            aggregated[key]["Coimbatore"] += Number(r["Coimbatore"] || 0);
+            aggregated[key]["Bangalore"] += Number(r["Bangalore"] || 0);
+            aggregated[key]["Total Quantity"] += Number(r["Total Quantity"] || 0);
+        });
+
+        const aggregatedArray = Object.values(aggregated);
+
+        // --- SORTING: Sort alphabetically by Item Name ---
+        aggregatedArray.sort((a, b) => {
+            const nameA = a["Item Name"].toUpperCase();
+            const nameB = b["Item Name"].toUpperCase();
+            if (nameA < nameB) return -1;
+            if (nameA > nameB) return 1;
+            return 0;
+        });
+        // --- END SORTING ---
+
+        return aggregatedArray;
+    }
+
+    /**
+     * Renders the data into the table, adjusting for view mode.
+     * Ensures consistent text alignment (Left for text, Right for numbers, Center for dates/types).
+     */
+    function renderTable(data, selectedDepot = "", viewMode = "Consolidated") {
+      const tableBody = document.getElementById("reportTable");
+      const tableHeader = document.getElementById("reportTableHeader");
+      let htmlBody = "";
+      
+      const isConsolidated = viewMode === "Consolidated";
+      const isBatch = CURRENT_DATA_SOURCE === "BATCH";
+
+      // --- 1. Define Headers with Alignment ---
+      const baseHeaders = [
+        { name: "Date", key: "Date", align: "left" }, 
+        { name: "Div Code", key: "Div Code", align: "left" }, 
+        { name: "Div Name", key: "Div Name", align: "left" }, 
+        { name: "Item Code", key: "Item Code", align: "left" }, 
+        { name: "Item Name", key: "Item Name", align: "left" }, 
+        { name: "MRP", key: "MRP", align: "right" }, 
+        { name: "Kerala", key: "Kerala", align: "right" }, 
+        { name: "Palepu", key: "Palepu", align: "right" }, 
+        { name: "Coimbatore", key: "Coimbatore", align: "right" }, 
+        { name: "Bangalore", key: "Bangalore", align: "right" }, 
+        { name: "Total Qty", key: "Total Quantity", align: "right" }
+      ];
+
+      // Batch/Expiry details are only available and relevant for Batch Wise data
+      const detailedInserts = isBatch ? [
+        { name: "Batch No", key: "Batch No", align: "left" },
+        { name: "Expiry (MM-YYYY)", key: "Expiry (MM-YYYY)", align: "center" },
+      ] : [];
+      
+      const expiryTypeInsert = isBatch ? { name: "Expiry Type", key: "Expiry Type", align: "center" } : null;
+
+      let headers;
+      if (isConsolidated) {
+          headers = baseHeaders;
+      } else {
+          // Detailed: Date..Item Name + [Batch + Expiry Date] + MRP..Total Qty + [Expiry Type]
+          const firstPart = baseHeaders.slice(0, 5); // Date to Item Name
+          const secondPart = baseHeaders.slice(5); // MRP to Total Qty
+          headers = [...firstPart, ...detailedInserts, ...secondPart];
+          if (expiryTypeInsert) {
+              headers.push(expiryTypeInsert);
+          }
+      }
+
+      tableHeader.innerHTML = `<tr>
+          ${headers.map(h => `<th class="p-4 text-${h.align} font-medium">${h.name}</th>`).join('')}
+      </tr>`;
+
+
+      // --- 2. Generate Body Rows ---
+      data.forEach((r, index) => {
+        // Use the same reliable function to format date for display
+        const recordDate = getFormattedDate(r["Date"]);
+
+        const rawMrp = parseFloat(r["MRP"] || 0);
+        const mrp = rawMrp.toFixed(2);
+        
+        // Apply zebra striping
+        const rowClass = index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+
+        let rowCells = `
+          <td class="p-3 text-left">${recordDate}</td>
+          <td class="p-3 text-left">${r["Div Code"]}</td>
+          <td class="p-3 text-left">${r["Div Name"]}</td>
+          <td class="p-3 text-left">${r["Item Code"]}</td>
+          <td class="p-3 text-left font-medium text-gray-900 whitespace-nowrap">${r["Item Name"]}</td>
+        `;
+        
+        if (!isConsolidated && isBatch) {
+            // Detailed View: Include batch, expiry (only for Batch Wise data)
+            rowCells += `
+              <td class="p-3 text-left">${r["Batch No"] ?? ''}</td>
+              <td class="p-3 text-center whitespace-nowrap">${r["Expiry (MM-YYYY)"] ?? ''}</td>
+            `;
+        }
+
+        rowCells += `
+          <td class="p-3 text-right font-mono text-gray-700 whitespace-nowrap">₹${mrp}</td>
+          <td class="p-3 text-right">${!selectedDepot || selectedDepot === "Kerala" ? (r["Kerala"] ?? 0) : ""}</td>
+          <td class="p-3 text-right">${!selectedDepot || selectedDepot === "Palepu" ? (r["Palepu"] ?? 0) : ""}</td>
+          <td class="p-3 text-right">${!selectedDepot || selectedDepot === "Coimbatore" ? (r["Coimbatore"] ?? 0) : ""}</td>
+          <td class="p-3 text-right">${!selectedDepot || selectedDepot === "Bangalore" ? (r["Bangalore"] ?? 0) : ""}</td>
+          <td class="p-3 text-right font-bold text-indigo-600">${r["Total Quantity"] ?? 0}</td>
+        `;
+
+        if (!isConsolidated && expiryTypeInsert) {
+            // Detailed View: Include Expiry Type (only for Batch Wise data)
+            rowCells += `<td class="p-3 text-center">${r["Expiry Type"] ?? ''}</td>`;
+            htmlBody += `<tr class="${rowClass} hover:bg-indigo-50 transition duration-150 border-b border-gray-100">${rowCells}</tr>`;
+        } else if (isConsolidated && isBatch) {
+            // Consolidated View (only for Batch Wise data): Add click handler for drill-down
+             htmlBody += `<tr class="${rowClass} hover:bg-indigo-100 transition duration-150 border-b border-gray-100 cursor-pointer" onclick="showProductDetailsPanel(this)" data-item-code="${r["Item Code"]}" data-div-code="${r["Div Code"]}">
+                ${rowCells}
+             </tr>`;
+        } else {
+            // Consolidated View for Current Stock or Detailed View for Current Stock (no drill-down)
+             htmlBody += `<tr class="${rowClass} hover:bg-indigo-50 transition duration-150 border-b border-gray-100">${rowCells}</tr>`;
+        }
+      });
+
+      tableBody.innerHTML = htmlBody;
+    }
+
+    /**
+     * Closes the product details panel.
+     */
+    function closeProductDetailsPanel(event) {
+        // Only close if clicking the background overlay or the close button, not the panel content itself
+        const panel = document.getElementById("productDetailPanel");
+        if (!event || event.target === panel) {
+            panel.classList.add('hidden');
+        }
+    }
+
+    /**
+     * Shows the detailed batch-wise data for a selected product in a panel.
+     */
+    function showProductDetailsPanel(rowElement) {
+        // Prevent showing details if not in Batch mode
+        if (CURRENT_DATA_SOURCE !== "BATCH") {
+            showMessage("Batch details are only available in 'Batch Wise' mode.", "error");
+            return;
+        }
+
+        const itemCode = rowElement.getAttribute('data-item-code');
+        const divCode = rowElement.getAttribute('data-div-code');
+        const depot = document.getElementById("depotFilter").value; // Current depot filter
+
+        if (!itemCode || !divCode) return;
+
+        // Find all detailed records for this specific product (Item Code + Div Code)
+        const detailedRecords = FILTERED_DATA.filter(r => 
+            r["Item Code"] === itemCode && r["Div Code"] === divCode
+        );
+
+        if (detailedRecords.length === 0) {
+            showMessage(`No detailed records found for Item Code: ${itemCode}`, "error");
+            return;
+        }
+        
+        // Get the item name for the title
+        const itemName = detailedRecords[0]["Item Name"];
+        document.getElementById("detailPanelTitle").innerText = `${itemName} (Code: ${itemCode}) - Batch Details`;
+
+        // Generate the inner table HTML for the details panel
+        let detailHtml = `
+            <table class="min-w-full text-sm">
+                <thead class="bg-gray-200 text-gray-800 sticky top-0">
+                    <tr>
+                        <th class="p-3 text-left">Batch No</th>
+                        <th class="p-3 text-center">Expiry (MM-YYYY)</th>
+                        <th class="p-3 text-center">Expiry Type</th>
+                        <th class="p-3 text-right">MRP</th>
+                        <th class="p-3 text-right">Kerala</th>
+                        <th class="p-3 text-right">Palepu</th>
+                        <th class="p-3 text-right">Coimbatore</th>
+                        <th class="p-3 text-right">Bangalore</th>
+                        <th class="p-3 text-right">Total Qty</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+
+        detailedRecords.forEach((r, index) => {
+            const rowClass = index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+            const rawMrp = parseFloat(r["MRP"] || 0);
+            const mrp = rawMrp.toFixed(2);
+            
+            // Depot quantities - only show value if All Depots selected or it matches the filtered depot
+            const qtyKerala = !depot || depot === "Kerala" ? (r["Kerala"] ?? 0) : "";
+            const qtyPalepu = !depot || depot === "Palepu" ? (r["Palepu"] ?? 0) : "";
+            const qtyCoimbatore = !depot || depot === "Coimbatore" ? (r["Coimbatore"] ?? 0) : "";
+            const qtyBangalore = !depot || depot === "Bangalore" ? (r["Bangalore"] ?? 0) : "";
+            
+            const totalQty = r["Total Quantity"] ?? 0;
+
+            detailHtml += `
+                <tr class="${rowClass}">
+                    <td class="p-3 text-left">${r["Batch No"] ?? ''}</td>
+                    <td class="p-3 text-center whitespace-nowrap">${r["Expiry (MM-YYYY)"] ?? ''}</td>
+                    <td class="p-3 text-center">${r["Expiry Type"] ?? ''}</td>
+                    <td class="p-3 text-right font-mono">₹${mrp}</td>
+                    <td class="p-3 text-right">${qtyKerala}</td>
+                    <td class="p-3 text-right">${qtyPalepu}</td>
+                    <td class="p-3 text-right">${qtyCoimbatore}</td>
+                    <td class="p-3 text-right">${qtyBangalore}</td>
+                    <td class="p-3 text-right font-bold text-indigo-600">${totalQty}</td>
+                </tr>
+            `;
+        });
+
+        detailHtml += `</tbody></table>`;
+
+        document.getElementById("detailPanelContent").innerHTML = detailHtml;
+        document.getElementById("productDetailPanel").classList.remove('hidden');
+    }
+
+
+    // --- Event Listeners and Fetch Logic ---
+
+    document.getElementById("applyFilter").onclick = () => {
+      const fd = fromDateInput.value;
+      const td = toDateInput.value;
+      const depot = document.getElementById("depotFilter").value;
+      const prod = document.getElementById("productFilter").value;
+      const viewMode = document.getElementById("viewModeFilter").value;
+      const isBatch = CURRENT_DATA_SOURCE === "BATCH";
+      
+      // --- Read checked Division Codes ---
+      const checkedDivCodes = Array.from(document.querySelectorAll('#divCodeFilterContainer input[data-group="divCode"]:checked')).map(cb => cb.value);
+      
+      // --- Read checked Expiry Types (only apply if in Batch mode) ---
+      const checkedExpiryTypes = isBatch ? Array.from(document.querySelectorAll('#expiryTypeFilterContainer input[data-group="expiryType"]:checked')).map(cb => cb.value) : [];
+
+      // --- 1. Filter Data (Always filter the MERGED_SAVED array first to populate FILTERED_DATA) ---
+      // FILTERED_DATA is the detailed, batch-wise subset.
+      FILTERED_DATA = MERGED_SAVED.filter(r => {
+        
+        // Date Filtering (only apply if in Batch mode)
+        let dateMatch = true;
+const recordDate = getFormattedDate(r["Date"]);
+
+if (fd || td) {
+  dateMatch = (!fd || recordDate >= fd) && (!td || recordDate <= td);
+}
+        
+        // Division Code Filter: Match if checkedDivCodes is empty (All selected) or if the record's code is in the checked list
+        const recordDivCode = r["Div Code"];
+        const divCodeMatch = checkedDivCodes.length === 0 || checkedDivCodes.includes(recordDivCode); 
+        
+        const productMatch = !prod || r["Item Name"] === prod;
+        // Check if stock exists at the filtered depot (if a depot is selected)
+        const depotMatch = !depot || (r.hasOwnProperty(depot) && Number(r[depot] || 0) > 0); 
+        
+        // Expiry Type Filter (only apply if in Batch mode)
+        const recordExpiryType = r["Expiry Type"] || "";
+        const expiryMatch = !isBatch || checkedExpiryTypes.length === 0 || checkedExpiryTypes.includes(recordExpiryType);
+
+        return dateMatch && divCodeMatch && productMatch && depotMatch && expiryMatch; 
+      });
+
+      // --- 2. Group or Use Filtered Data for Rendering ---
+      let dataToRender = FILTERED_DATA;
+      if (viewMode === 'Consolidated') {
+          // dataToRender will be automatically sorted by groupDataConsolidated
+          dataToRender = groupDataConsolidated(FILTERED_DATA);
+      }
+
+      renderTable(dataToRender, depot, viewMode);
+      showMessage(`Applied filter. ${FILTERED_DATA.length} detailed records filtered, ${dataToRender.length} rows displayed in ${viewMode} view.`);
+    };
+
+    document.getElementById("clearFilter").onclick = () => {
+      fromDateInput.value = "";
+      toDateInput.value = "";
+      document.getElementById("depotFilter").value = "";
+      document.getElementById("productFilter").value = "";
+      document.getElementById("viewModeFilter").value = "Consolidated"; // Reset to default
+      
+      // --- Reset Division Code Checkboxes (Select 'All' and all others) ---
+      document.querySelectorAll('#divCodeFilterContainer input[type="checkbox"]').forEach(cb => cb.checked = true);
+
+      // --- Reset Expiry Type Checkboxes (Select 'All' and all others) ---
+      document.querySelectorAll('#expiryTypeFilterContainer input[type="checkbox"]').forEach(cb => cb.checked = true);
+
+      // Reset filtered data and render in default Consolidated mode (which is sorted)
+      FILTERED_DATA = MERGED_SAVED;
+      renderTable(groupDataConsolidated(MERGED_SAVED), "", "Consolidated");
+      showMessage("Filters cleared. Showing all data in Consolidated view.");
+    };
+    
+    document.getElementById("exportExcel").onclick = () => {
+        // Use the currently available detailed FILTERED_DATA for comprehensive export
+        const viewMode = document.getElementById("viewModeFilter").value;
+        const isBatch = CURRENT_DATA_SOURCE === "BATCH";
+        let dataToExport;
+        
+        if (viewMode === 'Consolidated') {
+             // Re-run grouping and sorting on the filtered data for consolidated export structure
+            dataToExport = groupDataConsolidated(FILTERED_DATA).map(r => ({
+                Date: getFormattedDate(r["Date"]),
+                "Div Code": r["Div Code"],
+                "Div Name": r["Div Name"],
+                "Item Code": r["Item Code"],
+                "Item Name": r["Item Name"],
+                "MRP": parseFloat(r["MRP"] || 0).toFixed(2),
+                Kerala: r["Kerala"] ?? 0,
+                Palepu: r["Palepu"] ?? 0,
+                Coimbatore: r["Coimbatore"] ?? 0,
+                Bangalore: r["Bangalore"] ?? 0,
+                "Total Quantity": r["Total Quantity"] ?? 0,
+            }));
+        } else {
+            // Detailed View - use FILTERED_DATA directly
+            const baseExport = FILTERED_DATA.map(r => ({
+                Date: getFormattedDate(r["Date"]),
+                "Div Code": r["Div Code"],
+                "Div Name": r["Div Name"],
+                "Item Code": r["Item Code"],
+                "Item Name": r["Item Name"],
+                "MRP": parseFloat(r["MRP"] || 0).toFixed(2),
+                Kerala: r["Kerala"] ?? 0,
+                Palepu: r["Palepu"] ?? 0,
+                Coimbatore: r["Coimbatore"] ?? 0,
+                Bangalore: r["Bangalore"] ?? 0,
+                "Total Quantity": r["Total Quantity"] ?? 0,
+            }));
+
+            if (isBatch) {
+                // Add batch and expiry columns only for Batch Wise data
+                dataToExport = baseExport.map((r, i) => ({
+                    ...r,
+                    "Batch No": FILTERED_DATA[i]["Batch No"],
+                    "Expiry (MM-YYYY)": FILTERED_DATA[i]["Expiry (MM-YYYY)"],
+                    "Expiry Type": FILTERED_DATA[i]["Expiry Type"]
+                }));
+            } else {
+                dataToExport = baseExport;
+            }
+        }
+
+        if (dataToExport.length === 0) {
+            showMessage("No data to export. Apply a filter first or wait for data to load.", "error");
+            return;
+        }
+
+
+        const sourceName = CURRENT_DATA_SOURCE === "BATCH" ? "Batch" : "Current";
+        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, `${sourceName} Report (${viewMode})`);
+        XLSX.writeFile(workbook, `Merged_Depot_Stock_Report_${sourceName}_${viewMode}.xlsx`);
+        showMessage(`Exported ${dataToExport.length} records to Excel.`);
+    };
+
+    // --- Data Fetch and Switch Logic ---
+    
+    /**
+     * Populates filter dropdowns/checkboxes, ensuring lists are sorted and interactive.
+     */
+    function populateFilters(data) {
+        const depots = ["Kerala", "Palepu", "Coimbatore", "Bangalore"];
+        const depotFilter = document.getElementById("depotFilter");
+        depotFilter.innerHTML = '<option value="">All Depots</option>'; // Reset
+        depots.forEach(d => depotFilter.innerHTML += `<option value="${d}">${d}</option>`);
+        
+        // --- Division Code Filter (Checkboxes) ---
+        const divCodes = [...new Set(data.map(i => i["Div Code"]).filter(c => c))].sort((a, b) => a.localeCompare(b));
+        const divCodeContainer = document.getElementById("divCodeFilterContainer");
+        divCodeContainer.innerHTML = ''; // Clear container
+        
+        // Add "All" checkbox
+        divCodeContainer.innerHTML += `
+            <div class="flex items-center mb-1">
+                <input type="checkbox" id="divCodeAll" value="all" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" checked />
+                <label for="divCodeAll" class="ml-2 text-sm text-gray-700 font-semibold cursor-pointer">All Divisions</label>
+            </div>
+        `;
+        
+        divCodes.forEach(c => {
+            divCodeContainer.innerHTML += `
+                <div class="flex items-center mb-1">
+                    <input type="checkbox" id="divCode_${c}" value="${c}" data-group="divCode" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" checked />
+                    <label for="divCode_${c}" class="ml-2 text-sm text-gray-600 cursor-pointer">${c}</label>
+                </div>
+            `;
+        });
+        
+        // Add change listener to "All" checkbox for Division Codes
+        document.getElementById("divCodeAll").addEventListener('change', function() {
+            document.querySelectorAll('#divCodeFilterContainer input[data-group="divCode"]').forEach(cb => cb.checked = this.checked);
+        });
+        
+        // Get unique product names and SORT them
+        const products = [...new Set(data.map(i => i["Item Name"]).filter(n => n))].sort((a, b) => a.localeCompare(b));
+        const productFilter = document.getElementById("productFilter");
+        productFilter.innerHTML = '<option value="">All Products</option>'; // Reset
+        products.forEach(p => productFilter.innerHTML += `<option value="${p}">${p}</option>`);
+
+        // --- Expiry Type Filter (Checkboxes) ---
+        const expiryTypes = ["Long", "Short", "Expired"];
+        const expiryContainer = document.getElementById("expiryTypeFilterContainer");
+        expiryContainer.innerHTML = ''; // Clear container
+        
+        // Add "All" checkbox
+        expiryContainer.innerHTML += `
+            <div class="flex items-center mb-1">
+                <input type="checkbox" id="expiryAll" value="all" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" checked />
+                <label for="expiryAll" class="ml-2 text-sm text-gray-700 font-semibold cursor-pointer">All Expiry Types</label>
+            </div>
+        `;
+
+        expiryTypes.forEach(t => {
+            expiryContainer.innerHTML += `
+                <div class="flex items-center mb-1">
+                    <input type="checkbox" id="expiryType_${t}" value="${t}" data-group="expiryType" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" checked />
+                    <label for="expiryType_${t}" class="ml-2 text-sm text-gray-600 cursor-pointer">${t}</label>
+                </div>
+            `;
+        });
+        
+        // Add change listener to "All" checkbox for Expiry Types
+        document.getElementById("expiryAll").addEventListener('change', function() {
+            document.querySelectorAll('#expiryTypeFilterContainer input[data-group="expiryType"]').forEach(cb => cb.checked = this.checked);
+        });
+    }
+
+    /**
+     * Updates the UI state of the switch and filter inputs.
+     */
+    function updateSwitchState() {
+        if (CURRENT_DATA_SOURCE === "BATCH") {
+            // Batch State
+            switchBatch.classList.add('bg-indigo-600', 'text-white', 'shadow-md');
+            switchBatch.classList.remove('text-gray-700', 'hover:bg-white', 'hover:shadow-lg');
+            switchCurrent.classList.remove('bg-indigo-600', 'text-white', 'shadow-md');
+            switchCurrent.classList.add('text-gray-700', 'hover:bg-white', 'hover:shadow-lg');
+            fromDateInput.disabled = false;
+            toDateInput.disabled = false;
+        } else {
+            // Current State
+            switchCurrent.classList.add('bg-indigo-600', 'text-white', 'shadow-md');
+            switchCurrent.classList.remove('text-gray-700', 'hover:bg-white', 'hover:shadow-lg');
+            switchBatch.classList.remove('bg-indigo-600', 'text-white', 'shadow-md');
+            switchBatch.classList.add('text-gray-700', 'hover:bg-white', 'hover:shadow-lg');
+            fromDateInput.disabled = false;
+            toDateInput.disabled = false;
+        }
+    }
+
+    /**
+     * Fetches data based on the current data source setting and updates the dashboard.
+     */
+    function fetchDataAndRender() {
+        const url = CURRENT_DATA_SOURCE === "BATCH" ? BATCH_URL : CURRENT_URL;
+        const isBatch = CURRENT_DATA_SOURCE === "BATCH";
+        
+        // Update UI state before fetch
+        updateSwitchState();
+
+        // Clear the current data and show spinner
+        MERGED_SAVED = [];
+        FILTERED_DATA = [];
+        renderTable([], ""); // Clear table
+        
+        dashboardContent.classList.add('hidden');
+        loadingSpinner.classList.remove('hidden');
+
+        fetch(url)
+          .then(res => res.json())
+          .then(json => {
+            MERGED_SAVED = json;
+            FILTERED_DATA = json; 
+            
+            // Repopulate filters (especially Product/Div code)
+            populateFilters(json);
+            
+            // Render in the default Consolidated view on load (which is sorted)
+            const consolidatedData = groupDataConsolidated(json);
+            renderTable(consolidatedData, "", "Consolidated");
+            
+            loadingSpinner.classList.add('hidden');
+            dashboardContent.classList.remove('hidden');
+            
+            const sourceName = isBatch ? "Batch Wise Merged Stock" : "Current Stock";
+            showMessage(`${sourceName} data loaded successfully. Showing Consolidated View.`);
+          })
+          .catch((e) => {
+            console.error("Fetch error:", e);
+            
+            loadingSpinner.classList.add('hidden');
+            dashboardContent.classList.remove('hidden'); 
+            
+            showMessage(`❌ Failed to load data from ${CURRENT_DATA_SOURCE} source. Check the script URL and network connection.`, "error");
+          });
+    }
+
+
+    // --- Setup Listeners for Data Source Switch ---
+    switchBatch.onclick = () => {
+        if (CURRENT_DATA_SOURCE !== "BATCH") {
+            CURRENT_DATA_SOURCE = "BATCH";
+            fetchDataAndRender();
+        }
+    };
+
+    switchCurrent.onclick = () => {
+        if (CURRENT_DATA_SOURCE !== "CURRENT") {
+            CURRENT_DATA_SOURCE = "CURRENT";
+            fetchDataAndRender();
+        }
+    };
+    
+    // --- Initial Load ---
+    window.onload = () => {
+        fetchDataAndRender();
+    };
+
+  </script>
+</body>
+</html>
