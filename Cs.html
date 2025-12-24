@@ -1,325 +1,435 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<title>Current Stock – Depot Wise</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
-
-<script>
-tailwind.config = {
-  theme: {
-    extend: {
-      colors: { primary: '#0ea5a4' },
-      fontFamily: { sans: ['Inter','system-ui'] }
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Current Stock</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'Segoe UI', 'Roboto', 'Arial', 'sans-serif'],
+          },
+          colors: {
+            primary: {
+              50: '#f0fdfa',
+              100: '#ccfbf1',
+              500: '#14b8a6',
+              600: '#0d9488',
+              700: '#0f766e',
+            },
+          }
+        }
+      }
     }
-  }
-}
-</script>
-
-<style>
-.table-wrap { overflow-x:auto; max-height:520px; }
-</style>
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .table-wrap {
+      overflow-x: auto;
+      max-height: 520px;
+      scrollbar-width: thin;
+      scrollbar-color: #cbd5e1 transparent;
+    }
+    .table-wrap::-webkit-scrollbar { width: 6px; height: 6px; }
+    .table-wrap::-webkit-scrollbar-track { background: transparent; }
+    .table-wrap::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
+    .stat-card:hover { transform: translateY(-2px); transition: transform 0.2s ease; }
+    #custom-modal-container { z-index: 9999; position: relative; }
+  </style>
 </head>
+<body class="bg-slate-50 text-slate-900 min-h-screen">
+  
+  <nav class="sticky top-0 z-40 w-full border-b border-slate-200 bg-white/80 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center shadow-lg shadow-primary-600/20">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+        </div>
+        <div>
+            <h1 class="text-xl font-bold tracking-tight text-slate-800">Depot Wise<span class="text-primary-600"> Current Stock</span></h1>
+            <p class="text-[10px] uppercase tracking-widest text-slate-400 font-bold leading-none">Current Stock Upload</p>
+        </div>
+      </div>
+      <div class="hidden md:flex items-center gap-4 text-sm font-medium">
+          <span class="text-slate-400">Stock Date:</span>
+          <span id="asOf" class="bg-primary-50 px-3 py-1 rounded-full text-primary-700 font-mono font-bold border border-primary-100">Waiting for files...</span>
+      </div>
+    </div>
+  </nav>
 
-<body class="bg-gray-50 p-6">
+  <main class="max-w-7xl mx-auto p-4 md:p-6 lg:p-8">
+    <div class="mb-8 p-6 bg-white rounded-2xl border border-slate-200 shadow-sm">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+            <div>
+                <h2 class="text-2xl font-bold text-slate-800 mb-2">Merge Current Stock Files</h2>
+                <p class="text-slate-500 mb-6 text-sm">Upload multiple depot reports. Use the standard template for guaranteed compatibility.</p>
+                
+                <div class="flex flex-col gap-4">
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <input id="files" type="file" accept=".xlsx,.xls,.csv" multiple
+                               class="block w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 transition-all border border-slate-200 rounded-full p-1" />
+                        
+                        <button id="process" class="bg-primary-600 hover:bg-primary-700 text-white font-bold py-2.5 px-6 rounded-full shadow-lg shadow-primary-600/20 transition-all flex items-center justify-center gap-2 whitespace-nowrap">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                            Combine Stock
+                        </button>
+                    </div>
 
-<div class="max-w-7xl mx-auto">
+                    <button id="downloadTemplate" class="text-xs font-bold text-primary-600 hover:text-primary-700 flex items-center gap-1.5 transition-colors w-fit">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                        Download Format Template (.xlsx)
+                    </button>
+                </div>
+            </div>
+            <div class="bg-slate-50 rounded-xl p-5 border border-dashed border-slate-300">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Stock Overview</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="stat-card bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
+                        <p class="text-[10px] text-slate-400 font-bold uppercase">Depots</p>
+                        <p id="countDepots" class="text-xl font-black text-slate-800">0</p>
+                    </div>
+                    <div class="stat-card bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
+                        <p class="text-[10px] text-slate-400 font-bold uppercase">Unique Items</p>
+                        <p id="countProducts" class="text-xl font-black text-slate-800">0</p>
+                    </div>
+                    <div class="stat-card bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
+                        <p class="text-[10px] text-slate-400 font-bold uppercase">Groups</p>
+                        <p id="countGroups" class="text-xl font-black text-slate-800">0</p>
+                    </div>
+                    <div class="stat-card bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
+                        <p class="text-[10px] text-slate-400 font-bold uppercase">Grand Total Qty</p>
+                        <p id="countQty" class="text-xl font-black text-slate-800">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<!-- HEADER -->
-<div class="flex items-center gap-4 mb-6 border-b pb-4">
-  <div class="w-14 h-14 bg-emerald-100 text-emerald-700 rounded-xl flex items-center justify-center font-bold text-xl">
-    CS
-  </div>
-  <div>
-    <h1 class="text-3xl font-extrabold">Current Stock Upload</h1>
-    <p class="text-gray-500">Merged column-wise stock</p>
-  </div>
-</div>
+    <div class="flex flex-col lg:flex-row gap-6">
+      <div class="flex-grow order-2 lg:order-1">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <h3 class="font-bold text-slate-700">Consolidated Stock Matrix</h3>
+                <button id="exportXlsx" class="text-xs font-bold text-primary-600 hover:text-primary-700 flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                    Download Excel
+                </button>
+            </div>
+            <div id="tableContainer" class="p-0">
+                <div class="py-20 flex flex-col items-center justify-center text-slate-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 opacity-20 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8-4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                    </svg>
+                    <p class="text-sm font-medium">Upload depot files to view merged stock.</p>
+                </div>
+            </div>
+        </div>
+      </div>
 
-<!-- FILTERS -->
-<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-  <input type="date" id="dateFilter" class="border rounded p-2">
-  <input type="text" id="searchBox" placeholder="Search Item / Code"
-         class="border rounded p-2">
-  <input type="file" id="fileInput" multiple
-         class="border rounded p-2 bg-white">
-</div>
+      <div class="w-full lg:w-80 space-y-6 order-1 lg:order-2">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+            <h4 class="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                Depots Found
+            </h4>
+            <div class="max-h-60 overflow-y-auto pr-2 space-y-2" id="depotsList">
+                <p class="text-xs text-slate-400 italic text-center py-4">No depots detected.</p>
+            </div>
+        </div>
 
-<!-- BUTTONS -->
-<div class="flex flex-wrap gap-3 mb-6">
-  <button onclick="processFiles()"
-    class="bg-primary text-white px-4 py-2 rounded font-semibold">
-    Import & Merge
-  </button>
+        <div class="bg-primary-700 rounded-2xl shadow-lg p-6 text-white overflow-hidden relative">
+            <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full"></div>
+            <h4 class="text-sm font-bold mb-1 relative z-10">Sync to Cloud</h4>
+            <p class="text-[11px] text-primary-100 mb-5 relative z-10">Archive consolidated current stock to the master Google Sheet.</p>
+            <button id="saveToSheet" class="w-full py-3 bg-white text-primary-700 font-bold rounded-xl shadow-xl hover:bg-primary-50 transition-all flex items-center justify-center gap-2 relative z-10">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
+                Push to Master Sheet
+            </button>
+        </div>
+      </div>
+    </div>
+  </main>
 
-  <button onclick="downloadFormat()"
-    class="border px-4 py-2 rounded font-semibold">
-    Download Format
-  </button>
+  <div id="custom-modal-container"></div>
 
-  <button onclick="exportExcel()"
-    class="border px-4 py-2 rounded font-semibold">
-    Export Excel
-  </button>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
 
-  <button onclick="saveToSheet()"
-    class="bg-emerald-600 text-white px-4 py-2 rounded font-semibold">
-    Save to Google Sheet
-  </button>
-</div>
+  <script>
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby0zKw1g1s_yB3J2p8QC_h31DBBCaswlK8xwt07bip98txOSMvOWgGPJwUWltDdg9uo9w/exec";
+    
+    const fileInput = document.getElementById('files');
+    const processBtn = document.getElementById('process');
+    const exportBtn = document.getElementById('exportXlsx');
+    const templateBtn = document.getElementById('downloadTemplate');
+    const tableContainer = document.getElementById('tableContainer');
+    const depotsList = document.getElementById('depotsList');
+    const syncBtn = document.getElementById('saveToSheet');
+    const asOfDisplay = document.getElementById('asOf');
+    
+    let MERGED = [];
+    let DEPOTS = [];
+    let REPORT_DATE = "";
 
-<!-- SUMMARY -->
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-  <div class="bg-white p-4 rounded shadow">
-    <div class="text-gray-500">Total Quantity</div>
-    <div id="sumQty" class="text-2xl font-bold">0</div>
-  </div>
-</div>
+    function showModal(title, message, type = 'info') {
+        const colorClass = type === 'success' ? 'text-emerald-600' : type === 'error' ? 'text-rose-600' : 'text-primary-600';
+        const icon = type === 'success' ? 
+            `<svg class="w-12 h-12 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>` :
+            `<svg class="w-12 h-12 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
 
-<!-- TABLE -->
-<div id="tableContainer" class="table-wrap bg-white rounded shadow"></div>
+        document.getElementById('custom-modal-container').innerHTML = `
+            <div class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+                <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200">
+                    <div class="flex flex-col items-center text-center">
+                        <div class="mb-4">${icon}</div>
+                        <h3 class="text-xl font-bold mb-2 ${colorClass}">${title}</h3>
+                        <p class="text-slate-500 text-sm mb-6">${message}</p>
+                        <button onclick="document.getElementById('custom-modal-container').innerHTML = ''" 
+                                class="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl">Dismiss</button>
+                    </div>
+                </div>
+            </div>`;
+    }
 
-</div>
+    function cleanKey(s) { return (s||'').toString().trim().toLowerCase().replace(/\s+/g,' '); }
 
-<script>
-/* ================= CONFIG ==	=============== */
-const SCRIPT_URL =
-"https://script.google.com/macros/s/AKfycbzW_NpWGgBFK2qLdeLiCpdF4XmalmrA-_YcAaXc_l-5olzSRBp4cHO8i7pzEzseFhVWEw/exec";
+    async function parseFile(file) {
+      const data = await file.arrayBuffer();
+      const wb = XLSX.read(data, { type: 'array' });
+      const records = [];
 
-/* ================= GLOBALS ================= */
-let RAW = [];
-let MERGED = [];
-let DEPOTS = [];
+      wb.SheetNames.forEach(name => {
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1 });
+        if (rows.length < 2) return;
 
-/* ================= EXCEL DATE FIX ================= */
-function excelDateToJS(n){
-  if (typeof n !== 'number') return n || '';
-  const d = new Date(Math.round((n - 25569) * 86400 * 1000));
-  return moment(d).format('DD-MM-YYYY');
-}
+        let hIdx = -1;
+        for (let i = 0; i < Math.min(rows.length, 20); i++) {
+          const r = rows[i].map(c => cleanKey(c));
+          if (r.includes('item name') && (r.includes('depot name') || r.includes('depot code'))) {
+            hIdx = i; break;
+          }
+        }
+        if (hIdx === -1) return;
 
-/* ================= IMPORT ================= */
-async function processFiles(){
-  RAW = [];
-  MERGED = [];
-  DEPOTS = [];
+        const headers = rows[hIdx].map(c => cleanKey(c));
+        const idx = {};
+        headers.forEach((h, i) => idx[h] = i);
 
-  const files = document.getElementById("fileInput").files;
-  if (!files.length) {
-    alert("Select Excel file");
-    return;
-  }
+        rows.slice(hIdx + 1).forEach(r => {
+          if (!r[idx['item name']]) return;
 
-  for (const file of files) {
-    const buf = await file.arrayBuffer();
-    const wb = XLSX.read(buf, { type:'array' });
-    const rows = XLSX.utils.sheet_to_json(
-      wb.Sheets[wb.SheetNames[0]],
-      { defval:'' }
-    );
+          let rawDate = r[idx['date']];
+          let formattedDate = moment().format('DD-MM-YYYY');
+          if (typeof rawDate === 'number') {
+            formattedDate = moment(new Date(Math.round((rawDate - 25569) * 86400 * 1000))).format('DD-MM-YYYY');
+          } else if (rawDate) {
+            formattedDate = moment(rawDate.toString().trim(), ['DD-MM-YYYY', 'YYYY-MM-DD', 'DD/MM/YYYY']).format('DD-MM-YYYY');
+          }
 
-    rows.forEach(r => {
-      const depot = r['Depot Name'];
+          records.push({
+            Date: formattedDate,
+            "Depot Code": (r[idx['depot code']] || '').toString(),
+            "Depot Name": (r[idx['depot name']] || r[idx['depot code']] || 'Unknown').toString().trim(),
+            "Div Code": (r[idx['div code']] || '').toString(),
+            "Div Name": (r[idx['div name']] || '').toString(),
+            "Item Name": (r[idx['item name']] || '').toString(),
+            Packing: (r[idx['packing']] || '').toString(),
+            "Item Code": (r[idx['item code']] || '').toString(),
+            MFR: (r[idx['mfr']] || '').toString(),
+            "Item Group": (r[idx['item group']] || '').toString(),
+            Quantity: parseFloat(r[idx['total quantity']] || r[idx['closing qty']] || 0)
+          });
+        });
+      });
+      return records;
+    }
 
-      if (depot && !DEPOTS.includes(depot)) {
-        DEPOTS.push(depot);
+    processBtn.onclick = async () => {
+      if (!fileInput.files.length) return showModal("Error", "Please select files.", "error");
+      
+      processBtn.disabled = true;
+      processBtn.innerHTML = `<span class="animate-spin mr-2">⏳</span> Processing...`;
+
+      const allRecords = [];
+      for (const f of fileInput.files) {
+        const recs = await parseFile(f);
+        allRecords.push(...recs);
       }
 
-      RAW.push({
-        date: excelDateToJS(r['Date']),
-        depot: depot,
-        div_code: r['Div Code'],
-        div_name: r['Div Name'],
-        item_code: r['Item Code'],
-        item_name: r['Item Name'],
-        packing: r['Packing'],
-        mfr: r['MFR'],
-        item_group: r['Item Group'],
-        qty: Number(r['Total Quantity'] || 0)
+      if (!allRecords.length) {
+          showModal("Error", "No valid data found in files.", "error");
+          processBtn.disabled = false;
+          processBtn.textContent = 'Combine Stock';
+          return;
+      }
+
+      const grouped = {};
+      const datesFound = {};
+      const foundDepots = new Set();
+
+      allRecords.forEach(r => {
+        if (r.Date) datesFound[r.Date] = (datesFound[r.Date] || 0) + 1;
+        foundDepots.add(r["Depot Name"]);
+
+        const key = `${r["Item Code"]}|${r.Packing}`;
+        if (!grouped[key]) {
+          grouped[key] = { ...r, depots: {}, "Total Quantity": 0 };
+        }
+        grouped[key].depots[r["Depot Name"]] = (grouped[key].depots[r["Depot Name"]] || 0) + r.Quantity;
+        grouped[key]["Total Quantity"] += r.Quantity;
       });
-    });
-  }
 
-  mergeDepotWise();
-  render();
-}
+      DEPOTS = Array.from(foundDepots).sort();
+      MERGED = Object.values(grouped);
+      
+      const sortedDates = Object.entries(datesFound).sort((a,b) => b[1] - a[1]);
+      REPORT_DATE = sortedDates.length ? sortedDates[0][0] : moment().format('DD-MM-YYYY');
+      asOfDisplay.textContent = REPORT_DATE;
 
-/* ================= MERGE DEPOT WISE ================= */
-function mergeDepotWise(){
-  const map = {};
+      render();
+      processBtn.disabled = false;
+      processBtn.textContent = 'Combine Stock';
+    };
 
-  RAW.forEach(r => {
-    const key = [r.date, r.div_code, r.item_code].join('|');
+    function render() {
+      document.getElementById('countDepots').textContent = DEPOTS.length;
+      document.getElementById('countProducts').textContent = MERGED.length;
+      document.getElementById('countGroups').textContent = new Set(MERGED.map(r => r["Item Group"])).size;
+      document.getElementById('countQty').textContent = MERGED.reduce((s, r) => s + r["Total Quantity"], 0).toLocaleString();
 
-    if (!map[key]) {
-      map[key] = {
-        Date: r.date,
-        "Div Code": r.div_code,
-        "Div Name": r.div_name,
-        "Item Code": r.item_code,
-        "Item Name": r.item_name,
-        Packing: r.packing,
-        MFR: r.mfr,
-        "Item Group": r.item_group,
-        depots: {},
-        "Total Quantity": 0
-      };
+      depotsList.innerHTML = DEPOTS.map(d => `
+        <div class="flex items-center justify-between p-2 rounded-lg border border-slate-100 bg-slate-50">
+            <span class="text-[11px] font-bold text-slate-600 truncate mr-2">${d}</span>
+            <span class="text-[11px] font-mono font-black text-primary-600">${MERGED.reduce((s, r) => s + (r.depots[d] || 0), 0).toLocaleString()}</span>
+        </div>
+      `).join('');
+
+      let html = `<div class="table-wrap"><table class="w-full text-[11px] text-left border-collapse">
+        <thead class="sticky top-0 bg-white shadow-sm ring-1 ring-slate-200">
+          <tr>
+            <th class="px-3 py-3 font-bold uppercase text-slate-400">Item Details</th>
+            <th class="px-3 py-3 font-bold uppercase text-slate-400">Packing</th>
+            <th class="px-3 py-3 font-bold uppercase text-slate-400">Group</th>
+            ${DEPOTS.map(d => `<th class="px-3 py-3 font-bold uppercase text-slate-400 text-right">${d}</th>`).join('')}
+            <th class="px-3 py-3 font-bold uppercase text-slate-800 text-right">Total</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">`;
+
+      MERGED.forEach(r => {
+        html += `<tr class="hover:bg-slate-50">
+          <td class="px-3 py-3">
+            <div class="font-bold text-slate-800">${r["Item Name"]}</div>
+            <div class="text-[9px] text-slate-400">${r["Item Code"]} | ${r.MFR}</div>
+          </td>
+          <td class="px-3 py-3 text-slate-500">${r.Packing}</td>
+          <td class="px-3 py-3 text-slate-500">${r["Item Group"]}</td>
+          ${DEPOTS.map(d => `<td class="px-3 py-3 text-right font-mono text-slate-400">${(r.depots[d] || 0).toLocaleString()}</td>`).join('')}
+          <td class="px-3 py-3 text-right font-black text-slate-800">${r["Total Quantity"].toLocaleString()}</td>
+        </tr>`;
+      });
+      html += '</tbody></table></div>';
+      tableContainer.innerHTML = html;
     }
 
-    map[key].depots[r.depot] =
-      (map[key].depots[r.depot] || 0) + r.qty;
-
-    map[key]["Total Quantity"] += r.qty;
-  });
-
-  MERGED = Object.values(map);
-}
-
-/* ================= FILTER & RENDER ================= */
-document.getElementById("searchBox").oninput =
-document.getElementById("dateFilter").onchange = render;
-
-function render(){
-  const s = document.getElementById("searchBox").value.toLowerCase();
-  const d = document.getElementById("dateFilter").value
-    ? moment(document.getElementById("dateFilter").value).format('DD-MM-YYYY')
-    : '';
-
-  const rows = MERGED.filter(r =>
-    (!d || r.Date === d) &&
-    (!s ||
-      r["Item Name"].toLowerCase().includes(s) ||
-      r["Item Code"].toLowerCase().includes(s))
-  );
-
-  document.getElementById("sumQty").textContent =
-    rows.reduce((a,b)=>a+b["Total Quantity"],0);
-
-  if (!rows.length) {
-    document.getElementById("tableContainer").innerHTML =
-      `<div class="p-4 text-gray-500 italic">No data</div>`;
-    return;
-  }
-
-  let html = `<table class="min-w-full text-sm">
-  <thead class="bg-gray-100 sticky top-0">
-    <tr>
-      <th class="p-2">Date</th>
-      <th class="p-2">Div Code</th>
-      <th class="p-2">Div Name</th>
-      <th class="p-2">Item Code</th>
-      <th class="p-2">Item Name</th>
-      <th class="p-2">Packing</th>
-      <th class="p-2">MFR</th>
-      <th class="p-2">Item Group</th>`;
-
-  DEPOTS.forEach(d => html += `<th class="p-2">${d}</th>`);
-
-  html += `<th class="p-2 font-bold">Total Quantity</th>
-    </tr></thead><tbody>`;
-
-  rows.forEach(r => {
-    html += `<tr class="border-b hover:bg-gray-50">
-      <td class="p-2">${r.Date}</td>
-      <td class="p-2">${r["Div Code"]}</td>
-      <td class="p-2">${r["Div Name"]}</td>
-      <td class="p-2 font-medium">${r["Item Code"]}</td>
-      <td class="p-2">${r["Item Name"]}</td>
-      <td class="p-2">${r.Packing}</td>
-      <td class="p-2">${r.MFR}</td>
-      <td class="p-2">${r["Item Group"]}</td>`;
-
-    DEPOTS.forEach(d => {
-      html += `<td class="p-2 text-right">${r.depots[d] || 0}</td>`;
-    });
-
-    html += `<td class="p-2 font-bold text-right">${r["Total Quantity"]}</td>
-    </tr>`;
-  });
-
-  html += `</tbody></table>`;
-  document.getElementById("tableContainer").innerHTML = html;
-}
-
-/* ================= SAVE TO SHEET ================= */
-function saveToSheet(){
-  if (!MERGED.length) {
-    alert("No data to save");
-    return;
-  }
-
-  const payload = MERGED.map(r => ({
-    Date: r.Date,
-    "Div Code": r["Div Code"],
-    "Div Name": r["Div Name"],
-    "Item Code": r["Item Code"],
-    "Item Name": r["Item Name"],
-    Packing: r.Packing,
-    MFR: r.MFR,
-    "Item Group": r["Item Group"],
-    depots: r.depots,
-    "Total Quantity": r["Total Quantity"]
-  }));
-
-  fetch(SCRIPT_URL, {
-    method: "POST",
-    mode: "no-cors",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  })
-  .then(() => alert("✅ Data saved to Google Sheet"))
-  .catch(() => alert("❌ Failed to save"));
-}
-
-/* ================= EXPORT ================= */
-function exportExcel(){
-  const out = MERGED.map(r => {
-    const row = {
-      Date: r.Date,
-      "Div Code": r["Div Code"],
-      "Div Name": r["Div Name"],
-      "Item Code": r["Item Code"],
-      "Item Name": r["Item Name"],
-      Packing: r.Packing,
-      MFR: r.MFR,
-      "Item Group": r["Item Group"]
+    exportBtn.onclick = () => {
+      if (!MERGED.length) return;
+      const data = MERGED.map(r => {
+        const row = {
+          Date: REPORT_DATE,
+          "Item Code": r["Item Code"],
+          "Item Name": r["Item Name"],
+          Packing: r.Packing,
+          MFR: r.MFR,
+          "Item Group": r["Item Group"]
+        };
+        const staticDepots = ["Kerala", "Palepu", "Coimbatore", "Bangalore"];
+        staticDepots.forEach(d => row[d] = r.depots[d] || 0);
+        DEPOTS.forEach(d => { if(!staticDepots.includes(d)) row[d] = r.depots[d] || 0; });
+        row["Total Quantity"] = r["Total Quantity"];
+        return row;
+      });
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Consolidated Stock");
+      XLSX.writeFile(wb, `Merged_CurrentStock_${REPORT_DATE}.xlsx`);
     };
-    DEPOTS.forEach(d => row[d] = r.depots[d] || 0);
-    row["Total Quantity"] = r["Total Quantity"];
-    return row;
-  });
 
-  const ws = XLSX.utils.json_to_sheet(out);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Current Stock");
-  XLSX.writeFile(wb, "Current_Stock_Depot_Wise.xlsx");
-}
+    templateBtn.onclick = () => {
+        // Headers in EXACT order requested
+        const templateHeaders = [
+            "Date", 
+            "Depot Code", 
+            "Depot Name", 
+            "Div Code", 
+            "Div Name", 
+            "Item Name", 
+            "Packing", 
+            "Item Code", 
+            "MFR", 
+            "Item Group", 
+            "Total Quantity"
+        ];
+        
+        const sampleRow = {};
+        templateHeaders.forEach(h => sampleRow[h] = "");
+        
+        // Fill sample data
+        sampleRow["Date"] = moment().format('DD-MM-YYYY');
+        sampleRow["Depot Name"] = "Coimbatore";
+        sampleRow["Item Name"] = "PRLFAC P";
+        sampleRow["Total Quantity"] = 0;
 
-/* ================= FORMAT ================= */
-function downloadFormat(){
-  const sample = [{
-    "Date": "01-01-2025",
-    "Depot Name": "Coimbatore",
-    "Div Code": "A",
-    "Div Name": "Division A",
-    "Item Code": "PRL001",
-    "Item Name": "PRL SAMPLE TAB",
-    "Packing": "10x10",
-    "MFR": "PRISTINE",
-    "Item Group": "TABLET",
-    "Total Quantity": 100
-  }];
+        // Force column order using the 'header' option in json_to_sheet
+        const ws = XLSX.utils.json_to_sheet([sampleRow], { header: templateHeaders });
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Format");
+        XLSX.writeFile(wb, "Current_Stock_Depot_Format.xlsx");
+    };
 
-  const ws = XLSX.utils.json_to_sheet(sample);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Format");
-  XLSX.writeFile(wb, "Current_Stock_Format.xlsx");
-}
-</script>
+    syncBtn.onclick = async () => {
+      if (!MERGED.length) return showModal("Error", "No data to sync.", "error");
+      syncBtn.disabled = true;
+      syncBtn.innerHTML = `<span class="animate-spin mr-2">⏳</span> Syncing...`;
 
+      const payload = MERGED.map(r => ({
+        Date: REPORT_DATE,
+        "Div Code": r["Div Code"],
+        "Div Name": r["Div Name"],
+        "Item Code": r["Item Code"],
+        "Item Name": r["Item Name"],
+        Packing: r.Packing,
+        MFR: r.MFR,
+        "Item Group": r["Item Group"],
+        depots: {
+            Kerala: r.depots["Kerala"] || 0,
+            Palepu: r.depots["Palepu"] || 0,
+            Coimbatore: r.depots["Coimbatore"] || 0,
+            Bangalore: r.depots["Bangalore"] || 0
+        },
+        "Total Quantity": r["Total Quantity"]
+      }));
+
+      try {
+        await fetch(APPS_SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        showModal("Sync Initiated", "Data sent to master sheet.", "success");
+      } catch (e) {
+        showModal("Sync Failed", "Connection error.", "error");
+      } finally {
+        syncBtn.disabled = false;
+        syncBtn.textContent = "Push to Master Sheet";
+      }
+    };
+  </script>
 </body>
 </html>
