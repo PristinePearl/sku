@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Merge Batchwise Stock</title>
+  <title>Depot Stock Hub — Smart Merged Reporting</title>
   <!-- Load Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Configure Tailwind to use Inter font and custom colors -->
@@ -15,705 +15,476 @@
             sans: ['Inter', 'system-ui', 'Segoe UI', 'Roboto', 'Arial', 'sans-serif'],
           },
           colors: {
-            primary: '#0ea5a4', // Teal 500
+            primary: {
+              50: '#f0fdfa',
+              100: '#ccfbf1',
+              500: '#14b8a6',
+              600: '#0d9488',
+              700: '#0f766e',
+            },
+            accent: '#0ea5a4',
           }
         }
       }
     }
   </script>
-  <!-- Custom styles for table layout and scroll -->
   <style>
-    /* Ensure Inter font is used for everything */
-    body { font-family: 'Inter', system-ui, 'Segoe UI', Roboto, Arial, sans-serif; }
-    
-    /* Utility class for table container */
+    body { font-family: 'Inter', sans-serif; }
     .table-wrap {
       overflow-x: auto;
-      max-height: 520px; /* Fixed height for scrollable table */
+      max-height: 520px;
+      scrollbar-width: thin;
+      scrollbar-color: #cbd5e1 transparent;
     }
-    .table-wrap table {
-      min-width: 1000px; /* Ensure table doesn't collapse too much on small screens */
+    .table-wrap::-webkit-scrollbar { width: 6px; height: 6px; }
+    .table-wrap::-webkit-scrollbar-track { background: transparent; }
+    .table-wrap::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
+    
+    .glass-morphism {
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+        transition: transform 0.2s ease;
     }
   </style>
 </head>
-<body class="bg-gray-50 text-gray-900 p-4 sm:p-6 md:p-8">
-  <div class="max-w-7xl mx-auto">
-    <header class="flex flex-col sm:flex-row items-start sm:items-center gap-4 border-b pb-4 mb-4">
-      <div class="w-14 h-14 bg-emerald-50 text-cyan-800 rounded-xl flex items-center justify-center font-bold text-xl flex-shrink-0">
-        
+<body class="bg-slate-50 text-slate-900 min-h-screen">
+  
+  <!-- Top Navigation/Header -->
+  <nav class="sticky top-0 z-40 w-full border-b border-slate-200 bg-white/80 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-primary-500 rounded-lg flex items-center justify-center shadow-lg shadow-primary-500/20">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+        </div>
+        <div>
+            <h1 class="text-xl font-bold tracking-tight text-slate-800">Depot Stock<span class="text-primary-500"> Batch Wise</span></h1>
+            <p class="text-[10px] uppercase tracking-widest text-slate-400 font-bold leading-none">Batch Wise Stock Upload</p>
+        </div>
       </div>
-      <div>
-        <h1 class="text-3xl font-extrabold text-gray-800">Batch Wise Depot Upload</h1>
-        <p class="text-gray-500 mt-1">Combine multiple depot stock Excel files into a single, merged report.</p>
-      </div>
-    </header>
-
-    <div class="flex flex-wrap gap-3 mb-6 items-center">
-      <input id="files" type="file" accept=".xlsx,.xls,.csv" multiple
-             class="flex-grow min-w-[200px] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20
-                    py-2 px-3 rounded-lg border border-gray-300 bg-white shadow-sm focus:ring-primary focus:border-primary transition duration-150" />
-
-      <button id="process" class="primary bg-primary hover:bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-150 flex-shrink-0">
-        Combine & Preview
-      </button>
-      <button id="exportXlsx" class="bg-white hover:bg-gray-100 text-gray-700 font-semibold py-2 px-4 rounded-lg border border-gray-300 shadow-sm transition duration-150 flex-shrink-0">
-        Export .xlsx (5 sheets)
-      </button>
-      
-      <div class="ml-auto text-sm text-gray-500 hidden md:block">
-        Expiry displayed as <strong class="text-gray-700">MM-YYYY</strong>. Colors: <span class="text-red-600">red</span>=Expired, <span class="text-amber-600">orange</span>=Short, <span class="text-sky-700">blue</span>=Long.
+      <div class="hidden md:flex items-center gap-4 text-sm font-medium">
+          <span class="text-slate-400">Report Date:</span>
+          <span id="asOf" class="bg-primary-50 px-3 py-1 rounded-full text-primary-700 font-mono font-bold border border-primary-100">Pending Upload</span>
       </div>
     </div>
+  </nav>
 
-    <!-- Main Content Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <!-- Left Column: Summary and Main Table -->
-      <div class="lg:col-span-2">
-        <div class="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-lg">
-          <div class="flex justify-between items-start flex-wrap gap-4">
+  <main class="max-w-7xl mx-auto p-4 md:p-6 lg:p-8">
+    
+    <!-- Hero/Upload Section -->
+    <div class="mb-8 p-6 bg-white rounded-2xl border border-slate-200 shadow-sm">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
             <div>
-              <div class="text-sm font-semibold text-gray-500 mb-2">Report Summary</div>
-              <div class="flex flex-wrap gap-2 text-sm">
-                <!-- Summary items -->
-                <div class="bg-indigo-50 text-indigo-700 p-2 rounded-lg border border-indigo-100 min-w-[140px] font-medium shadow-sm">
-                  Depots: <strong id="countDepots" class="font-extrabold text-indigo-900">0</strong>
+                <h2 class="text-2xl font-bold text-slate-800 mb-2">Combine & Analyze Reports</h2>
+                <p class="text-slate-500 mb-6 text-sm">Upload multiple depot stock files to generate a unified batch-wise report. Date is automatically taken from Excel data.</p>
+                
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <input id="files" type="file" accept=".xlsx,.xls,.csv" multiple
+                           class="block w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 transition-all border border-slate-200 rounded-full p-1" />
+                    
+                    <button id="process" class="bg-primary-600 hover:bg-primary-700 text-white font-bold py-2.5 px-6 rounded-full shadow-lg shadow-primary-600/20 transition-all flex items-center justify-center gap-2 whitespace-nowrap">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                        Combine Files
+                    </button>
                 </div>
-                <div class="bg-emerald-50 text-emerald-700 p-2 rounded-lg border border-emerald-100 min-w-[140px] font-medium shadow-sm">
-                  Products: <strong id="countProducts" class="font-extrabold text-emerald-900">0</strong>
+            </div>
+            <div class="bg-slate-50 rounded-xl p-5 border border-dashed border-slate-300">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Quick Stats</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="stat-card bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
+                        <p class="text-[10px] text-slate-400 font-bold uppercase">Depots</p>
+                        <p id="countDepots" class="text-xl font-black text-slate-800">0</p>
+                    </div>
+                    <div class="stat-card bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
+                        <p class="text-[10px] text-slate-400 font-bold uppercase">Products</p>
+                        <p id="countProducts" class="text-xl font-black text-slate-800">0</p>
+                    </div>
+                    <div class="stat-card bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
+                        <p class="text-[10px] text-slate-400 font-bold uppercase">Merged Rows</p>
+                        <p id="countRows" class="text-xl font-black text-slate-800">0</p>
+                    </div>
+                    <div class="stat-card bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
+                        <p class="text-[10px] text-slate-400 font-bold uppercase">Total Qty</p>
+                        <p id="countQty" class="text-xl font-black text-slate-800">0</p>
+                    </div>
                 </div>
-                <div class="bg-cyan-50 text-cyan-700 p-2 rounded-lg border border-cyan-100 min-w-[140px] font-medium shadow-sm">
-                  Merged Rows: <strong id="countRows" class="font-extrabold text-cyan-900">0</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="flex flex-col lg:flex-row gap-6">
+      
+      <!-- Left: Dynamic Report Table -->
+      <div class="flex-grow order-2 lg:order-1">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <div class="flex items-center gap-4">
+                    <h3 class="font-bold text-slate-700">Stock Inventory Matrix</h3>
+                    <div class="hidden sm:flex gap-2">
+                        <span class="px-2 py-0.5 rounded-md bg-red-100 text-red-700 text-[10px] font-bold border border-red-200 uppercase">Expired</span>
+                        <span class="px-2 py-0.5 rounded-md bg-amber-100 text-amber-700 text-[10px] font-bold border border-amber-200 uppercase">Short (≤6m)</span>
+                        <span class="px-2 py-0.5 rounded-md bg-sky-100 text-sky-700 text-[10px] font-bold border border-sky-200 uppercase">Long (>6m)</span>
+                    </div>
                 </div>
-                <div class="bg-purple-50 text-purple-700 p-2 rounded-lg border border-purple-100 min-w-[140px] font-medium shadow-sm">
-                  Total Qty: <strong id="countQty" class="font-extrabold text-purple-900">0</strong>
-                </div>
-              </div>
+                <button id="exportXlsx" class="text-xs font-bold text-primary-600 hover:text-primary-700 flex items-center gap-1 group">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                    Download .xlsx
+                </button>
             </div>
             
-            <div class="text-right flex-shrink-0">
-              <div class="text-sm font-semibold text-gray-500">As of</div>
-              <div id="asOf" class="text-lg font-bold text-gray-800">-</div>
+            <div id="tableContainer" class="p-0">
+                <div class="py-20 flex flex-col items-center justify-center text-slate-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 opacity-20 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                    </svg>
+                    <p class="text-sm font-medium">Ready to process your files.</p>
+                </div>
             </div>
-          </div>
-
-          <hr class="my-4 border-gray-100" />
-          
-          <div class="flex flex-wrap gap-2 text-sm">
-            <div class="px-3 py-1 rounded-full text-red-800 bg-red-100 font-bold shadow-sm">Expired</div>
-            <div class="px-3 py-1 rounded-full text-amber-800 bg-amber-100 font-bold shadow-sm">Short (≤ 3 months)</div>
-            <div class="px-3 py-1 rounded-full text-sky-800 bg-sky-100 font-bold shadow-sm">Long (> 3 months)</div>
-          </div>
-        </div>
-
-        <div id="tableContainer" class="mt-6">
-          <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-lg text-center text-gray-500 italic">
-            Upload and process Excel files to see the merged stock report here.
-          </div>
         </div>
       </div>
 
-      <!-- Right Column: Breakdown and Actions -->
-      <div class="lg:col-span-1 space-y-6">
-        <!-- Depot Breakdown Card -->
-        <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-lg">
-          <h3 class="text-xl font-semibold mb-3 text-gray-800">Depot Breakdown</h3>
-          <div class="overflow-x-auto">
-            <table id="depots" class="min-w-full text-sm">
-              <thead>
-                <tr class="text-left bg-gray-50 border-b border-gray-200">
-                  <th class="py-2 px-1 text-gray-600 font-medium">#</th>
-                  <th class="py-2 px-1 text-gray-600 font-medium whitespace-nowrap">Depot Code/Name</th>
-                  <th class="py-2 px-1 text-gray-600 font-medium">Batches</th>
-                  <th class="py-2 px-1 text-gray-600 font-medium">Qty</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr class="border-b border-gray-100"><td colspan="4" class="py-2 text-center text-gray-400 italic">No depots loaded.</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Quick Actions Card -->
-        <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-lg">
-          <h3 class="text-xl font-semibold mb-3 text-gray-800">Quick Actions</h3>
-          <div class="flex flex-col gap-3">
-            <a id="downloadSample" class="text-primary hover:text-teal-600 font-medium cursor-pointer transition duration-150 underline">Download Sample Excel Template</a>
-            
-            <button id="saveToSheet" class="bg-primary/10 text-primary hover:bg-primary/20 font-semibold py-2 px-4 rounded-lg transition duration-150">
-              Save Day-wise Stock
-            </button>
-            <div class="grid grid-cols-2 gap-3">
-              <button id="filterExpired" class="bg-red-50 text-red-700 hover:bg-red-100 font-semibold py-2 px-4 rounded-lg transition duration-150">Show Expired Only</button>
-              <button id="filterShort" class="bg-amber-50 text-amber-700 hover:bg-amber-100 font-semibold py-2 px-4 rounded-lg transition duration-150">Show Short Only</button>
-              <button id="filterLong" class="bg-sky-50 text-sky-700 hover:bg-sky-100 font-semibold py-2 px-4 rounded-lg transition duration-150">Show Long Only</button>
+      <!-- Right: Sidebar -->
+      <div class="w-full lg:w-80 space-y-6 order-1 lg:order-2">
+        
+        <!-- Depot List -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+            <h4 class="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                Depot Breakdown
+            </h4>
+            <div class="max-h-60 overflow-y-auto pr-2 space-y-2" id="depotsList">
+                <p class="text-xs text-slate-400 italic text-center py-4">No data loaded.</p>
             </div>
-            <button id="filterAll" class="bg-gray-100 text-gray-700 hover:bg-gray-200 font-semibold py-2 px-4 rounded-lg transition duration-150">Show All</button>
-
-          </div>
         </div>
 
+        <!-- Smart Filters -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+            <h4 class="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
+                Smart Filters
+            </h4>
+            <div class="grid grid-cols-1 gap-2">
+                <button id="filterAll" class="w-full text-left px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-xs font-bold hover:bg-slate-200 transition-colors">Show All</button>
+                <button id="filterExpired" class="w-full text-left px-4 py-2 rounded-lg bg-red-50 text-red-700 text-xs font-bold hover:bg-red-100 transition-colors">Expired Only</button>
+                <button id="filterShort" class="w-full text-left px-4 py-2 rounded-lg bg-amber-50 text-amber-700 text-xs font-bold hover:bg-amber-100 transition-colors">Short Expiry (≤6m)</button>
+                <button id="filterLong" class="w-full text-left px-4 py-2 rounded-lg bg-sky-50 text-sky-700 text-xs font-bold hover:bg-sky-100 transition-colors">Long Expiry (>6m)</button>
+            </div>
+        </div>
 
+        <!-- Sync Action -->
+        <div class="bg-primary-700 rounded-2xl shadow-lg p-6 text-white overflow-hidden relative">
+            <div class="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full"></div>
+            <h4 class="text-sm font-bold mb-1 relative z-10">Cloud Sync</h4>
+            <p class="text-[11px] text-primary-100 mb-5 relative z-10">Push the merged data to the master spreadsheet archive.</p>
+            <button id="saveToSheet" class="w-full py-3 bg-white text-primary-700 font-bold rounded-xl shadow-xl hover:bg-primary-50 transition-all flex items-center justify-center gap-2 relative z-10">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
+                Push to Master Sheet
+            </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- External Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx-js-style.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/moment-timezone@0.5.43/builds/moment-timezone-with-data.min.js"></script>
 
   <script>
-    // Utilities & globals
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwKSSo3923VjuwLllxRyzA2wkaQ4GzkLj0T4GYINOrvBv12L1KvKoBcd6W8FKJZroNS/exec";
+    
     const fileInput = document.getElementById('files');
     const processBtn = document.getElementById('process');
     const exportBtn = document.getElementById('exportXlsx');
     const tableContainer = document.getElementById('tableContainer');
-    const depotsTbody = document.querySelector('#depots tbody');
-    const asOf = document.getElementById('asOf');
-    asOf.textContent = moment().format('YYYY-MM-DD');
+    const depotsList = document.getElementById('depotsList');
+    const syncBtn = document.getElementById('saveToSheet');
+    const asOfDisplay = document.getElementById('asOf');
+    
+    let MERGED = [];
+    let DEPOT_ORDER = [];
+    let GLOBAL_REPORT_DATE = "";
 
-    let MERGED = []; // array of merged rows
-    let DEPOT_ORDER = []; // dynamic depot order
-
-    // normalize header key
     function keyify(s){ return (s||'').toString().trim().toLowerCase().replace(/\s+/g,' '); }
 
-    // parse a workbook into records using template columns
-// ✅ Full Excel parser (reads all 16 template columns correctly)
-function workbookToRecords(wb, filenameFallback) {
-  const records = [];
+    function workbookToRecords(wb) {
+      const records = [];
+      wb.SheetNames.forEach(sn => {
+        const sheet = wb.Sheets[sn];
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true });
+        if (!rows || rows.length === 0) return;
 
-  wb.SheetNames.forEach(sn => {
-    const sheet = wb.Sheets[sn];
-    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true });
-    if (!rows || rows.length === 0) return;
+        let headerRow = -1;
+        for (let i = 0; i < Math.min(rows.length, 10); i++) {
+          const r = rows[i].map(c => keyify(c));
+          if (r.includes('item name') && r.includes('batch no')) {
+            headerRow = i;
+            break;
+          }
+        }
+        if (headerRow === -1) return;
 
-    // Find header row
-    let headerRow = 0;
-    for (let i = 0; i < Math.min(rows.length, 8); i++) {
-      const r = rows[i].map(c => keyify(c));
-      if (r.includes('item name') && r.includes('batch no')) {
-        headerRow = i;
-        break;
-      }
-    }
+        const hdr = rows[headerRow].map(c => keyify(c));
+        const data = rows.slice(headerRow + 1).filter(r => r.some(c => c));
+        const idx = {};
+        hdr.forEach((h, i) => (idx[h] = i));
 
-    const hdr = rows[headerRow].map(c => keyify(c));
-    const data = rows.slice(headerRow + 1).filter(r => r.some(c => c));
-    const idx = {};
-    hdr.forEach((h, i) => (idx[h] = i));
+        data.forEach(r => {
+          const rec = {};
+          
+          let dateVal = r[idx['date']];
+          if (typeof dateVal === 'number') {
+            rec.date = moment(new Date(Math.round((dateVal - 25569) * 86400 * 1000))).format('DD-MM-YYYY');
+          } else if (dateVal) {
+            rec.date = moment(dateVal.toString().trim(), ['DD-MM-YYYY', 'YYYY-MM-DD']).format('DD-MM-YYYY');
+          } else {
+            rec.date = "";
+          }
 
-    // Parse each record row
-    data.forEach(r => {
-      const rec = {};
+          rec.div_code = (r[idx['div code']] || '').toString().trim();
+          rec.div_name = (r[idx['div name']] || '').toString().trim();
+          rec.depot_name = (r[idx['depot name']] || r[idx['depot code']] || '').toString().trim();
+          rec.item_code = (r[idx['item code']] || '').toString().trim();
+          rec.item_name = (r[idx['item name']] || '').toString().trim();
+          rec.batch_no = (r[idx['batch no']] || '').toString().trim();
+          rec.mrp = parseFloat(r[idx['mrp']] || 0);
+          rec.total_quantity = parseFloat(r[idx['total quantity']] || 0);
+          rec.total_value = parseFloat(r[idx['total value']] || 0);
 
-      let dateVal = r[idx['date']];
-if (typeof dateVal === 'number') {
-  const jsDate = new Date(Math.round((dateVal - 25569) * 86400 * 1000));
-  rec.date = moment(jsDate).format('DD-MM-YYYY');
-} else if (dateVal instanceof Date) {
-  rec.date = moment(dateVal).format('DD-MM-YYYY');
-} else {
-  rec.date = (dateVal || '').toString().trim();
-}
-      rec.depot_code = (r[idx['depot code']] || '').toString().trim();
-      rec.depot_name = (r[idx['depot name']] || '').toString().trim();
-      rec.div_code = (r[idx['div code']] || '').toString().trim();
-      rec.div_name = (r[idx['div name']] || '').toString().trim();
-      rec.item_name = (r[idx['item name']] || '').toString().trim();
-      rec.packing = (r[idx['packing']] || '').toString().trim();
-      rec.item_code = (r[idx['item code']] || '').toString().trim();
-      rec.mfr = (r[idx['mfr']] || '').toString().trim();
-      rec.item_group = (r[idx['item group']] || '').toString().trim();
-      rec.shipper_qty = parseFloat(r[idx['shipper qty(item)']] || 0);
-      rec.batch_no = (r[idx['batch no']] || '').toString().trim();
+          let expRaw = r[idx['expiry date']];
+          let expMoment = null;
+          if (typeof expRaw === 'number') expMoment = moment(new Date(Math.round((expRaw - 25569) * 86400 * 1000)));
+          else expMoment = moment((expRaw || '').toString().trim(), ['MM-YYYY', 'DD-MM-YYYY', 'YYYY-MM-DD']);
 
-      // Handle expiry date
-      let raw = r[idx['expiry date']] || '';
-      let expMoment = null;
-      if (raw instanceof Date) expMoment = moment(raw);
-      else if (typeof raw === 'number')
-        expMoment = moment(new Date(Math.round((raw - 25569) * 86400 * 1000)));
-      else
-        expMoment = moment(
-          (raw || '').toString().trim(),
-          ['MM-YYYY', 'MM/YYYY', 'DD-MM-YYYY', 'YYYY-MM-DD']
-        );
+          if (expMoment && expMoment.isValid()) {
+            rec.expiry = expMoment.endOf('month').toDate();
+            rec.expiry_mm_yyyy = expMoment.format('MM-YYYY');
+          } else {
+            rec.expiry = null;
+            rec.expiry_mm_yyyy = '';
+          }
 
-      if (expMoment && expMoment.isValid()) {
-        expMoment = expMoment.endOf('month');
-        rec.expiry = expMoment.toDate();
-        rec.expiry_mm_yyyy = expMoment.format('MM-YYYY');
-      } else {
-        rec.expiry = null;
-        rec.expiry_mm_yyyy = '';
-      }
-
-      rec.mrp = parseFloat(r[idx['mrp']] || 0);
-      rec.total_quantity = parseFloat(r[idx['total quantity']] || 0);
-      rec.total_value = parseFloat(r[idx['total value']] || 0);
-
-      if (rec.item_name && rec.item_code)
-        records.push(rec);
-    });
-  });
-
-  return records;
-}
-
-    // merge multiple file records into MERGED with dynamic depot columns
-// ✅ Merge uploaded Excel data (preserves full template columns)
-function mergeAll(fileRecordsArray) {
-  MERGED = [];
-  DEPOT_ORDER = [];
-
-  const grouped = {};
-
-  function ensureDepot(depot) {
-    if (depot && !DEPOT_ORDER.includes(depot)) DEPOT_ORDER.push(depot);
-  }
-
-  fileRecordsArray.forEach(fileRec => {
-    fileRec.records.forEach(r => {
-      const depot = r.depot_name || r.depot_code;
-      ensureDepot(depot);
-
-      // ✅ CORRECT UNIQUE KEY
-      const key = [
-        r.item_code,
-        r.batch_no,
-        r.expiry_mm_yyyy
-      ].join('|');
-
-      if (!grouped[key]) {
-        grouped[key] = {
-          date: r.date,
-          div_code: r.div_code,
-          div_name: r.div_name,
-          item_code: r.item_code,
-          item_name: r.item_name,
-          packing: r.packing,
-          mfr: r.mfr,
-          item_group: r.item_group,
-          shipper_qty: r.shipper_qty,
-          batch_no: r.batch_no,
-          expiry_mm_yyyy: r.expiry_mm_yyyy,
-          mrp: r.mrp,
-          total_quantity: 0,
-          total_value: 0,
-          per_depot: {}
-        };
-      }
-
-      // Add depot quantity
-      grouped[key].per_depot[depot] =
-        (grouped[key].per_depot[depot] || 0) +
-        Number(r.total_quantity || 0);
-
-      // Total totals
-      grouped[key].total_quantity += Number(r.total_quantity || 0);
-      grouped[key].total_value += Number(r.total_value || 0);
-    });
-  });
-
-  MERGED = Object.values(grouped);
-  classifyMerged();
-}
-// =============================
-//   FIX EXPIRY TYPE DETECTION
-// =============================
-function classifyMerged() {
-  MERGED.forEach(r => {
-    
-    // Case 1: expiry_mm_yyyy already exists
-    if (r.expiry_mm_yyyy && typeof r.expiry_mm_yyyy === "string") {
-      const m = moment(r.expiry_mm_yyyy, ["MM-YYYY", "YYYY-MM"]);
-      if (m.isValid()) {
-        r.expiry = m.endOf("month").toDate();
-      }
-    }
-
-    // If still no expiry date → unknown
-    if (!r.expiry) {
-      r.expiry_type = "Unknown";
-      return;
-    }
-
-    // Evaluate expiry
-    const today = moment();
-    const exp = moment(r.expiry);
-
-    if (exp.isBefore(today, 'day')) {
-      r.expiry_type = "Expired";
-    } 
-    else if (exp.diff(today, "months") <= 3) { // Changed from 6 months to 3 months for 'Short'
-      r.expiry_type = "Short";
-    } 
-    else {
-      r.expiry_type = "Long";
-    }
-  });
-}
-
-    // render HTML table (column-wise depots)
-function renderTable(filter) {
-  const depOrder = DEPOT_ORDER;
-  const rows = MERGED.filter(r => !filter || r.expiry_type === filter);
-
-  // summary counts
-  document.getElementById('countDepots').textContent = depOrder.length;
-  document.getElementById('countProducts').textContent = new Set(MERGED.map(r => r.item_code || r.item_name)).size;
-  document.getElementById('countRows').textContent = MERGED.length;
-  document.getElementById('countQty').textContent = MERGED.reduce((s, r) => s + (r.total_quantity || 0), 0);
-
-  // depot breakdown sidebar
-  depotsTbody.innerHTML = '';
-  if (depOrder.length === 0) {
-    depotsTbody.innerHTML = '<tr class="border-b border-gray-100"><td colspan="4" class="py-2 text-center text-gray-400 italic">No depots loaded.</td></tr>';
-  } else {
-    depOrder.forEach((d, idx) => {
-      const qty = MERGED.reduce((s, r) => s + (r.per_depot && r.per_depot[d] ? r.per_depot[d] : 0), 0);
-      const tr = document.createElement('tr');
-      tr.className = "border-b border-gray-100 hover:bg-gray-50 transition duration-150";
-      tr.innerHTML = `<td class="py-2 px-1 text-gray-500">${idx + 1}</td><td class="py-2 px-1 font-medium">${escapeHtml(d)}</td><td class="py-2 px-1 text-center text-gray-500">-</td><td class="py-2 px-1 font-bold text-right">${qty.toLocaleString()}</td>`;
-      depotsTbody.appendChild(tr);
-    });
-  }
-
-  // ===== build column-wise headers =====
-  const headerCols = [
-    'Date','Div Code','Div Name','Item Code','Item Name','Batch No',
-    'Expiry (MM-YYYY)','MRP', ...depOrder, 'Total Quantity','Total Value','Expiry Type'
-  ];
-
-  // ===== build table =====
-  let html = '<div class="table-wrap bg-white p-6 rounded-xl border border-gray-200 shadow-lg">';
-  html += '<table class="w-full text-sm border-separate border-spacing-y-1">';
-  html += '<thead class="sticky top-0 bg-white z-10 shadow-sm border-b border-gray-200">';
-  html += '<tr>' +
-    headerCols.map(h => `<th class="py-2 px-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap">${escapeHtml(h)}</th>`).join('') +
-    '</tr></thead><tbody>';
-
-  rows.forEach(r => {
-    const typeLabel = r.expiry_type || '';
-    let bgColor = 'bg-gray-100 text-gray-600';
-    if (typeLabel === 'Expired') bgColor = 'bg-red-100 text-red-800 border-red-200';
-    else if (typeLabel === 'Short') bgColor = 'bg-amber-100 text-amber-800 border-amber-200';
-    else if (typeLabel === 'Long') bgColor = 'bg-sky-100 text-sky-800 border-sky-200';
-
-    const coloredType = `<span class="px-3 py-1 rounded-full text-xs font-bold ${bgColor}">${typeLabel}</span>`;
-
-    html += '<tr class="border-b border-gray-100 hover:bg-gray-50 transition duration-150">';
-    html += `<td class="py-3 px-3 whitespace-nowrap">${escapeHtml(r.date)}</td>`;
-    html += `<td class="py-3 px-3">${escapeHtml(r.div_code)}</td>`;
-    html += `<td class="py-3 px-3">${escapeHtml(r.div_name)}</td>`;
-    html += `<td class="py-3 px-3 font-medium">${escapeHtml(r.item_code)}</td>`;
-    html += `<td class="py-3 px-3 max-w-xs truncate">${escapeHtml(r.item_name)}</td>`;
-    html += `<td class="py-3 px-3 whitespace-nowrap">${escapeHtml(r.batch_no)}</td>`;
-    html += `<td class="py-3 px-3 whitespace-nowrap">${escapeHtml(r.expiry_mm_yyyy)}</td>`;
-    html += `<td class="py-3 px-3 text-right">${r.mrp ? r.mrp.toFixed(2) : 0}</td>`;
-
-    // depot quantities in columns
-    depOrder.forEach(d => {
-      const val = (r.per_depot && r.per_depot[d]) ? r.per_depot[d] : 0;
-      html += `<td class="py-3 px-3 text-right whitespace-nowrap">${val.toLocaleString()}</td>`;
-    });
-
-    html += `<td class="py-3 px-3 font-bold text-right whitespace-nowrap">${r.total_quantity.toLocaleString() || 0}</td>`;
-    html += `<td class="py-3 px-3 text-right whitespace-nowrap">${(r.total_value || 0).toFixed(2)}</td>`;
-    html += `<td class="py-3 px-3">${coloredType}</td>`;
-    html += '</tr>';
-  });
-
-  html += '</tbody></table></div>';
-  tableContainer.innerHTML = html;
-}
-
-    function escapeHtml(s){ if(s==null) return ''; return (''+s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
-
-    // convert MERGED to sheet data arrays (objects) with depot columns
-    function buildSheetRows(filter){
-      const depOrder = DEPOT_ORDER;
-      const rows = MERGED.filter(r=> !filter || r.expiry_type===filter).map(r=>{
-        const obj = {
-          'Item Code': r.item_code || '',
-          'Item Name': r.item_name || '',
-          'Batch No': r.batch_no || '',
-          'Expiry (MM-YYYY)': r.expiry_mm_yyyy || ''
-        };
-        depOrder.forEach(d => obj[d] = r.per_depot[d] || 0);
-        obj['Total Quantity'] = r.total_quantity || 0;
-        obj['Total Value'] = Number((r.total_value||0).toFixed(2));
-        obj['Expiry Type'] = r.expiry_type || '';
-        return obj;
-      });
-      return rows;
-    }
-
-    // Export to XLSX with 5 sheets (added Low Stock)
-// ✅ Export merged data to Excel (Full Header Format)
-function exportXlsx() {
-  if (!MERGED || MERGED.length === 0) {
-    alert("Upload files and preview first!");
-    return;
-  }
-
-  const wb = XLSX.utils.book_new();
-  const depOrder = DEPOT_ORDER;
-
-  // Build sheet rows
-  const buildSheet = (filter) => {
-    return MERGED
-      .filter(r => !filter || r.expiry_type === filter)
-      .filter(r => (r.div_code || '').toUpperCase() !== 'G')   // ❌ Remove DIVISION G
-      .map(r => {
-
-        const row = {
-          'Date': r.date || '',
-          'Div Code': r.div_code || '',
-          'Div Name': r.div_name || '',
-          'Item Name': r.item_name || '',
-          'Packing': r.packing || '',
-          'Item Code': r.item_code || '',
-          'MFR': r.mfr || '',
-          'Item Group': r.item_group || '',
-          'Shipper Qty(Item)': r.shipper_qty || 0,
-          'Batch No': r.batch_no || '',
-          'Expiry (MM-YYYY)': r.expiry_mm_yyyy || '',
-          'MRP': r.mrp || 0
-        };
-
-        // depot columns
-        depOrder.forEach(d => {
-          row[d] = (r.per_depot && r.per_depot[d]) ? r.per_depot[d] : 0;
+          if (rec.item_code && rec.batch_no) records.push(rec);
         });
-
-        row['Total Quantity'] = r.total_quantity || 0;
-        row['Total Value'] = Number(r.total_value || 0).toFixed(2);
-        row['Expiry Type'] = r.expiry_type || '';
-
-        return row;
       });
-  };
-
-  const addSheet = (title, filter) => {
-    const ws = XLSX.utils.json_to_sheet(buildSheet(filter));
-    XLSX.utils.book_append_sheet(wb, ws, title);
-  };
-
-  addSheet("Total Stock");
-  addSheet("Long Expiry Stock", "Long");
-  addSheet("Short Expiry Stock", "Short");
-  addSheet("Expired Stock", "Expired");
-
-
-  
-  // Update summary counts (optional, but good UX)
-  document.getElementById('countDepots').textContent = depOrder.length;
-  document.getElementById('countProducts').textContent = new Set(MERGED.map(r => r.item_code || r.item_name)).size;
-  document.getElementById('countRows').textContent = MERGED.length;
-  document.getElementById('countQty').textContent = MERGED.reduce((s, r) => s + (r.total_quantity || 0), 0);
-
-  // ===== build column-wise headers (simplified for low stock view) =====
-  const headerCols = [
-    'Date','Item Code','Item Name','Batch No','Expiry (MM-YYYY)','MRP', ...depOrder, 'Total Quantity','Total Value','Expiry Type'
-  ];
-
-  // ===== build table =====
-  let html = '<div class="table-wrap bg-white p-6 rounded-xl border border-gray-200 shadow-lg">';
-  html += '<table class="w-full text-sm border-separate border-spacing-y-1">';
-  html += '<thead class="sticky top-0 bg-white z-10 shadow-sm border-b border-gray-200">';
-  html += '<tr>' +
-    headerCols.map(h => `<th class="py-2 px-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap">${escapeHtml(h)}</th>`).join('') +
-    '</tr></thead><tbody>';
-
-  rows.forEach(r => {
-    const typeLabel = r.expiry_type || '';
-    let bgColor = 'bg-gray-100 text-gray-600';
-    if (typeLabel === 'Expired') bgColor = 'bg-red-100 text-red-800 border-red-200';
-    else if (typeLabel === 'Short') bgColor = 'bg-amber-100 text-amber-800 border-amber-200';
-    else if (typeLabel === 'Long') bgColor = 'bg-sky-100 text-sky-800 border-sky-200';
-
-    const coloredType = `<span class="px-3 py-1 rounded-full text-xs font-bold ${bgColor}">${typeLabel}</span>`;
-
-    html += '<tr class="border-b border-gray-100 hover:bg-gray-50 transition duration-150">';
-    html += `<td class="py-3 px-3 whitespace-nowrap">${escapeHtml(r.date)}</td>`;
-    html += `<td class="py-3 px-3 font-medium">${escapeHtml(r.item_code)}</td>`;
-    html += `<td class="py-3 px-3 max-w-xs truncate">${escapeHtml(r.item_name)}</td>`;
-    html += `<td class="py-3 px-3 whitespace-nowrap">${escapeHtml(r.batch_no)}</td>`;
-    html += `<td class="py-3 px-3 whitespace-nowrap">${escapeHtml(r.expiry_mm_yyyy)}</td>`;
-    html += `<td class="py-3 px-3 text-right">${r.mrp ? r.mrp.toFixed(2) : 0}</td>`;
-    
-    depOrder.forEach(d => {
-      const val = (r.per_depot && r.per_depot[d]) ? r.per_depot[d] : 0;
-      html += `<td class="py-3 px-3 text-right whitespace-nowrap">${val.toLocaleString()}</td>`;
-    });
-    
-    html += `<td class="py-3 px-3 font-bold text-right whitespace-nowrap">${r.total_quantity.toLocaleString() || 0}</td>`;
-    html += `<td class="py-3 px-3 text-right whitespace-nowrap">${(r.total_value || 0).toFixed(2)}</td>`;
-    html += `<td class="py-3 px-3">${coloredType}</td>`;
-    html += '</tr>';
-  });
-  
-  html += '</tbody></table></div>';
-  
-  if(rows.length === 0){
-     tableContainer.innerHTML = '<div class="bg-white p-6 rounded-xl border border-gray-200 shadow-lg text-center text-gray-500 italic">No low stock items (&lt; 6000 Qty) found.</div>';
-  } else {
-     tableContainer.innerHTML = html;
-  }
-});
-document.getElementById("saveToSheet").addEventListener("click", saveToSheet);
-
-// ✅ Correct Excel Template Download (Full Header)
-document.getElementById('downloadSample').addEventListener('click', () => {
-  const sample = [{
-    'Date': '2025-11-11',
-    'Depot Code': '100',
-    'Depot Name': 'Coimbatore',
-    'Div Code': 'A',
-    'Div Name': 'Division A',
-    'Item Name': 'PRL ASYNAC AB TAB 10S',
-    'Packing': '1s',
-    'Item Code': 'SPE049',
-    'MFR': 'GOODMAN',
-    'Item Group': 'TABLET',
-    'Shipper Qty(Item)': 10,
-    'Batch No': 'B123',
-    'Expiry Date': '09-2026',
-    'MRP': 25.00,
-    'Total Quantity': 120,
-    'Total Value': 3000.00
-  }];
-
-  const ws = XLSX.utils.json_to_sheet(sample);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Stock Template');
-  XLSX.writeFile(wb, 'Format-Sample.xlsx');
-});
-
-    function escapeHtml(s){ if(s==null) return ''; return (''+s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
-
-function saveToSheet() {
-  if (!MERGED || MERGED.length === 0) {
-    showModal('Warning', "Please process files before saving!", 'warning');
-    return;
-  }
-
-const payload = MERGED.map(r => {
-  const depotData = {};
-  DEPOT_ORDER.forEach(d => {
-    depotData[d] = (r.per_depot && r.per_depot[d]) ? r.per_depot[d] : 0;
-  });
-
-  return {
-    date: r.date || '',
-    div_code: r.div_code || '',
-    div_name: r.div_name || '',
-    item_code: r.item_code || '',
-    item_name: r.item_name || '',
-    batch_no: r.batch_no || '',
-    expiry_mm_yyyy: r.expiry_mm_yyyy || '',
-    mrp: r.mrp || '',
-    ...depotData, // ✅ Adds correct dynamic depot-wise values
-    total_quantity: r.total_quantity || 0,
-    total_value: r.total_value || 0,
-    expiry_type: r.expiry_type || ''
-  };
-});
-
-  const url = "https://script.google.com/macros/s/AKfycbw-3KJFfIB3WOt7BqH1QjPswVkrhVeTA9xs9WoSus9kYMeCV0N8ADCmN9gViShCUADO/exec";
-
-  const saveBtn = document.getElementById("saveToSheet");
-  saveBtn.textContent = 'Saving...';
-  saveBtn.disabled = true;
-
-  fetch(url, {
-      method: "POST",
-      mode: "no-cors", // 👉 Fix for NETWORK ISSUE
-      headers: {
-          "Content-Type": "application/json"
-      },
-      body: JSON.stringify(payload),
-  })
-  .then(() => {
-      showModal('Success', '✔ Data sent successfully to Google Apps Script (verify inside Sheet).', 'success');
-  })
-  .catch((error) => {
-      console.error("Fetch error:", error);
-      showModal('Error', '❌ Network Issue – Failed to connect.', 'error');
-  })
-  .finally(() => {
-      saveBtn.textContent = 'Save Day-wise Stock';
-      saveBtn.disabled = false;
-  });
-}
-
-
-// ----------------------------------------------------
-// Custom Modal/Alert System (Replacing alert/confirm)
-// ----------------------------------------------------
-function getModalHtml(title, message, type) {
-    let icon;
-    let color;
-
-    switch (type) {
-        case 'success':
-            icon = `<svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
-            color = 'text-green-600';
-            break;
-        case 'error':
-            icon = `<svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
-            color = 'text-red-600';
-            break;
-        case 'warning':
-            icon = `<svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>`;
-            color = 'text-yellow-600';
-            break;
-        default:
-            icon = `<svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
-            color = 'text-gray-600';
+      return records;
     }
 
-    return `
-        <div id="custom-modal-backdrop" class="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity z-50"></div>
-        <div id="custom-modal-dialog" class="fixed inset-0 z-50 overflow-y-auto">
-            <div class="flex items-center justify-center min-h-full p-4 text-center">
-                <div class="relative bg-white rounded-xl shadow-2xl transform transition-all max-w-lg w-full p-6">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0 mr-4">
-                            ${icon}
-                        </div>
-                        <h3 class="text-lg font-bold ${color}">${title}</h3>
-                    </div>
-                    <div class="mt-4 text-gray-600 text-left">
-                        <p>${message}</p>
-                    </div>
-                    <div class="mt-6 flex justify-end">
-                        <button onclick="document.getElementById('custom-modal-container').innerHTML = ''" 
-                                class="bg-primary hover:bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-150">
-                            Close
-                        </button>
-                    </div>
-                </div>
+    function mergeAll(fileRecordsArray) {
+      const grouped = {};
+      const datesFound = {};
+      DEPOT_ORDER = [];
+
+      fileRecordsArray.forEach(f => {
+        f.records.forEach(r => {
+          // Track most frequent date
+          if (r.date) datesFound[r.date] = (datesFound[r.date] || 0) + 1;
+
+          const d = r.depot_name || 'Unspecified';
+          if (!DEPOT_ORDER.includes(d)) DEPOT_ORDER.push(d);
+
+          const key = `${r.item_code}|${r.batch_no}|${r.expiry_mm_yyyy}`;
+          if (!grouped[key]) {
+            grouped[key] = { ...r, per_depot: {}, total_quantity: 0, total_value: 0 };
+          }
+          grouped[key].per_depot[d] = (grouped[key].per_depot[d] || 0) + r.total_quantity;
+          grouped[key].total_quantity += r.total_quantity;
+          grouped[key].total_value += r.total_value;
+        });
+      });
+
+      // Determine the report date from uploaded data
+      const sortedDates = Object.entries(datesFound).sort((a,b) => b[1] - a[1]);
+      GLOBAL_REPORT_DATE = sortedDates.length ? sortedDates[0][0] : moment().format('DD-MM-YYYY');
+      asOfDisplay.textContent = GLOBAL_REPORT_DATE;
+
+      MERGED = Object.values(grouped);
+      classify();
+    }
+
+    function classify() {
+      // Logic based on global report date or current month
+      const reportDate = moment(GLOBAL_REPORT_DATE, 'DD-MM-YYYY');
+      
+      MERGED.forEach(r => {
+        if (!r.expiry) { r.expiry_type = 'Unknown'; return; }
+        const exp = moment(r.expiry);
+        
+        if (exp.isBefore(reportDate, 'month')) {
+            r.expiry_type = 'Expired';
+        } else {
+            const diffMonths = exp.diff(reportDate, 'months', true);
+            if (diffMonths <= 6) {
+                r.expiry_type = 'Short';
+            } else {
+                r.expiry_type = 'Long';
+            }
+        }
+      });
+    }
+
+    function renderTable(filter = null) {
+      const rows = MERGED.filter(r => !filter || r.expiry_type === filter);
+      
+      document.getElementById('countDepots').textContent = DEPOT_ORDER.length;
+      document.getElementById('countProducts').textContent = new Set(MERGED.map(r => r.item_code)).size;
+      document.getElementById('countRows').textContent = MERGED.length;
+      document.getElementById('countQty').textContent = MERGED.reduce((s, r) => s + r.total_quantity, 0).toLocaleString();
+
+      depotsList.innerHTML = DEPOT_ORDER.map(d => {
+        const qty = MERGED.reduce((s, r) => s + (r.per_depot[d] || 0), 0);
+        return `
+            <div class="flex items-center justify-between p-2 rounded-lg border border-slate-100 bg-slate-50">
+                <span class="text-[11px] font-bold text-slate-600 truncate mr-2">${d}</span>
+                <span class="text-[11px] font-mono font-black text-primary-700">${qty.toLocaleString()}</span>
             </div>
-        </div>
-    `;
-}
+        `;
+      }).join('') || '<p class="text-xs text-slate-400 italic text-center py-4">No data loaded.</p>';
 
-function showModal(title, message, type = 'info') {
-    const container = document.getElementById('custom-modal-container');
-    container.innerHTML = getModalHtml(title, message, type);
-}
+      if (rows.length === 0) {
+          tableContainer.innerHTML = '<div class="py-20 text-center text-slate-400">No records to display.</div>';
+          return;
+      }
 
-// Add a container for the modal at the end of the body
-document.addEventListener('DOMContentLoaded', () => {
-    const modalContainer = document.createElement('div');
-    modalContainer.id = 'custom-modal-container';
-    document.body.appendChild(modalContainer);
-});
-// ----------------------------------------------------
-// END Custom Modal/Alert System
-// ----------------------------------------------------
+      let html = `<div class="table-wrap"><table class="w-full text-[11px] text-left border-collapse">
+        <thead class="sticky top-0 bg-white shadow-sm ring-1 ring-slate-200">
+          <tr>
+            <th class="px-3 py-3 font-bold uppercase text-slate-400">Item Name</th>
+            <th class="px-3 py-3 font-bold uppercase text-slate-400">Batch</th>
+            <th class="px-3 py-3 font-bold uppercase text-slate-400">Expiry</th>
+            ${DEPOT_ORDER.map(d => `<th class="px-3 py-3 font-bold uppercase text-slate-400 text-right">${d}</th>`).join('')}
+            <th class="px-3 py-3 font-bold uppercase text-slate-800 text-right">Total Qty</th>
+            <th class="px-3 py-3 font-bold uppercase text-slate-400">Status</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">`;
 
+      rows.forEach(r => {
+        let badge = 'bg-slate-100 text-slate-600';
+        if (r.expiry_type === 'Expired') badge = 'bg-red-100 text-red-700';
+        else if (r.expiry_type === 'Short') badge = 'bg-amber-100 text-amber-700';
+        else if (r.expiry_type === 'Long') badge = 'bg-sky-100 text-sky-700';
 
+        html += `<tr class="hover:bg-slate-50">
+            <td class="px-3 py-3">
+                <div class="font-bold text-slate-800">${r.item_name}</div>
+                <div class="text-[9px] text-slate-400">${r.item_code}</div>
+            </td>
+            <td class="px-3 py-3 font-mono text-slate-500">${r.batch_no}</td>
+            <td class="px-3 py-3 text-slate-600">${r.expiry_mm_yyyy}</td>
+            ${DEPOT_ORDER.map(d => `<td class="px-3 py-3 text-right font-mono text-slate-400">${(r.per_depot[d] || 0).toLocaleString()}</td>`).join('')}
+            <td class="px-3 py-3 text-right font-black text-slate-800">${r.total_quantity.toLocaleString()}</td>
+            <td class="px-3 py-3"><span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase ${badge}">${r.expiry_type}</span></td>
+        </tr>`;
+      });
+      html += '</tbody></table></div>';
+      tableContainer.innerHTML = html;
+    }
+
+    processBtn.onclick = async () => {
+      const files = Array.from(fileInput.files);
+      if (files.length === 0) return showModal('Error', 'Please select files first.', 'error');
+      
+      processBtn.disabled = true;
+      processBtn.innerHTML = `<svg class="animate-spin w-4 h-4" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+
+      const fileData = [];
+      for (const f of files) {
+        try {
+          const buf = await f.arrayBuffer();
+          const wb = XLSX.read(buf, { type: 'array' });
+          fileData.push({ records: workbookToRecords(wb) });
+        } catch (e) { console.error(e); }
+      }
+
+      mergeAll(fileData);
+      renderTable();
+      processBtn.disabled = false;
+      processBtn.textContent = 'Combine Files';
+    };
+
+    exportBtn.onclick = () => {
+      if (!MERGED.length) return;
+      const wb = XLSX.utils.book_new();
+      const wsData = MERGED.map(r => {
+        const o = { 
+            'Date': GLOBAL_REPORT_DATE,
+            'Item Code': r.item_code, 
+            'Item Name': r.item_name, 
+            'Batch': r.batch_no, 
+            'Expiry': r.expiry_mm_yyyy 
+        };
+        DEPOT_ORDER.forEach(d => o[d] = r.per_depot[d] || 0);
+        o['Total Qty'] = r.total_quantity;
+        o['Status'] = r.expiry_type;
+        return o;
+      });
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(wsData), 'Merged Report');
+      XLSX.writeFile(wb, `Merged_Stock_${GLOBAL_REPORT_DATE.replace(/-/g,'')}.xlsx`);
+    };
+
+    syncBtn.onclick = async () => {
+        if (!MERGED.length) return showModal('Warning', 'No data to sync.', 'warning');
+        
+        syncBtn.disabled = true;
+        syncBtn.textContent = 'Syncing...';
+
+        const payload = MERGED.map(r => ({
+            date: GLOBAL_REPORT_DATE,
+            div_code: r.div_code,
+            div_name: r.div_name,
+            item_code: r.item_code,
+            item_name: r.item_name,
+            batch_no: r.batch_no,
+            expiry_mm_yyyy: r.expiry_mm_yyyy,
+            mrp: r.mrp,
+            Kerala: r.per_depot['Kerala'] || 0,
+            Palepu: r.per_depot['Palepu'] || 0,
+            Coimbatore: r.per_depot['Coimbatore'] || 0,
+            Bangalore: r.per_depot['Bangalore'] || 0,
+            total_quantity: r.total_quantity,
+            total_value: r.total_value,
+            expiry_type: r.expiry_type
+        }));
+
+        try {
+            // Using POST to Apps Script Web App
+            await fetch(APPS_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            showModal('Success', 'Data push request sent to Google Sheets Archive.', 'success');
+        } catch (err) {
+            showModal('Error', 'Sync failed. Please check your connection.', 'error');
+        } finally {
+            syncBtn.disabled = false;
+            syncBtn.textContent = 'Push to Master Sheet';
+        }
+    };
+
+    document.getElementById('filterAll').onclick = () => renderTable();
+    document.getElementById('filterExpired').onclick = () => renderTable('Expired');
+    document.getElementById('filterShort').onclick = () => renderTable('Short');
+    document.getElementById('filterLong').onclick = () => renderTable('Long');
+
+    function showModal(title, message, type) {
+        const div = document.createElement('div');
+        div.className = "fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm";
+        div.innerHTML = `<div class="bg-white p-6 rounded-2xl max-w-sm w-full shadow-2xl border border-slate-200">
+            <h3 class="text-lg font-bold mb-2 ${type === 'error' ? 'text-red-600' : 'text-slate-800'}">${title}</h3>
+            <p class="text-sm text-slate-500 mb-6">${message}</p>
+            <button onclick="this.closest('.fixed').remove()" class="w-full py-3 bg-slate-100 hover:bg-slate-200 font-bold rounded-xl transition-colors">Close</button>
+        </div>`;
+        document.body.appendChild(div);
+    }
   </script>
 </body>
 </html>
