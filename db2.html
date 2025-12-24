@@ -2,1102 +2,900 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Stock Planning Pro</title>
+  <title>Dashboard & Planning</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- SheetJS for XLSX Export -->
   <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
-  <!-- Lucide Icons -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- MathJax for Formulas -->
-  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-    
     body { font-family: 'Inter', sans-serif; }
     .section { display: none; }
     .section.active { display: block; animation: fadeIn 0.3s ease-out; }
-    
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .nav-active {
-      background-color: #f3f4f6;
-      color: #4f46e5;
-      font-weight: 600;
-      border-right: 4px solid #4f46e5;
-    }
-
-    .ai-gradient {
-      background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-    }
-
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
-    ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
-
-    .class-card {
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        cursor: pointer;
-        position: relative;
-        overflow: hidden;
-    }
-    .class-card:hover {
-        transform: translateY(-4px);
-    }
-    .class-card.selected-class {
-        border-color: #6366f1;
-        background-color: #f5f3ff;
-        box-shadow: 0 0 0 2px #6366f1;
-    }
-    
-    .mfg-item {
-        transition: all 0.2s ease;
-    }
-    .mfg-item.active-mfg {
-        background-color: #eef2ff;
-        border-color: #6366f1;
-    }
-
-    #reportModal {
-      backdrop-filter: blur(8px);
-      background-color: rgba(0,0,0,0.4);
-    }
-    
-    .kb-card {
-      background: white;
-      border: 1px solid #f1f5f9;
-      border-radius: 1.25rem;
-      padding: 1.5rem;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
-
-    .formula-pill {
-        background: #f1f5f9;
-        padding: 2px 8px;
-        border-radius: 6px;
-        font-family: monospace;
-        color: #475569;
-    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    .nav-active { background-color: #f1f5f9; color: #4f46e5; font-weight: 600; border-right: 4px solid #4f46e5; }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    .table-container { border-radius: 1rem; border: 1px solid #e2e8f0; overflow: hidden; background: white; }
+    .critical-pulse { animation: pulse-red 2s infinite; }
+    @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+    .report-card { transition: all 0.2s ease; border: 1px solid #e2e8f0; cursor: pointer; position: relative; }
+    .report-card:hover { transform: translateY(-4px); border-color: #4f46e5; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+    .preview-scroll::-webkit-scrollbar { height: 6px; width: 6px; }
+    .preview-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
   </style>
 </head>
 
-<body class="bg-gray-50 h-screen overflow-hidden flex flex-col md:flex-row">
+<body class="bg-slate-50 h-screen overflow-hidden flex flex-col md:flex-row">
 
   <!-- SIDEBAR -->
-  <aside class="w-full md:w-72 bg-white border-r border-gray-200 flex flex-col h-full shadow-sm z-10">
-    <div class="p-6 flex items-center gap-3 border-b border-gray-100">
-      <div class="bg-indigo-600 p-2 rounded-lg text-white">
-        <i data-lucide="package" class="w-6 h-6"></i>
+  <aside class="w-full md:w-72 bg-white border-r border-slate-200 flex flex-col h-full shadow-lg z-20">
+    <div class="p-6 flex items-center gap-3 border-b border-slate-100">
+      <div class="bg-indigo-600 p-2 rounded-xl text-white shadow-md">
+        <i data-lucide="package-search" class="w-6 h-6"></i>
       </div>
-      <h1 class="text-xl font-bold text-gray-800 tracking-tight">StockSystem</h1>
+      <div>
+        <h1 class="text-lg font-bold text-slate-800 tracking-tight">Planning Dashboard</h1>
+        <p class="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Stock & Planning</p>
+      </div>
     </div>
 
     <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
-      <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-4 mb-2">Operations</p>
-      
-      <button class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-600 rounded-xl hover:bg-gray-50 transition-all nav-active" onclick="show('req', this)">
-        <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Stock vs Requirement
+      <p class="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 mt-2">Operations</p>
+      <button class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-600 rounded-xl hover:bg-slate-50 nav-active" onclick="show('req', this)">
+        <i data-lucide="layout-grid" class="w-4 h-4"></i> Stock & Requirements
       </button>
-      
-      <button class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-600 rounded-xl hover:bg-gray-50 transition-all" onclick="show('plan', this)">
-        <i data-lucide="clipboard-list" class="w-4 h-4"></i> Planning
+      <button class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-600 rounded-xl hover:bg-slate-50" onclick="show('plan', this)">
+        <i data-lucide="clipboard-list" class="w-4 h-4"></i> Replenishment Plan
       </button>
-
-      <button class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-600 rounded-xl hover:bg-gray-50 transition-all" onclick="show('mfg', this)">
-        <i data-lucide="factory" class="w-4 h-4"></i> Manufacturers
+      <button class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-600 rounded-xl hover:bg-slate-50" onclick="show('po-track', this)">
+        <i data-lucide="truck" class="w-4 h-4"></i> PO Pipeline
       </button>
 
-      <button class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-600 rounded-xl hover:bg-gray-50 transition-all" onclick="show('reports', this)">
-        <i data-lucide="file-text" class="w-4 h-4"></i> Reports & Export
+      <p class="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 mt-6">Health Check</p>
+      <button class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-sm text-red-600 rounded-xl hover:bg-red-50" onclick="show('alerts', this)">
+        <i data-lucide="alert-triangle" class="w-4 h-4"></i> Critical Alerts <span id="alertCount" class="ml-auto bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">0</span>
       </button>
 
-      <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-4 mb-2 mt-4">Intelligence</p>
-
-      <button class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-600 rounded-xl hover:bg-gray-50 transition-all" onclick="show('ai', this)">
-        <i data-lucide="sparkles" class="w-4 h-4 text-indigo-500"></i> Pearl AI
+      <p class="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 mt-6">Insights</p>
+      <button class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-600 rounded-xl hover:bg-slate-50" onclick="show('reports', this)">
+        <i data-lucide="file-text" class="w-4 h-4"></i> Export Hub
       </button>
-
-      <button class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-600 rounded-xl hover:bg-gray-50 transition-all" onclick="show('insights', this)">
-        <i data-lucide="zap" class="w-4 h-4"></i> Inventory Insights
-      </button>
-
-      <button class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-600 rounded-xl hover:bg-gray-50 transition-all" onclick="show('alerts', this)">
-        <i data-lucide="bell" class="w-4 h-4 text-red-500"></i> Critical Alerts
-      </button>
-
-      <div class="pt-4 mt-4 border-t border-gray-100">
-        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-4 mb-2">Help</p>
-        <button class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-600 rounded-xl hover:bg-gray-50 transition-all" onclick="show('guide', this)">
-          <i data-lucide="book-open" class="w-4 h-4"></i> Knowledge Base
-        </button>
-      </div>
+<button class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-600 rounded-xl hover:bg-slate-50"
+        onclick="show('ai-pearl', this)">
+  <i data-lucide="sparkles" class="w-4 h-4 text-indigo-500"></i> Pearl AI Analyst
+</button>
+<button class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-600 rounded-xl hover:bg-slate-50"
+        onclick="show('knowledge', this)">
+  <i data-lucide="book-open" class="w-4 h-4"></i> Knowledge Hub
+</button>
     </nav>
   </aside>
 
   <!-- MAIN CONTENT -->
-  <main class="flex-1 overflow-y-auto p-4 md:p-8 space-y-6">
+  <main class="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 relative">
     
-    <header class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 sticky top-0 bg-slate-50/90 backdrop-blur-md z-10 py-2">
       <div>
-        <h2 id="pageTitle" class="text-2xl font-bold text-gray-800">Stock vs Requirement</h2>
-        <p class="text-gray-500 text-sm">Targeting <span id="displayDate" class="font-medium text-indigo-600">...</span></p>
+        <h2 id="pageTitle" class="text-2xl font-bold text-slate-800">Stock & Requirements</h2>
+        <p class="text-slate-500 text-xs mt-1">Snapshot Date: <span id="displayDate" class="font-bold text-indigo-600">Loading...</span></p>
       </div>
-      <div class="flex items-center gap-3">
-        <div class="relative">
-          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-          <input type="text" id="searchInput" placeholder="Search items..." oninput="build()" 
-                 class="pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none w-48 shadow-sm">
-        </div>
-        <input type="date" id="dateFilter" class="bg-white border border-gray-200 rounded-xl text-sm px-4 py-2 outline-none cursor-pointer shadow-sm" onchange="handleDateChange(this.value)">
+      <div class="flex items-center gap-3 bg-white p-1.5 rounded-xl shadow-sm border border-slate-200">
+        <label class="text-[10px] font-bold text-slate-400 uppercase px-2">Filter Date</label>
+        <input type="date" id="dateFilter" class="bg-transparent text-sm font-medium text-slate-600 outline-none pr-2" onchange="handleDateChange(this.value)">
+        <button onclick="fetchData()" class="p-2 hover:bg-slate-100 rounded-lg text-indigo-600 transition-colors">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+        </button>
       </div>
     </header>
 
-    <!-- SECTION: STOCK VS REQUIREMENT -->
-    <section id="req" class="section active space-y-6">
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div id="loader" class="hidden flex items-center justify-center p-20">
+        <div class="flex flex-col items-center gap-4">
+            <div class="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+            <p class="text-slate-400 text-sm font-medium">Synchronizing enterprise data...</p>
+        </div>
+    </div>
+
+    <div id="errorOverlay" class="hidden flex items-center justify-center p-12 bg-red-50 rounded-3xl border border-red-100">
+        <div class="flex flex-col items-center gap-4 text-center max-w-md">
+            <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center">
+                <i data-lucide="wifi-off" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-lg font-bold text-red-900">Connection Interrupted</h3>
+            <p id="errorMessage" class="text-red-700 text-xs leading-relaxed">Network timeout detected.</p>
+            <button onclick="fetchData()" class="px-6 py-2 bg-red-600 text-white rounded-xl text-xs font-bold shadow-lg hover:bg-red-700 transition-all">RETRY SYNCHRONIZATION</button>
+        </div>
+    </div>
+
+    <section id="req" class="section active">
+        <div class="table-container shadow-sm overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs whitespace-nowrap">
                     <thead>
-                        <tr class="bg-gray-50 border-b border-gray-100 text-gray-400 uppercase text-[10px] font-bold tracking-widest">
-                            <th class="px-6 py-4">Item Name</th>
-                            <th class="px-6 py-4">Total Stock</th>
-                            <th class="px-6 py-4">Prog. Req</th>
-                            <th class="px-6 py-4">OSH Req</th>
-                            <th class="px-6 py-4">Prog %</th>
-                            <th class="px-6 py-4">OSH %</th>
-                            <th class="px-6 py-4">Bal Prog</th>
-                            <th class="px-6 py-4">Bal OSH</th>
+                        <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider">
+                            <th class="px-6 py-4">Item Catalog</th>
+                            <th class="px-6 py-4 text-center">Physical Stock</th>
+                            <th class="px-6 py-4 text-center text-orange-600">Short Expiry</th>
+                            <th class="px-6 py-4 text-center bg-indigo-50 text-indigo-700">Usable (S.ED)</th>
+                            <th class="px-6 py-4 text-center">Prog Requirement</th>
+                            <th class="px-6 py-4 text-center">Prog Variance</th>
+                            <th class="px-6 py-4 text-center">OSH Goal</th>
+                            <th class="px-6 py-4 text-center">OSH Variance</th>
                         </tr>
                     </thead>
-                    <tbody id="reqBody" class="divide-y divide-gray-50 text-gray-600"></tbody>
+                    <tbody id="reqBody" class="divide-y divide-slate-100 text-slate-700"></tbody>
                 </table>
             </div>
         </div>
     </section>
 
-    <!-- SECTION: PLANNING -->
     <section id="plan" class="section">
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div class="table-container shadow-sm">
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs whitespace-nowrap">
             <thead>
-              <tr class="bg-gray-50 border-b border-gray-100 font-bold text-gray-500 uppercase text-[10px] tracking-widest">
-                <th class="px-6 py-4">Item Name</th>
-                <th class="px-6 py-4">Stock</th>
-                <th class="px-6 py-4">Req. Days</th>
-                <th class="px-6 py-4">Holding Days</th>
-                <th class="px-6 py-4">Status</th>
-                <th class="px-6 py-4">Suggested PO</th>
+              <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider">
+                <th class="px-6 py-4">Item Catalog</th>
+                <th class="px-6 py-4 text-center text-orange-600">Short Exp</th>
+                <th class="px-6 py-4 text-center">Usable Stock</th>
+                <th class="px-6 py-4 text-center text-blue-700">PO Pipeline</th>
+                <th class="px-6 py-4 text-center">Daily Burn</th>
+                <th class="px-6 py-4 text-center">Coverage</th>
+                <th class="px-6 py-4 text-center bg-slate-100 text-slate-700">MOQ</th>
+                <th class="px-6 py-4 text-center bg-indigo-50 text-indigo-700 font-black">Suggested Order</th>
               </tr>
             </thead>
-            <tbody id="planBody" class="divide-y divide-gray-50 text-gray-600"></tbody>
+            <tbody id="planBody" class="divide-y divide-slate-100 text-slate-700"></tbody>
           </table>
         </div>
       </div>
     </section>
 
-    <!-- SECTION: MANUFACTURERS -->
-    <section id="mfg" class="section">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-280px)]">
-            <div class="lg:col-span-4 bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col overflow-hidden">
-                <div class="p-4 border-b border-gray-100 bg-gray-50/50">
-                    <h3 class="font-bold text-gray-800 text-[10px] uppercase tracking-widest">Manufacturer List</h3>
+    <section id="alerts" class="section">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div class="bg-white p-6 rounded-2xl border-l-4 border-red-500 shadow-sm">
+                <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Immediate Stock-Out</p>
+                <div class="flex items-baseline gap-2 mt-1">
+                    <h3 id="severeCount" class="text-3xl font-black text-slate-800">0</h3>
+                    <span class="text-red-500 text-xs font-bold font-mono">< 3 Days</span>
                 </div>
-                <div id="mfgList" class="flex-1 overflow-y-auto p-4 space-y-2"></div>
             </div>
-            <div class="lg:col-span-8 bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col overflow-hidden">
-                <div id="mfgDetailHeader" class="p-6 border-b border-gray-100 flex items-center justify-between">
-                    <h3 id="selectedMfgName" class="text-xl font-bold text-gray-800">Select Manufacturer</h3>
+            <div class="bg-white p-6 rounded-2xl border-l-4 border-amber-500 shadow-sm">
+                <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Low Inventory Alerts</p>
+                <div class="flex items-baseline gap-2 mt-1">
+                    <h3 id="lowCount" class="text-3xl font-black text-slate-800">0</h3>
+                    <span class="text-amber-600 text-xs font-bold font-mono">3-7 Days</span>
                 </div>
-                <div class="flex-1 overflow-y-auto">
-                    <table class="w-full text-left text-sm whitespace-nowrap">
+            </div>
+            <div class="bg-slate-800 p-6 rounded-2xl shadow-xl">
+                <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Total Units Gap (OSH)</p>
+                <div class="flex items-baseline gap-2 mt-1">
+                    <h3 id="shortfallVal" class="text-3xl font-black text-white">0</h3>
+                    <span class="text-indigo-400 text-xs font-bold">Qty Needed</span>
+                </div>
+            </div>
+        </div>
+        <div class="table-container border-red-100">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs whitespace-nowrap">
+                    <thead>
+                        <tr class="bg-red-50 text-red-700 font-bold uppercase tracking-wider border-b border-red-100">
+                            <th class="px-6 py-4">Priority SKU</th>
+                            <th class="px-6 py-4 text-center">Usable Qty</th>
+                            <th class="px-6 py-4 text-center">Short Expiry</th>
+                            <th class="px-6 py-4 text-center">Daily Burn</th>
+                            <th class="px-6 py-4 text-center">Days Remaining</th>
+                        </tr>
+                    </thead>
+                    <tbody id="alertBody" class="divide-y divide-red-50 text-slate-700"></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <section id="reports" class="section">
+        <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <h3 class="text-xl font-bold text-slate-800">Reports</h3>
+                <p class="text-slate-500 text-xs">View & Export</p>
+            </div>
+            <button onclick="exportToExcel()" class="px-6 py-3 bg-slate-900 text-white rounded-xl font-bold text-xs flex items-center gap-2 hover:bg-slate-800 transition-all shadow-lg active:scale-95">
+                <i data-lucide="download-cloud" class="w-4 h-4"></i> MASTER CONSOLIDATED XLS
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 mb-8">
+            <div class="report-card bg-white p-5 rounded-2xl" onclick="previewReport('gap')">
+                <div class="w-8 h-8 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center mb-3"><i data-lucide="sigma" class="w-4 h-4"></i></div>
+                <h4 class="font-bold text-slate-800 text-sm">GAP Analysis</h4>
+                <p class="text-slate-500 text-[10px] mt-1">Usable vs Requirements.</p>
+            </div>
+            <div class="report-card bg-white p-5 rounded-2xl" onclick="previewReport('short_expiry')">
+                <div class="w-8 h-8 bg-orange-100 text-orange-600 rounded-lg flex items-center justify-center mb-3"><i data-lucide="hourglass" class="w-4 h-4"></i></div>
+                <h4 class="font-bold text-slate-800 text-sm">Short Expiry Aging</h4>
+                <p class="text-slate-500 text-[10px] mt-1">Batch-level audit by Depot.</p>
+            </div>
+            <div class="report-card bg-white p-5 rounded-2xl" onclick="previewReport('procurement')">
+                <div class="w-8 h-8 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center mb-3"><i data-lucide="shopping-cart" class="w-4 h-4"></i></div>
+                <h4 class="font-bold text-slate-800 text-sm">Procurement Priority</h4>
+                <p class="text-slate-500 text-[10px] mt-1">Suggested PO with MOQ.</p>
+            </div>
+            <div class="report-card bg-white p-5 rounded-2xl" onclick="previewReport('risk_matrix')">
+                <div class="w-8 h-8 bg-red-100 text-red-600 rounded-lg flex items-center justify-center mb-3"><i data-lucide="alert-octagon" class="w-4 h-4"></i></div>
+                <h4 class="font-bold text-slate-800 text-sm">Stock-Out Risk Matrix</h4>
+                <p class="text-slate-500 text-[10px] mt-1">High-risk coverage items.</p>
+            </div>
+            <div class="report-card bg-white p-5 rounded-2xl" onclick="previewReport('depot_dist')">
+                <div class="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center mb-3"><i data-lucide="map-pin" class="w-4 h-4"></i></div>
+                <h4 class="font-bold text-slate-800 text-sm">Depot Distribution</h4>
+                <p class="text-slate-500 text-[10px] mt-1">Regional health comparison.</p>
+            </div>
+            <div class="report-card bg-white p-5 rounded-2xl" onclick="previewReport('mfr_details')">
+                <div class="w-8 h-8 bg-slate-100 text-slate-600 rounded-lg flex items-center justify-center mb-3"><i data-lucide="factory" class="w-4 h-4"></i></div>
+                <h4 class="font-bold text-slate-800 text-sm">Manufacturer Details</h4>
+                <p class="text-slate-500 text-[10px] mt-1">Item-wise MFR & MOQ mapping.</p>
+            </div>
+        </div>
+        
+        <div id="reportPreviewArea" class="hidden">
+            <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden mb-12">
+                <div class="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                    <div>
+                        <h3 id="previewTitle" class="font-black text-slate-800 tracking-tight uppercase text-sm">Report Preview</h3>
+                    </div>
+                    <div class="flex gap-2">
+                        <button id="downloadSpecificBtn" class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-[10px] font-black hover:bg-indigo-700 transition-all flex items-center gap-2">
+                            <i data-lucide="download" class="w-3 h-3"></i> DOWNLOAD XLS (Summary + Detail)
+                        </button>
+                        <button onclick="closePreview()" class="text-slate-400 hover:text-slate-600 p-2"><i data-lucide="x" class="w-5 h-5"></i></button>
+                    </div>
+                </div>
+                <div id="previewContent" class="overflow-auto max-h-[600px] preview-scroll p-0"></div>
+            </div>
+        </div>
+    </section>
+
+    <section id="po-track" class="section">
+        <div class="table-container" id="poTrackContent"></div>
+    </section>
+
+    <!-- PEARL AI SECTION -->
+    <section id="ai-pearl" class="section">
+        <div class="pearl-gradient p-10 rounded-3xl shadow-sm mb-8 relative overflow-hidden">
+            <div class="relative z-10 flex flex-col md:flex-row items-center gap-8">
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                    <img src="https://www.pristinepearlpharma.in/images/alt-logo.png" alt="Pearl AI" class="h-16 w-auto object-contain">
+                </div>
+                <div>
+                    <h2 class="text-3xl font-black text-slate-800 tracking-tight">Pearl AI</h2>
+                    <p class="text-slate-500 text-sm max-w-md mt-1 italic">AI designed to study & analyse the data & provide analytical reports </p>
+                    <div class="mt-6 flex flex-wrap gap-3">
+                        <button onclick="runPearlAnalysis()" id="pearlBtn" class="px-6 py-3 bg-slate-900 text-white rounded-xl font-bold text-xs flex items-center gap-2 hover:bg-black transition-all">
+                            <i data-lucide="play" class="w-4 h-4"></i> EXECUTE DEEP ANALYSIS
+                        </button>
+                        <button onclick="exportPearlReport()" id="pearlExportBtn" class="hidden px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold text-xs flex items-center gap-2 hover:bg-indigo-700 transition-all shadow-md">
+                            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> EXPORT DETAILED PEARL AI REPORT (XLS)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="pearlResults" class="hidden space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Metrics -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Vital Health Indicators</h3>
+                    <div class="space-y-4" id="pearlMetrics"></div>
+                </div>
+                <!-- Suggestions -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Executive AI Suggestions</h3>
+                    <div class="space-y-3" id="pearlSuggestions"></div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                <div class="px-6 py-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                    <h3 class="text-xs font-black text-slate-800 uppercase">Analysis Output & Logistics Comments</h3>
+                    <span class="text-[10px] text-slate-400">Deep-dive assessment per SKU</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-[11px]">
                         <thead>
-                            <tr class="bg-gray-50 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                                <th class="px-6 py-4">Product Name</th>
-                                <th class="px-6 py-4">Stock</th>
-                                <th class="px-6 py-4">Coverage</th>
+                            <tr class="bg-slate-50/50 text-slate-400 font-bold border-b border-slate-100">
+                                <th class="px-6 py-3">SKU Catalog</th>
+                                <th class="px-6 py-3">Health Status</th>
+                                <th class="px-6 py-3">Risk Assessment</th>
+                                <th class="px-6 py-3">Detailed Logistics Comment</th>
                             </tr>
                         </thead>
-                        <tbody id="mfgProductList" class="divide-y divide-gray-50"></tbody>
+                        <tbody id="pearlTable" class="divide-y divide-slate-50"></tbody>
                     </table>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- SECTION: REPORTS -->
-    <section id="reports" class="section space-y-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            <!-- Existing Report: Inventory Status -->
-            <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col">
-                <div class="flex items-center gap-3 mb-4">
-                  <div class="p-2 bg-indigo-50 text-indigo-600 rounded-lg"><i data-lucide="package" class="w-5 h-5"></i></div>
-                  <h4 class="font-bold text-gray-800">Inventory Status</h4>
-                </div>
-                <p class="text-xs text-gray-500 mb-6 flex-1">Breakdown of total current stock and ABC classification.</p>
-                <div class="flex gap-2">
-                  <button onclick="previewReport('status')" class="flex-1 py-2 bg-gray-100 text-gray-700 rounded-xl text-[10px] font-bold hover:bg-gray-200 transition-colors">PREVIEW</button>
-                  <button onclick="downloadReportXlsx('status')" class="flex-1 py-2 bg-indigo-600 text-white rounded-xl text-[10px] font-bold hover:bg-indigo-700 transition-colors">EXPORT</button>
+    <section id="reports" class="section">
+        <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <h3 class="text-xl font-bold text-slate-800">Export Hub</h3>
+                <p class="text-slate-500 text-xs">Internal Logistics Reporting Center.</p>
+            </div>
+            <button onclick="exportToExcel()" class="px-6 py-3 bg-slate-900 text-white rounded-xl font-bold text-xs flex items-center gap-2 hover:bg-slate-800 transition-all shadow-lg active:scale-95">
+                <i data-lucide="download-cloud" class="w-4 h-4"></i> EXPORT MASTER LOGISTICS FILE
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+            <div class="report-card bg-white p-5 rounded-2xl" onclick="previewReport('gap')">
+                <div class="w-8 h-8 bg-slate-100 text-slate-800 rounded-lg flex items-center justify-center mb-3"><i data-lucide="sigma" class="w-4 h-4"></i></div>
+                <h4 class="font-bold text-slate-800 text-sm">GAP Analysis Report</h4>
+                <p class="text-[10px] text-slate-400 mt-1">Variance against OSH targets.</p>
+            </div>
+            <div class="report-card bg-white p-5 rounded-2xl" onclick="previewReport('short_expiry')">
+                <div class="w-8 h-8 bg-orange-100 text-orange-600 rounded-lg flex items-center justify-center mb-3"><i data-lucide="hourglass" class="w-4 h-4"></i></div>
+                <h4 class="font-bold text-slate-800 text-sm">Short Expiry Aging</h4>
+                <p class="text-[10px] text-slate-400 mt-1">Items requiring immediate liquidation.</p>
+            </div>
+            <div class="report-card bg-white p-5 rounded-2xl" onclick="previewReport('procurement')">
+                <div class="w-8 h-8 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center mb-3"><i data-lucide="shopping-cart" class="w-4 h-4"></i></div>
+                <h4 class="font-bold text-slate-800 text-sm">Procurement Priorities</h4>
+                <p class="text-[10px] text-slate-400 mt-1">Suggested PO quantities based on burn.</p>
+            </div>
+        </div>
+        <div id="reportPreviewArea" class="hidden">
+            <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden mb-12">
+                <div id="previewContent" class="overflow-auto max-h-[600px] p-0"></div>
+            </div>
+        </div>
+    </section>
+    <!-- NEW KNOWLEDGE HUB SECTION -->
+    <section id="knowledge" class="section">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Terminology Definitions -->
+            <div class="space-y-6">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <i data-lucide="book" class="w-5 h-5 text-indigo-600"></i> Dictionary of Terms
+                </h3>
+                <div class="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100 shadow-sm overflow-hidden">
+                    <div class="p-5">
+                        <h4 class="text-sm font-bold text-indigo-700">Physical Stock</h4>
+                        <p class="text-xs text-slate-500 mt-1 leading-relaxed">The total quantity currently stored across all depots (Kerala, Palepu, Coimbatore, Bangalore) as reported in the latest snapshot.</p>
+                    </div>
+                    <div class="p-5">
+                        <h4 class="text-sm font-bold text-indigo-700">Usable Stock</h4>
+                        <p class="text-xs text-slate-500 mt-1 leading-relaxed">The total quantity of current stock across all depots (Kerala, Palepu, Coimbatore, Bangalore) - Short Expiry stock .</p>
+                    </div>
+                    <div class="p-5">
+                        <h4 class="text-sm font-bold text-indigo-700">Short Expiry</h4>
+                        <p class="text-xs text-slate-500 mt-1 leading-relaxed">Stock quantity labeled as 'Short' in the batch master. These items are excluded from 'Usable Stock' to prevent distribution of aging inventory.</p>
+                    </div>
+                    <div class="p-5">
+                        <h4 class="text-sm font-bold text-indigo-700">Prog Requirement</h4>
+                        <p class="text-xs text-slate-500 mt-1 leading-relaxed">Program Requirement: Stock Requirement plan automated by this program.</p>
+                    </div>
+                    <div class="p-5">
+                        <h4 class="text-sm font-bold text-indigo-700">OSH Requirement</h4>
+                        <p class="text-xs text-slate-500 mt-1 leading-relaxed">Operational Sales Head Requirement: The Stock requirement plan by OSH.</p>
+                    </div>
+                    <div class="p-5">
+                        <h4 class="text-sm font-bold text-indigo-700">MOQ</h4>
+                        <p class="text-xs text-slate-500 mt-1 leading-relaxed">Minimum Order Quantity: The smallest unit of stock a supplier will accept for a single purchase order.</p>
+                    </div>
+                    <div class="p-5">
+                        <h4 class="text-sm font-bold text-indigo-700">Daily Burn (Per day avg sales)</h4>
+                        <p class="text-xs text-slate-500 mt-1 leading-relaxed">The average number of units consumed per day, calculated from the previous year sales data.</p>
+                    </div>
                 </div>
             </div>
 
-            <!-- Existing Report: Depot Wise -->
-            <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col">
-                <div class="flex items-center gap-3 mb-4">
-                  <div class="p-2 bg-cyan-50 text-cyan-600 rounded-lg"><i data-lucide="map-pin" class="w-5 h-5"></i></div>
-                  <h4 class="font-bold text-gray-800">Depot Wise Report</h4>
-                </div>
-                <p class="text-xs text-gray-500 mb-6 flex-1">Distribution for Coimbatore, Palepu, Kerala & Bangalore.</p>
-                <div class="flex gap-2">
-                  <button onclick="previewReport('depot')" class="flex-1 py-2 bg-gray-100 text-gray-700 rounded-xl text-[10px] font-bold hover:bg-gray-200 transition-colors">PREVIEW</button>
-                  <button onclick="downloadReportXlsx('depot')" class="flex-1 py-2 bg-cyan-600 text-white rounded-xl text-[10px] font-bold hover:bg-cyan-700 transition-colors">EXPORT</button>
-                </div>
-            </div>
+            <!-- Formulas & Calculations -->
+            <div class="space-y-6">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <i data-lucide="variable" class="w-5 h-5 text-indigo-600"></i> Formulas & Calculations
+                </h3>
+                
+                <div class="space-y-4">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Usable Stock Logic</span>
+                        <div class="math-block mt-2">Usable Stock = Physical Stock - Short Expiry Qty</div>
+                    </div>
 
-            <!-- Existing Report: Critical Shortages -->
-            <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col">
-              <div class="flex items-center gap-3 mb-4">
-                <div class="p-2 bg-red-50 text-red-600 rounded-lg"><i data-lucide="alert-circle" class="w-5 h-5"></i></div>
-                <h4 class="font-bold text-gray-800">Critical Shortages</h4>
-              </div>
-              <p class="text-xs text-gray-500 mb-6 flex-1">Items at risk of stock-out based on lead times.</p>
-              <div class="flex gap-2">
-                <button onclick="previewReport('shortage')" class="flex-1 py-2 bg-gray-100 text-gray-700 rounded-xl text-[10px] font-bold hover:bg-gray-200 transition-colors">PREVIEW</button>
-                <button onclick="downloadReportXlsx('shortage')" class="flex-1 py-2 bg-red-600 text-white rounded-xl text-[10px] font-bold hover:bg-red-700 transition-colors">EXPORT</button>
-              </div>
-            </div>
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Daily Burn (Consumption Rate)</span>
+                        <div class="math-block mt-2">Daily Burn = Prev.Yr Sales / 180 Days (6months)</div>
+                    </div>
 
-            <!-- NEW: Stock Out Trend -->
-            <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col">
-                <div class="flex items-center gap-3 mb-4">
-                  <div class="p-2 bg-amber-50 text-amber-600 rounded-lg"><i data-lucide="trending-down" class="w-5 h-5"></i></div>
-                  <h4 class="font-bold text-gray-800">Stock Out Trend</h4>
-                </div>
-                <p class="text-xs text-gray-500 mb-6 flex-1">Items running out within 7, 15, and 30 days.</p>
-                <div class="flex gap-2">
-                  <button onclick="previewReport('trend')" class="flex-1 py-2 bg-gray-100 text-gray-700 rounded-xl text-[10px] font-bold hover:bg-gray-200 transition-colors">PREVIEW</button>
-                  <button onclick="downloadReportXlsx('trend')" class="flex-1 py-2 bg-amber-600 text-white rounded-xl text-[10px] font-bold hover:bg-amber-700 transition-colors">EXPORT</button>
-                </div>
-            </div>
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Stock Coverage (Days)</span>
+                        <div class="math-block mt-2">Coverage = Usable Stock / Daily Burn</div>
+                        <p class="text-[10px] text-slate-400 mt-2 italic">*If Daily Burn is 0, Coverage is reported as 0.</p>
+                    </div>
 
-            <!-- NEW: Manufacturer Summary -->
-            <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col">
-                <div class="flex items-center gap-3 mb-4">
-                  <div class="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><i data-lucide="factory" class="w-5 h-5"></i></div>
-                  <h4 class="font-bold text-gray-800">Mfg Summary</h4>
-                </div>
-                <p class="text-xs text-gray-500 mb-6 flex-1">Manufacturer level stock value and item count distribution.</p>
-                <div class="flex gap-2">
-                  <button onclick="previewReport('mfg_summary')" class="flex-1 py-2 bg-gray-100 text-gray-700 rounded-xl text-[10px] font-bold hover:bg-gray-200 transition-colors">PREVIEW</button>
-                  <button onclick="downloadReportXlsx('mfg_summary')" class="flex-1 py-2 bg-emerald-600 text-white rounded-xl text-[10px] font-bold hover:bg-emerald-700 transition-colors">EXPORT</button>
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Suggested Order Calculation</span>
+                        <div class="math-block mt-2">
+                            Base = ((Lead Time + Safety Stock) × Daily Burn) - Usable Stock - PO Pipeline<br><br>
+                            If MOQ > 0:<br>
+                            Order = CEIL(Base / MOQ) × MOQ<br>
+                            Else:<br>
+                            Order = ROUND(Base)
+                        </div>
+                    </div>
+                    
+                    <div class="bg-indigo-900 p-5 rounded-2xl shadow-lg">
+                        <h4 class="text-white font-bold text-sm mb-2 flex items-center gap-2">
+                            <i data-lucide="info" class="w-4 h-4"></i> Data Hygiene Note
+                        </h4>
+                        <p class="text-indigo-200 text-[10px] leading-relaxed">
+                            System ignores negative stock values in calculations. Variance analysis compares current Usable Stock against fixed Program and OSH targets. All PO Pipeline data is filtered to show 'Pending Qty' only.
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
-
-    <!-- SECTION: INVENTORY INSIGHTS -->
-    <section id="insights" class="section space-y-6">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div id="card-abc-a" class="class-card group bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center text-center hover:bg-indigo-50/20" onclick="selectAbcClass('A')">
-                <div class="w-14 h-14 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mb-4 text-xl font-black group-hover:scale-110 transition-transform">A</div>
-                <h4 class="font-bold text-gray-800">High Velocity Items</h4>
-                <p class="text-[10px] text-gray-400 uppercase tracking-tighter mb-4">Top 20% of Daily Sales</p>
-                <p id="insight-a-count" class="text-4xl font-black text-indigo-600">0</p>
-                <div class="mt-4 text-[9px] font-bold text-indigo-400 group-hover:underline">CLICK TO VIEW PRODUCTS</div>
-            </div>
-            <div id="card-abc-b" class="class-card group bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center text-center hover:bg-amber-50/20" onclick="selectAbcClass('B')">
-                <div class="w-14 h-14 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center mb-4 text-xl font-black group-hover:scale-110 transition-transform">B</div>
-                <h4 class="font-bold text-gray-800">Moderate Items</h4>
-                <p class="text-[10px] text-gray-400 uppercase tracking-tighter mb-4">Middle 30% of Daily Sales</p>
-                <p id="insight-b-count" class="text-4xl font-black text-amber-600">0</p>
-                <div class="mt-4 text-[9px] font-bold text-amber-400 group-hover:underline">CLICK TO VIEW PRODUCTS</div>
-            </div>
-            <div id="card-abc-c" class="class-card group bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center text-center hover:bg-gray-100/50" onclick="selectAbcClass('C')">
-                <div class="w-14 h-14 bg-gray-100 text-gray-600 rounded-2xl flex items-center justify-center mb-4 text-xl font-black group-hover:scale-110 transition-transform">C</div>
-                <h4 class="font-bold text-gray-800">Low Velocity Items</h4>
-                <p class="text-[10px] text-gray-400 uppercase tracking-tighter mb-4">Bottom 50% of Daily Sales</p>
-                <p id="insight-c-count" class="text-4xl font-black text-gray-600">0</p>
-                <div class="mt-4 text-[9px] font-bold text-gray-400 group-hover:underline">CLICK TO VIEW PRODUCTS</div>
-            </div>
-        </div>
-
-        <div id="abcItemsContainer" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hidden">
-            <div class="p-4 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
-                <h3 id="abcSelectedTitle" class="text-sm font-bold text-gray-700">Products in Class A</h3>
-                <span class="text-[10px] font-bold text-gray-400">DAILY SALES VS CURRENT STOCK</span>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs whitespace-nowrap">
-                  <thead>
-                      <tr class="bg-white text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b">
-                          <th class="px-6 py-3">Item</th>
-                          <th class="px-6 py-3">Daily Avg</th>
-                          <th class="px-6 py-3">Stock</th>
-                          <th class="px-6 py-3">Days Remaining</th>
-                      </tr>
-                  </thead>
-                  <tbody id="abcProductList" class="divide-y divide-gray-50"></tbody>
-                </table>
-            </div>
-        </div>
-    </section>
-
-    <!-- SECTION: AI LAB -->
-    <section id="ai" class="section space-y-6">
-        <div class="ai-gradient p-8 rounded-3xl text-white relative overflow-hidden shadow-xl">
-            <div class="relative z-10 max-w-lg">
-                <h3 class="text-2xl font-bold mb-2">Pearl AI</h3>
-                <p class="text-indigo-100 text-sm mb-6">Pearl AI analyzes current stock levels, historical sales velocity, and lead times to generate a high-priority procurement strategy.</p>
-                <button onclick="runIntegratedAnalysis()" id="aiBtn"
-  class="px-8 py-3 bg-white text-indigo-600 rounded-xl font-bold text-sm shadow-lg hover:shadow-xl hover:bg-indigo-50 transition-all flex items-center gap-2">
-  <i data-lucide="zap" class="w-4 h-4"></i> RUN ANALYSIS
-</button>
-<button onclick="exportAiAnalysis()" id="aiExportBtn"
-  class="mt-3 px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold text-sm shadow-lg hover:bg-indigo-700 transition-all flex items-center gap-2 hidden">
-  <i data-lucide="download" class="w-4 h-4"></i> EXPORT AI REPORT
-</button>
-            </div>
-            <div class="absolute right-0 top-0 bottom-0 w-1/3 flex items-center justify-center opacity-20 pointer-events-none">
-                <i data-lucide="brain-circuit" class="w-48 h-48 text-white"></i>
-            </div>
-        </div>
-        <div id="aiResponse" class="grid grid-cols-1 lg:grid-cols-2 gap-6 hidden">
-            <div id="aiSummary" class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 text-sm leading-relaxed text-gray-600"></div>
-            <div id="aiActions" class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-3"></div>
-        </div>
-    </section>
-
-    <!-- SECTION: ALERTS -->
-    <section id="alerts" class="section">
-        <div id="alertGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
-    </section>
-
-    <!-- SECTION: KNOWLEDGE BASE -->
-    <section id="guide" class="section space-y-8">
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        
-        <!-- GLOSSARY CARD -->
-        <div class="kb-card">
-          <div class="flex items-center gap-3 mb-6">
-            <div class="p-2 bg-indigo-50 text-indigo-600 rounded-lg"><i data-lucide="book" class="w-5 h-5"></i></div>
-            <h3 class="text-lg font-bold text-gray-800">Operational Glossary</h3>
-          </div>
-          <div class="space-y-6 text-sm text-gray-600">
-            <div>
-              <p class="font-bold text-indigo-600 text-[10px] uppercase tracking-wider mb-1">Item Code / Item Name</p>
-              <p>The unique identifier and descriptive title of the pharmaceutical or stock item as mapped in the master requirement sheet.</p>
-            </div>
-            <div>
-              <p class="font-bold text-indigo-600 text-[10px] uppercase tracking-wider mb-1">Total Stock</p>
-              <p>The aggregate sum of inventory available across all tracked locations (Kerala, Palepu, Coimbatore, and Bangalore).</p>
-            </div>
-            <div>
-              <p class="font-bold text-indigo-600 text-[10px] uppercase tracking-wider mb-1">Program Req (Prog. Req)</p>
-              <p>Automated Stock Holding requirement analysed by item wise sales.</p>
-            </div>
-            <div>
-              <p class="font-bold text-indigo-600 text-[10px] uppercase tracking-wider mb-1">OSH Requirement (OSH Req)</p>
-              <p>Operational Sales Head requirement. This is the stock requirement which is planned by OSH to ensure continuous supply without interruption.</p>
-            </div>
-            <div>
-              <p class="font-bold text-indigo-600 text-[10px] uppercase tracking-wider mb-1">Lead Time (LT)</p>
-              <p>The number of days it takes from placing an order with the manufacturer until the goods are received at the depot.</p>
-            </div>
-            <div>
-              <p class="font-bold text-indigo-600 text-[10px] uppercase tracking-wider mb-1">Safety Stock (SS)</p>
-              <p>Buffer inventory maintained to mitigate the risk of stock-outs caused by fluctuations in supply or demand.</p>
-            </div>
-          </div>
-        </div>
-
-<!-- PEARL AI KNOWLEDGE BASE -->
-<div class="kb-card lg:col-span-2">
-  <div class="flex items-center gap-3 mb-6">
-    <div class="p-2 bg-purple-50 text-purple-600 rounded-lg">
-      <i data-lucide="brain-circuit" class="w-5 h-5"></i>
-    </div>
-    <h3 class="text-lg font-bold text-gray-800">Pearl AI – How It Works</h3>
-  </div>
-
-  <!-- FLOW DIAGRAM -->
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-
-    <div class="bg-gray-50 rounded-xl p-4 border">
-      <p class="font-bold text-xs text-indigo-600 mb-2">① Data Intake</p>
-      <p class="text-[11px] text-gray-600">
-        Pearl AI reads stock, sales velocity, lead time, safety stock, and
-        requirements for every SKU.
-      </p>
-    </div>
-
-    <div class="bg-gray-50 rounded-xl p-4 border">
-      <p class="font-bold text-xs text-indigo-600 mb-2">② Coverage Calculation</p>
-      <p class="text-[11px] text-gray-600">
-        Calculates how many days current stock can sustain sales.
-      </p>
-    </div>
-
-    <div class="bg-gray-50 rounded-xl p-4 border">
-      <p class="font-bold text-xs text-indigo-600 mb-2">③ Risk Classification</p>
-      <p class="text-[11px] text-gray-600">
-        Items are classified as 🚨 Immediate, ⚠️ This Week, or 👀 Monitor.
-      </p>
-    </div>
-
-    <div class="bg-gray-50 rounded-xl p-4 border">
-      <p class="font-bold text-xs text-indigo-600 mb-2">④ Confidence Scoring</p>
-      <p class="text-[11px] text-gray-600">
-        A 0–100 score represents inventory health and urgency.
-      </p>
-    </div>
-
-    <div class="bg-gray-50 rounded-xl p-4 border">
-      <p class="font-bold text-xs text-indigo-600 mb-2">⑤ Explainable AI</p>
-      <p class="text-[11px] text-gray-600">
-        Pearl AI explains <b>why</b> an item is flagged using real data.
-      </p>
-    </div>
-
-    <div class="bg-gray-50 rounded-xl p-4 border">
-      <p class="font-bold text-xs text-indigo-600 mb-2">⑥ Decision Output</p>
-      <p class="text-[11px] text-gray-600">
-        Displays PO quantity, priority tags, and executive summary.
-      </p>
-    </div>
-
-  </div>
-
-  <!-- WORKED EXAMPLE -->
-  <div>
-    <p class="font-bold text-purple-600 text-[10px] uppercase tracking-wider mb-3">
-      Worked Example – Real SKU
-    </p>
-
-    <div class="bg-gray-50 p-4 rounded-xl border text-[11px] space-y-2">
-      <div><b>SKU:</b> ENOXSET 60 PFS</div>
-
-      <ul class="ml-4 list-disc text-gray-600">
-        <li>Stock: 790 units</li>
-        <li>Daily Sales: 18.2 units</li>
-        <li>Required Coverage: 30 days</li>
-        <li>Reorder Threshold: 15 days</li>
-      </ul>
-
-      <div class="bg-white p-2 rounded border text-center italic">
-        Holding Days = 790 ÷ 18.2 ≈ 43.4 days
-      </div>
-
-      <div class="text-gray-600">
-        Result: <b>Healthy</b>, Score <b>100 / 100</b>, No PO required.
-      </div>
-    </div>
-  </div>
-</div>
-
-
-
-        <!-- FORMULA CARD -->
-        <div class="kb-card">
-          <div class="flex items-center gap-3 mb-6">
-            <div class="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><i data-lucide="function-square" class="w-5 h-5"></i></div>
-            <h3 class="text-lg font-bold text-gray-800">Calculations & Logic</h3>
-          </div>
-          <div class="space-y-6 text-sm text-gray-600">
-            <div>
-                <p class="font-bold text-emerald-600 text-[10px] uppercase tracking-wider mb-2">1. Sales Velocity (Daily Sales)</p>
-                <p class="mb-2">Calculated based on the last 6 months (H2) of sales data to normalize seasonal spikes.</p>
-                <div class="bg-gray-50 p-4 rounded-xl border italic text-center">
-                    $$V_{daily} = \frac{\text{Previous H2 Sales}}{180 \text{ days}}$$
-                </div>
-            </div>
-            <div>
-                <p class="font-bold text-emerald-600 text-[10px] uppercase tracking-wider mb-2">2. Inventory Coverage (Holding Days)</p>
-                <p class="mb-2">Estimates how long current stock will last at present consumption rates.</p>
-                <div class="bg-gray-50 p-4 rounded-xl border italic text-center">
-                    $$D_{hold} = \frac{\text{Current Total Stock}}{V_{daily}}$$
-                </div>
-            </div>
-            <div>
-                <p class="font-bold text-emerald-600 text-[10px] uppercase tracking-wider mb-2">3. Requirement Horizon</p>
-                <p class="mb-2">The total coverage required to stay safe, accounting for ordering delays.</p>
-                <div class="bg-gray-50 p-4 rounded-xl border italic text-center">
-                    $$D_{req} = \text{Lead Time} + \text{Safety Stock}$$
-                </div>
-            </div>
-            <div>
-                <p class="font-bold text-emerald-600 text-[10px] uppercase tracking-wider mb-2">4. Balance Program / OSH</p>
-                <p class="mb-2">Net surplus or deficit against specific targets.</p>
-                <div class="bg-gray-50 p-4 rounded-xl border italic text-center">
-                    $$\text{Balance} = \text{Current Stock} - \text{Target Quantity}$$
-                </div>
-            </div>
-
-<div>
-  <p class="font-bold text-emerald-600 text-[10px] uppercase tracking-wider mb-2">
-   5. Pearl AI Confidence Score
-  </p>
-  <p class="mb-2">
-    A normalized risk score (0–100) indicating inventory health and urgency.
-    Higher scores represent safer stock positions.
-  </p>
-  <div class="bg-gray-50 p-4 rounded-xl border italic text-center">
-    $$Score = 100 - (D_{threshold} - D_{hold}) \times W$$
-  </div>
-  <p class="mt-2 text-[11px] text-gray-500">
-    Where:
-    <br>• \(D_{hold}\) = Holding Days
-    <br>• \(D_{threshold}\) = 15 days (Reorder benchmark)
-    <br>• \(W\) = Risk weight (default = 6)
-  </p>
-</div>
-      </div>
-<div>
-  <p class="font-bold text-emerald-600 text-[10px] uppercase tracking-wider mb-3">
-    6. How Pearl AI Thinks (Decision Flow)
-  </p>
-
-  <div class="bg-gray-50 p-4 rounded-xl border text-[11px] leading-relaxed space-y-2">
-    <div>① <b>Data Ingestion</b></div>
-    <div class="ml-4 text-gray-600">
-      Reads stock, sales velocity, lead time, safety stock, and requirements.
-    </div>
-
-    <div>② <b>Holding Days Calculation</b></div>
-    <div class="ml-4 text-gray-600">
-      Calculates how long current stock will last.
-    </div>
-
-    <div>③ <b>Risk Classification</b></div>
-    <div class="ml-4 text-gray-600">
-      Classifies items as 🚨 Immediate, ⚠️ This Week, or 👀 Monitor.
-    </div>
-
-    <div>④ <b>Confidence Score</b></div>
-    <div class="ml-4 text-gray-600">
-      Generates a 0–100 score representing inventory health.
-    </div>
-
-    <div>⑤ <b>Explainable Reason</b></div>
-    <div class="ml-4 text-gray-600">
-      Explains why the item is flagged using sales & coverage.
-    </div>
-
-    <div>⑥ <b>PO Recommendation</b></div>
-    <div class="ml-4 text-gray-600">
-      Suggests PO quantity only when a gap exists.
-    </div>
-
-    <div>⑦ <b>Change Tracking</b></div>
-    <div class="ml-4 text-gray-600">
-      Compares with previous run to show risk increase or reduction.
-    </div>
-  </div>
-</div>
-
-<div>
-  <p class="font-bold text-emerald-600 text-[10px] uppercase tracking-wider mb-3">
-    7. Worked Example – SKU Evaluation
-  </p>
-
-  <div class="bg-gray-50 p-4 rounded-xl border text-[11px] leading-relaxed space-y-2">
-    <div><b>Example SKU:</b> ENOXSET 60 PFS</div>
-
-    <div>
-      <b>Input Data</b>
-      <ul class="ml-4 list-disc text-gray-600">
-        <li>Stock: 790 units</li>
-        <li>Daily Sales: 18.2 units</li>
-        <li>Required Coverage: 30 days</li>
-        <li>Reorder Threshold: 15 days</li>
-      </ul>
-    </div>
-
-    <div>
-      <b>Holding Days</b>
-      <div class="bg-white p-2 rounded border text-center italic">
-        790 ÷ 18.2 ≈ 43.4 days
-      </div>
-    </div>
-
-    <div>
-      <b>Risk Status</b>
-      <div class="ml-4 text-gray-600">
-        Healthy (above threshold)
-      </div>
-    </div>
-
-    <div>
-      <b>Confidence Score</b>
-      <div class="bg-white p-2 rounded border text-center italic">
-        100 / 100
-      </div>
-    </div>
-
-    <div>
-      <b>PO Decision</b>
-      <div class="ml-4 text-gray-600">
-        No PO required in current cycle.
-      </div>
-    </div>
-  </div>
-</div>
-
-    </section>
-
   </main>
 
-  <!-- MODAL -->
-  <div id="reportModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-5xl max-h-[85vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden">
-        <div class="p-6 border-b border-gray-100 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <i data-lucide="file-spreadsheet" class="w-5 h-5 text-indigo-600"></i>
-                <h3 id="modalTitle" class="text-xl font-bold text-gray-800">Preview</h3>
-            </div>
-            <button onclick="closeModal()" class="p-2 hover:bg-gray-100 rounded-full transition-colors"><i data-lucide="x" class="w-6 h-6 text-gray-400"></i></button>
-        </div>
-        <div class="flex-1 overflow-auto p-4 bg-gray-50/50">
-            <table class="w-full text-left text-[11px] bg-white rounded-xl shadow-sm border-separate border-spacing-0 overflow-hidden">
-                <thead id="modalHead" class="sticky top-0 bg-gray-100 border-b z-10 text-gray-600 uppercase font-bold tracking-widest"></thead>
-                <tbody id="modalBody" class="divide-y divide-gray-100 text-gray-700"></tbody>
-            </table>
-        </div>
-        <div class="p-6 border-t flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <p class="text-[10px] text-gray-400 font-medium">NOTE: Export includes "Summary" and "Full Dataset" worksheets.</p>
-            <div class="flex gap-3">
-                <button onclick="closeModal()" class="px-6 py-2 text-xs font-bold text-gray-500 hover:bg-gray-100 rounded-xl">CANCEL</button>
-                <button id="modalDownloadBtn" class="px-6 py-2 text-xs font-bold bg-indigo-600 text-white rounded-xl shadow-lg hover:bg-indigo-700 transition-all flex items-center gap-2">
-                    <i data-lucide="download" class="w-4 h-4"></i> EXPORT TO EXCEL
-                </button>
-            </div>
-        </div>
-    </div>
-  </div>
-
   <script>
-
-     let LAST_AI_STATE = null;
-    let STOCK = [], REQ = {}, FINAL = [];
+    const apiKey = ""; 
+    let STOCK = [], REQ_MAP = {}, PO_MAP = {}, FINAL = [], RAW_PO_DATA = [], BATCH_STOCK = [], MOQ_MAP = {}, RAW_STOCK_DATE_FILTERED = [];
 
     const STOCK_URL = "https://script.google.com/macros/s/AKfycby0zKw1g1s_yB3J2p8QC_h31DBBCaswlK8xwt07bip98txOSMvOWgGPJwUWltDdg9uo9w/exec";
     const REQ_URL = "https://script.google.com/macros/s/AKfycbzkiKxXCQAFTTaA5P5t7kpgoXARPOMv9V2u4hnDW4CdM65C_tAkc1YxfIjvN4Njix8EIA/exec";
+    const PO_URL = "https://script.google.com/macros/s/AKfycbzFZOc1qQw5kn7M88w251WOnZGzBwBznytNpx-QqxMRE89kHUkN8feVxH_qG38H3KXd/exec";
+    const BATCH_URL = "https://script.google.com/macros/s/AKfycbx4hqFN0DhMDm22q0_EkS_E4EAApVavgZz8FEZEdUV0Jg0uMVaUUg3S8FyL9vy3H5KM/exec";
+    const MOQ_URL = "https://script.google.com/macros/s/AKfycbwfWL5Iu25uPYWxsRA0pLNtjSzDo86K3jXhSAw_P-RrPTlK5rLPpbLnv00X7972skCj/exec";
 
     window.onload = fetchData;
 
+    function getValueByKeys(obj, keys) {
+      if (!obj) return null;
+      const entryKeys = Object.keys(obj);
+      for (const target of keys) {
+        const found = entryKeys.find(k => k.trim().toLowerCase() === target.toLowerCase());
+        if (found !== undefined) return obj[found];
+      }
+      return null;
+    }
+
+    function getISOStringFromMixed(raw) {
+      if (!raw) return null;
+      let d;
+      if (!isNaN(raw) && typeof raw !== 'boolean' && raw > 40000) {
+        d = new Date((parseFloat(raw) - 25569) * 86400 * 1000);
+      } else {
+        d = new Date(raw);
+        if (isNaN(d.getTime())) {
+            const parts = String(raw).split('/');
+            if (parts.length === 3) d = new Date(parts[2], parts[1] - 1, parts[0]);
+        }
+      }
+      return isNaN(d.getTime()) ? null : d.toISOString().split('T')[0];
+    }
+
+    function getLocalDateString(dateInput) {
+      const iso = getISOStringFromMixed(dateInput);
+      if (!iso) return "N/A";
+      const [y, m, d] = iso.split('-');
+      return `${d}/${m}/${y}`;
+    }
+
+    async function fetchWithRetry(url, retries = 5, backoff = 1000) {
+        for (let i = 0; i < retries; i++) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000); 
+            try {
+                const response = await fetch(url, { signal: controller.signal });
+                clearTimeout(timeoutId);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return await response.json();
+            } catch (err) {
+                clearTimeout(timeoutId);
+                const delay = (backoff * Math.pow(2, i)) + (Math.random() * 500);
+                if (i === retries - 1) throw err;
+                await new Promise(r => setTimeout(r, delay));
+            }
+        }
+    }
+
     async function fetchData() {
+        document.getElementById('loader').classList.remove('hidden');
+        document.getElementById('errorOverlay').classList.add('hidden');
         try {
-          const [s, r] = await Promise.all([
-            fetch(STOCK_URL).then(res => res.json()),
-            fetch(REQ_URL).then(res => res.json())
+          const results = await Promise.allSettled([
+            fetchWithRetry(STOCK_URL),
+            fetchWithRetry(REQ_URL),
+            fetchWithRetry(PO_URL),
+            fetchWithRetry(BATCH_URL),
+            fetchWithRetry(MOQ_URL)
           ]);
-          STOCK = s;
-          r.forEach(x => REQ[x["Item Code"]] = x);
-          if(STOCK.length > 0) {
-              const latest = new Date(Math.max(...STOCK.map(i => new Date(i.Date || i.date).getTime()))).toISOString().split('T')[0];
-              document.getElementById('dateFilter').value = latest;
-              document.getElementById('displayDate').innerText = latest;
+          const [sRes, rRes, pRes, bRes, mRes] = results;
+          if (sRes.status === 'fulfilled') STOCK = sRes.value; 
+          else throw new Error("Stock data unreachable.");
+          if (rRes.status === 'fulfilled') {
+            REQ_MAP = {};
+            rRes.value.forEach(x => {
+                const code = String(getValueByKeys(x, ["Item Code", "itemCode"]) || "").trim().toLowerCase();
+                if (code) REQ_MAP[code] = x;
+            });
+          }
+          if (pRes.status === 'fulfilled') RAW_PO_DATA = pRes.value;
+          if (bRes.status === 'fulfilled') BATCH_STOCK = bRes.value;
+          if (mRes.status === 'fulfilled' && Array.isArray(mRes.value)) {
+              MOQ_MAP = {};
+              mRes.value.forEach(row => {
+                  const code = String(getValueByKeys(row, ["Item Code", "itemCode"]) || "").trim().toLowerCase();
+                  const val = parseFloat(getValueByKeys(row, ["MOQ", "moq"]) || 0);
+                  if (code) MOQ_MAP[code] = val;
+              });
+          }
+          if(STOCK && STOCK.length > 0) {
+              const dateMap = STOCK.map(i => getISOStringFromMixed(getValueByKeys(i, ["Date", "date"]))).filter(d => d);
+              if (dateMap.length > 0) {
+                const latestStr = [...new Set(dateMap)].sort().pop();
+                document.getElementById('dateFilter').value = latestStr;
+                document.getElementById('displayDate').innerText = getLocalDateString(latestStr);
+              }
           }
           build();
-        } catch (e) { console.error(e); }
+        } catch (e) { 
+            document.getElementById('errorOverlay').classList.remove('hidden');
+            document.getElementById('errorMessage').innerText = `Sync Error: ${e.message}`;
+        } finally {
+            document.getElementById('loader').classList.add('hidden');
+            lucide.createIcons();
+        }
     }
-
-    function show(id, btn) {
-      const section = document.getElementById(id);
-      if(!section) return;
-
-      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-      section.classList.add('active');
-      
-      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('nav-active'));
-      if(btn) btn.classList.add('nav-active');
-      
-      document.getElementById('pageTitle').innerText = btn ? btn.innerText.trim() : "Dashboard";
-      
-      if(window.MathJax) MathJax.typesetPromise();
-      lucide.createIcons();
-    }
-
-function runIntegratedAnalysis() {
-
-  const btn = document.getElementById('aiBtn');
-  btn.disabled = true;
-  btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> AI THINKING...`;
-  lucide.createIcons();
-
-  setTimeout(() => {
-
-    const analysed = FINAL.map(r => {
-      const hold = r.dailySales > 0 ? r.stock / r.dailySales : 0;
-
-      // Confidence Score (0–100)
-      const score = Math.round(
-  Math.max(0, Math.min(100,
-    100 - Math.max(0, (15 - hold)) * 6
-  ))
-);
-const scoreColor =
-  score >= 80 ? "text-green-600" :
-  score >= 50 ? "text-yellow-600" :
-  "text-red-600";
-
-      // Priority Tag
-      let priority = "👀 MONITOR";
-      if (hold <= 5) priority = "🚨 IMMEDIATE";
-      else if (hold <= 10) priority = "⚠️ THIS WEEK";
-
-      // Why explanation
-      const why = `Daily sales ${r.dailySales.toFixed(2)}, stock covers ${hold.toFixed(1)} days`;
-
-      // Suggested PO
-      const poQty = Math.round(Math.max(0, (r.reqDays - hold) * r.dailySales));
-
-     return { ...r, hold, score, scoreColor, priority, why, poQty };
-    });
-
-    const critical = analysed.filter(r => r.hold <= 7);
-    const urgent   = analysed.filter(r => r.hold > 7 && r.hold <= 15);
-
-    // -------- DELTA ANALYSIS --------
-    let deltaText = "First analysis run";
-    if (LAST_AI_STATE) {
-      deltaText = `Δ Critical: ${critical.length - LAST_AI_STATE.critical}, Δ Urgent: ${urgent.length - LAST_AI_STATE.urgent}`;
-    }
-    LAST_AI_STATE = { critical: critical.length, urgent: urgent.length };
-
-    // -------- SUMMARY --------
-    const summary = `
-Pearl AI Summary – ${document.getElementById('displayDate').innerText}
-
-Critical Items: ${critical.length}
-Urgent Items: ${urgent.length}
-${deltaText}
-`;
-
-    // -------- ACTIONS --------
-    const actions = analysed
-      .filter(r => r.hold <= 15)
-      .map(r => `
-        <div class="rounded-xl border border-gray-200 p-4 bg-white shadow-sm">
-          <div class="flex justify-between items-center mb-1">
-            <span class="text-xs font-bold">${r.priority}</span>
-            <span class="relative group text-xs font-bold ${r.scoreColor} cursor-help">
-  Score ${r.score} / 100
-
-  <!-- Tooltip -->
-  <span class="absolute left-1/2 -translate-x-1/2 bottom-full mb-2
-               hidden group-hover:block
-               w-56 p-2 text-[10px] text-white bg-gray-900
-               rounded-lg shadow-lg z-50">
-    Score is calculated based on:
-    <br>• Remaining stock days
-    <br>• Daily sales velocity
-    <br>• Reorder threshold (15 days)
-  </span>
-</span>
-          </div>
-          <div class="text-sm font-bold">${r.name}</div>
-          <div class="text-xs text-gray-500 mt-1">${r.why}</div>
-          <div class="mt-2 text-xs font-bold text-red-600">
-            Suggested PO: ${r.poQty} units
-          </div>
-        </div>
-      `);
-
-    // -------- RENDER --------
-    document.getElementById('aiResponse').classList.remove('hidden');
-    document.getElementById('aiSummary').innerText = summary;
-    document.getElementById('aiActions').innerHTML = actions.join('');
-    document.getElementById('aiExportBtn').classList.remove('hidden');
-
-    btn.disabled = false;
-    btn.innerHTML = `<i data-lucide="zap" class="w-4 h-4"></i> RUN ANALYSIS`;
-    lucide.createIcons();
-
-  }, 900);
-}
-
 
     function build() {
       const selectedDate = document.getElementById('dateFilter').value;
-      const search = document.getElementById('searchInput').value.toLowerCase();
-      const map = {};
+      const dataMap = {};
+      RAW_STOCK_DATE_FILTERED = [];
 
-      Object.values(REQ).forEach(item => {
-          map[item["Item Code"]] = { 
-            name: item["Item Name"], 
-            code: item["Item Code"],
-            stock: 0, 
-            depotStock: { "Kerala": 0, "Palepu": 0, "Coimbatore": 0, "Bangalore": 0 },
-            mfg: item["Manufacturer"] || "General", 
-            prog: +item["Program Req"] || 0,
-            osh: +item["OSH Req"] || 0,
-            lt: +item["Lead Time"] || 0,
-            ss: +item["Safety Stock"] || 0,
-            prevH2: +item["Prev H2 Sales"] || 0
+      Object.values(REQ_MAP).forEach(item => {
+          const code = String(getValueByKeys(item, ["Item Code", "itemCode"]) || "").trim().toLowerCase();
+          if(!code) return;
+          dataMap[code] = { 
+            name: getValueByKeys(item, ["Item Name", "itemName"]) || "Unknown SKU", 
+            code: code.toUpperCase(),
+            stock: 0, shortQty: 0, usableStock: 0, openPo: 0,
+            moq: MOQ_MAP[code] || 0,
+            mfg: getValueByKeys(item, ["Manufacturer", "MFR"]) || "General", 
+            prog: +(getValueByKeys(item, ["Program Req"]) || 0),
+            osh: +(getValueByKeys(item, ["OSH Req"]) || 0),
+            lt: +(getValueByKeys(item, ["Lead Time"]) || 0),
+            ss: +(getValueByKeys(item, ["Safety Stock"]) || 0),
+            prevH2: +(getValueByKeys(item, ["Prev H2 Sales"]) || 0),
+            kerala: 0, palepu: 0, coimbatore: 0, bangalore: 0
           };
       });
 
-      STOCK.forEach(r => {
-        if (new Date(r.Date || r.date).toISOString().split('T')[0] === selectedDate) {
-            const code = r["Item Code"] || r["item code"];
-            if (map[code]) {
-                const k = +(r["Kerala"] || 0), p = +(r["Palepu"] || 0), c = +(r["Coimbatore"] || 0), b = +(r["Bangalore"] || 0);
-                map[code].depotStock["Kerala"] += k;
-                map[code].depotStock["Palepu"] += p;
-                map[code].depotStock["Coimbatore"] += c;
-                map[code].depotStock["Bangalore"] += b;
-                map[code].stock += (k + p + c + b);
+      if (Array.isArray(STOCK)) {
+          STOCK.forEach(r => {
+            if (getISOStringFromMixed(getValueByKeys(r, ["Date", "date"])) === selectedDate) {
+                RAW_STOCK_DATE_FILTERED.push(r);
+                const code = String(getValueByKeys(r, ["Item Code", "itemCode"]) || "").trim().toLowerCase();
+                if (dataMap[code]) {
+                    dataMap[code].kerala += +(r.Kerala||0);
+                    dataMap[code].palepu += +(r.Palepu||0);
+                    dataMap[code].coimbatore += +(r.Coimbatore||0);
+                    dataMap[code].bangalore += +(r.Bangalore||0);
+                    dataMap[code].stock += (+(r.Kerala||0) + +(r.Palepu||0) + +(r.Coimbatore||0) + +(r.Bangalore||0));
+                }
             }
-        }
-      });
+          });
+      }
 
-      FINAL = Object.values(map).filter(r => r.name.toLowerCase().includes(search));
-      
+      if (Array.isArray(BATCH_STOCK)) {
+          const batchDates = BATCH_STOCK.map(b => getISOStringFromMixed(getValueByKeys(b, ["Date", "date"]))).filter(d => d);
+          const targetBatchDate = [...new Set(batchDates)].sort().pop();
+          BATCH_STOCK.forEach(b => {
+              if (getISOStringFromMixed(getValueByKeys(b, ["Date", "date"])) === targetBatchDate) {
+                  const code = String(getValueByKeys(b, ["Item Code", "itemCode"]) || "").trim().toLowerCase();
+                  const expType = String(getValueByKeys(b, ["Expiry Type"]) || "").trim();
+                  if (dataMap[code] && expType.toLowerCase() === "short") {
+                      dataMap[code].shortQty += parseFloat(getValueByKeys(b, ["Total Quantity"]) || 0);
+                  }
+              }
+          });
+      }
+
+      if (Array.isArray(RAW_PO_DATA)) {
+          RAW_PO_DATA.forEach(x => {
+            const code = String(getValueByKeys(x, ["Item Code", "itemCode"]) || "").trim().toLowerCase();
+            const pendingQty = parseFloat(getValueByKeys(x, ["Pending Qty"]) || 0);
+            if (dataMap[code] && pendingQty > 0) dataMap[code].openPo += pendingQty;
+          });
+      }
+
+      FINAL = Object.values(dataMap);
       FINAL.forEach(r => {
-          const daily = (r.prevH2 || 0) / 180;
-          r.dailySales = daily;
-          r.holdDays = daily > 0 ? (r.stock / daily) : 0;
+          r.usableStock = Math.max(0, r.stock - r.shortQty); 
+          r.dailySales = (r.prevH2 || 0) / 180;
+          r.holdDays = r.dailySales > 0 ? (r.usableStock / r.dailySales) : 0;
           r.reqDays = r.lt + r.ss;
       });
-
-      const sorted = [...FINAL].sort((a,b) => b.dailySales - a.dailySales);
-      sorted.forEach((item, i) => {
-          if (i < sorted.length * 0.2) item.abc = 'A';
-          else if (i < sorted.length * 0.5) item.abc = 'B';
-          else item.abc = 'C';
-      });
-
-      renderReq();
-      renderPlan();
-      renderAlerts();
-      renderInsights();
-      renderMfg();
-      lucide.createIcons();
-
-document.getElementById('aiResponse').classList.add('hidden');
-document.getElementById('aiExportBtn').classList.add('hidden');
-
+      renderAll();
     }
+
+    function renderAll() { renderReq(); renderPlan(); renderPOTrack(); renderAlerts(); lucide.createIcons(); }
 
     function renderReq() {
       document.getElementById('reqBody').innerHTML = FINAL.map(r => `
-          <tr class="hover:bg-gray-50/50">
-            <td class="px-6 py-4 font-semibold text-gray-800 text-[10px]">${r.name}</td>
-            <td class="px-6 py-4 text-indigo-600 font-bold">${Math.round(r.stock)}</td>
-            <td class="px-6 py-4 text-gray-400">${Math.round(r.prog)}</td>
-            <td class="px-6 py-4 text-gray-400">${Math.round(r.osh)}</td>
-            <td class="px-6 py-4 font-bold ${r.stock < r.prog ? 'text-red-500' : 'text-emerald-500'}">${r.prog > 0 ? (r.stock/r.prog*100).toFixed(0) : 0}%</td>
-            <td class="px-6 py-4 font-bold ${r.stock < r.osh ? 'text-red-500' : 'text-emerald-500'}">${r.osh > 0 ? (r.stock/r.osh*100).toFixed(0) : 0}%</td>
-            <td class="px-6 py-4 font-black ${r.stock < r.prog ? 'text-red-500' : 'text-emerald-500'}">${Math.round(r.stock - r.prog)}</td>
-            <td class="px-6 py-4 font-black ${r.stock < r.osh ? 'text-red-500' : 'text-emerald-500'}">${Math.round(r.stock - r.osh)}</td>
+          <tr class="hover:bg-slate-50">
+            <td class="px-6 py-4"><div class="font-semibold text-slate-800">${r.name}</div><div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">${r.code}</div></td>
+            <td class="px-6 py-4 text-center">${Math.round(r.stock)}</td>
+            <td class="px-6 py-4 text-center font-bold text-orange-600">${Math.round(r.shortQty) || '-'}</td>
+            <td class="px-6 py-4 text-center font-black bg-indigo-50 text-indigo-800">${Math.round(r.usableStock)}</td>
+            <td class="px-6 py-4 text-center text-slate-500">${Math.round(r.prog)}</td>
+            <td class="px-6 py-4 text-center font-bold ${r.usableStock < r.prog ? 'text-red-500' : 'text-emerald-600'}">${Math.round(r.usableStock - r.prog)}</td>
+            <td class="px-6 py-4 text-center text-slate-500">${Math.round(r.osh)}</td>
+            <td class="px-6 py-4 text-center font-bold ${r.usableStock < r.osh ? 'text-red-500' : 'text-emerald-600'}">${Math.round(r.usableStock - r.osh)}</td>
           </tr>`).join('');
     }
 
     function renderPlan() {
-        document.getElementById('planBody').innerHTML = FINAL.map(r => `
-            <tr>
-                <td class="px-6 py-4 text-[10px] font-bold">${r.name}</td>
-                <td class="px-6 py-4 font-bold">${Math.round(r.stock)}</td>
-                <td class="px-6 py-4 text-gray-400">${r.reqDays}d</td>
-                <td class="px-6 py-4 font-bold ${r.holdDays < r.reqDays ? 'text-red-500' : 'text-emerald-500'}">${r.holdDays.toFixed(1)}d</td>
-                <td class="px-6 py-4"><span class="px-2 py-0.5 rounded-full text-[9px] font-bold ${r.holdDays < r.reqDays ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}">${r.holdDays < r.reqDays ? 'At Risk' : 'Healthy'}</span></td>
-                <td class="px-6 py-4 font-black text-indigo-600">${Math.round(Math.max(0, (r.reqDays - r.holdDays) * r.dailySales))}</td>
-            </tr>`).join('');
-    }
-
-    function renderMfg() {
-        const list = document.getElementById('mfgList');
-        const mfgs = [...new Set(FINAL.map(r => r.mfg))].sort();
-        list.innerHTML = mfgs.map(name => `
-            <div class="mfg-item flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-white cursor-pointer" onclick="selectMfg('${name}', this)">
-                <span class="text-[10px] font-bold text-gray-700 uppercase tracking-tighter">${name}</span>
-                <span class="bg-gray-100 text-[9px] px-2 py-0.5 rounded-full">${FINAL.filter(r => r.mfg === name).length}</span>
-            </div>`).join('');
-    }
-
-    function selectMfg(name, el) {
-        document.querySelectorAll('.mfg-item').forEach(i => i.classList.remove('active-mfg', 'ring-1', 'ring-indigo-500'));
-        el.classList.add('active-mfg', 'ring-1', 'ring-indigo-500');
-        document.getElementById('selectedMfgName').innerText = name;
-        document.getElementById('mfgProductList').innerHTML = FINAL.filter(r => r.mfg === name).map(r => `
-            <tr>
-                <td class="px-6 py-4 text-[10px] font-medium">${r.name}</td>
-                <td class="px-6 py-4 font-bold text-indigo-600">${Math.round(r.stock)}</td>
-                <td class="px-6 py-4 text-gray-400">${r.holdDays.toFixed(1)} Days</td>
-            </tr>`).join('');
-    }
-
-    function getReportData(type) {
-        if(type === 'status') return { title: "Stock Status", headers: ["Code", "Item", "Total Stock", "Prog %", "OSH %", "Bal Prog", "Bal OSH", "Class"], rows: FINAL.map(r => [r.code, r.name, Math.round(r.stock), (r.prog > 0 ? (r.stock/r.prog*100).toFixed(0) : 0) + "%", (r.osh > 0 ? (r.stock/r.osh*100).toFixed(0) : 0) + "%", Math.round(r.stock - r.prog), Math.round(r.stock - r.osh), r.abc]) };
-        if(type === 'depot') return { title: "Depot Wise Report", headers: ["Item", "Kerala", "Palepu", "Coimbatore", "Bangalore", "Total"], rows: FINAL.map(r => [r.name, Math.round(r.depotStock.Kerala), Math.round(r.depotStock.Palepu), Math.round(r.depotStock.Coimbatore), Math.round(r.depotStock.Bangalore), Math.round(r.stock)]) };
-        if(type === 'shortage') return { title: "Shortages", headers: ["Item", "Stock", "Days Left", "Gap"], rows: FINAL.filter(r => r.holdDays < r.reqDays).map(r => [r.name, Math.round(r.stock), r.holdDays.toFixed(1), (r.reqDays - r.holdDays).toFixed(1)]) };
-        
-        if(type === 'trend') {
-            const h7 = FINAL.filter(r => r.holdDays < 7).length;
-            const h15 = FINAL.filter(r => r.holdDays >= 7 && r.holdDays < 15).length;
-            const h30 = FINAL.filter(r => r.holdDays >= 15 && r.holdDays < 30).length;
-            return {
-                title: "Stock Out Trend",
-                headers: ["Severity", "Item Count", "Description"],
-                rows: [
-                    ["Critical (<7d)", h7, "Immediate stock-out risk"],
-                    ["Urgent (7-15d)", h15, "Order must be processed now"],
-                    ["Caution (15-30d)", h30, "Monitor closely"]
-                ]
-            };
-        }
-
-        if(type === 'mfg_summary') {
-            const groups = {};
-            FINAL.forEach(r => {
-                if(!groups[r.mfg]) groups[r.mfg] = { count: 0, totalStock: 0 };
-                groups[r.mfg].count++;
-                groups[r.mfg].totalStock += r.stock;
-            });
-            return {
-                title: "Manufacturer Summary",
-                headers: ["Manufacturer", "Total SKUs", "Aggregate Stock"],
-                rows: Object.entries(groups).map(([m, data]) => [m, data.count, Math.round(data.totalStock)])
-            };
-        }
-
-        return { title: "Report", headers: [], rows: [] };
-    }
-
-    function previewReport(t) {
-        const d = getReportData(t);
-        document.getElementById('modalTitle').innerText = d.title;
-        document.getElementById('modalHead').innerHTML = `<tr>${d.headers.map(h => `<th class="px-4 py-3 border-b text-left">${h}</th>`).join('')}</tr>`;
-        document.getElementById('modalBody').innerHTML = d.rows.map(row => `<tr>${row.map(c => `<td class="px-4 py-3">${c}</td>`).join('')}</tr>`).join('');
-        document.getElementById('modalDownloadBtn').onclick = () => downloadReportXlsx(t);
-        document.getElementById('reportModal').classList.remove('hidden');
-        lucide.createIcons();
-    }
-
-    function closeModal() { document.getElementById('reportModal').classList.add('hidden'); }
-
-    function downloadReportXlsx(type) {
-        const data = getReportData(type);
-        const wb = XLSX.utils.book_new();
-        
-        const wsSummary = XLSX.utils.aoa_to_sheet([data.headers, ...data.rows]);
-        XLSX.utils.book_append_sheet(wb, wsSummary, "Summary");
-
-        const rawHeaders = ["Item Code", "Item Name", "Manufacturer", "Stock", "Daily Sales", "Days Remaining", "Class"];
-        const rawRows = FINAL.map(r => [r.code, r.name, r.mfg, r.stock, r.dailySales.toFixed(2), r.holdDays.toFixed(1), r.abc]);
-        const wsRaw = XLSX.utils.aoa_to_sheet([rawHeaders, ...rawRows]);
-        XLSX.utils.book_append_sheet(wb, wsRaw, "Raw Data");
-
-        XLSX.writeFile(wb, `${data.title}_${document.getElementById('dateFilter').value}.xlsx`);
+        document.getElementById('planBody').innerHTML = FINAL.map(r => {
+            let base = Math.max(0, (r.reqDays * r.dailySales) - r.usableStock - r.openPo);
+            let finalSuggest = r.moq > 0 ? Math.ceil(base / r.moq) * r.moq : Math.round(base);
+            return `<tr class="hover:bg-slate-50">
+                <td class="px-6 py-4"><div class="font-semibold text-slate-800">${r.name}</div><div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">${r.code}</div></td>
+                <td class="px-6 py-4 text-center font-bold text-orange-600">${Math.round(r.shortQty) || '-'}</td>
+                <td class="px-6 py-4 text-center font-bold">${Math.round(r.usableStock)}</td>
+                <td class="px-6 py-4 text-center font-bold text-blue-700">${Math.round(r.openPo)}</td>
+                <td class="px-6 py-4 text-center text-slate-500 font-mono">${r.dailySales.toFixed(2)}</td>
+                <td class="px-6 py-4 text-center font-bold ${r.holdDays < r.reqDays ? 'text-red-500' : 'text-emerald-600'}">${r.holdDays.toFixed(1)}d</td>
+                <td class="px-6 py-4 text-center font-bold text-slate-500 bg-slate-100/50">${r.moq > 0 ? r.moq : '-'}</td>
+                <td class="px-6 py-4 text-center font-black text-indigo-600 bg-indigo-50">${finalSuggest > 0 ? finalSuggest : '-'}</td>
+            </tr>`;
+        }).join('');
     }
 
     function renderAlerts() {
-        document.getElementById('alertGrid').innerHTML = FINAL.filter(r => r.holdDays <= r.reqDays).map(r => `
-            <div class="bg-white border-l-4 border-red-500 p-4 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                <div class="flex justify-between items-start mb-2">
-                    <span class="text-[8px] font-black bg-red-100 text-red-600 px-2 py-0.5 rounded">LEVEL: CRITICAL</span>
-                    <i data-lucide="alert-triangle" class="w-3 h-3 text-red-400"></i>
-                </div>
-                <p class="font-bold text-gray-800 text-[10px] leading-tight mb-3">${r.name}</p>
-                <div class="flex items-center justify-between text-[10px]">
-                    <span class="text-gray-400">Coverage:</span>
-                    <span class="font-bold text-red-600">${r.holdDays.toFixed(1)} Days</span>
-                </div>
-                <div class="mt-2 pt-2 border-t border-gray-50 flex items-center justify-between text-[9px]">
-                    <span class="text-gray-400">Order Target:</span>
-                    <span class="font-bold text-indigo-600">${Math.round(Math.max(0, (r.reqDays - r.holdDays) * r.dailySales))} units</span>
-                </div>
-            </div>`).join('');
-    }
+        const alerts = FINAL.filter(r => r.holdDays < 7 && r.dailySales > 0).sort((a,b) => a.holdDays - b.holdDays);
+        document.getElementById('alertCount').innerText = alerts.length;
+        document.getElementById('severeCount').innerText = alerts.filter(a => a.holdDays < 3).length;
+        document.getElementById('lowCount').innerText = alerts.filter(a => a.holdDays >= 3).length;
+        document.getElementById('shortfallVal').innerText = Math.round(FINAL.reduce((a,b) => a + Math.max(0, b.osh - b.usableStock), 0)).toLocaleString();
 
-    function renderInsights() {
-        document.getElementById('insight-a-count').innerText = FINAL.filter(r => r.abc === 'A').length;
-        document.getElementById('insight-b-count').innerText = FINAL.filter(r => r.abc === 'B').length;
-        document.getElementById('insight-c-count').innerText = FINAL.filter(r => r.abc === 'C').length;
-    }
-
-    function selectAbcClass(abc) {
-        document.getElementById('abcItemsContainer').classList.remove('hidden');
-        document.getElementById('abcSelectedTitle').innerText = `Class ${abc} Products (${abc === 'A' ? 'High' : abc === 'B' ? 'Medium' : 'Low'} Priority)`;
-        
-        document.querySelectorAll('.class-card').forEach(c => c.classList.remove('selected-class'));
-        document.getElementById(`card-abc-${abc.toLowerCase()}`).classList.add('selected-class');
-
-        document.getElementById('abcProductList').innerHTML = FINAL.filter(r => r.abc === abc).map(r => `
-            <tr class="hover:bg-gray-50/50">
-                <td class="px-6 py-3 font-semibold text-gray-800 text-[10px]">${r.name}</td>
-                <td class="px-6 py-3 text-gray-500">${r.dailySales.toFixed(2)}</td>
-                <td class="px-6 py-3 font-bold text-indigo-600">${Math.round(r.stock)}</td>
-                <td class="px-6 py-3">
-                    <div class="flex items-center gap-2">
-                        <span class="font-black ${r.holdDays < 15 ? 'text-red-500' : 'text-emerald-500'}">${r.holdDays.toFixed(1)}d</span>
-                        <div class="w-16 h-1 bg-gray-100 rounded-full overflow-hidden">
-                            <div class="h-full ${r.holdDays < 15 ? 'bg-red-500' : 'bg-emerald-500'}" style="width: ${Math.min(100, (r.holdDays/60)*100)}%"></div>
-                        </div>
-                    </div>
+        document.getElementById('alertBody').innerHTML = alerts.map(r => `
+            <tr>
+                <td class="px-6 py-4 flex items-center gap-3">
+                    ${r.holdDays < 3 ? '<span class="w-2 h-2 rounded-full bg-red-500 critical-pulse"></span>' : '<span class="w-2 h-2 rounded-full bg-amber-400"></span>'}
+                    <div><div class="font-bold text-slate-800">${r.name}</div><div class="text-[10px] text-slate-400 font-bold tracking-tighter">${r.code}</div></div>
                 </td>
+                <td class="px-6 py-4 text-center font-bold">${Math.round(r.usableStock)}</td>
+                <td class="px-6 py-4 text-center font-bold text-orange-600">${Math.round(r.shortQty) || '-'}</td>
+                <td class="px-6 py-4 text-center text-slate-500 font-mono">${r.dailySales.toFixed(2)}</td>
+                <td class="px-6 py-4 text-center"><span class="px-3 py-1 rounded-full text-[10px] font-black tracking-tighter ${r.holdDays < 3 ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}">${r.holdDays.toFixed(1)} DAYS</span></td>
             </tr>`).join('');
     }
-function exportAiAnalysis() {
 
-  const rows = FINAL
-    .filter(r => r.holdDays <= 15)
-    .map(r => [
-      r.holdDays <= 7 ? "CRITICAL" : "URGENT",
-      r.code,
-      r.name,
-      r.mfg,
-      Math.round(r.stock),
-      r.dailySales.toFixed(2),
-      r.holdDays.toFixed(1),
-      r.reqDays,
-      Math.round(Math.max(0, (r.reqDays - r.holdDays) * r.dailySales))
-    ]);
+    function renderPOTrack() {
+        if (!RAW_PO_DATA.length) { document.getElementById('poTrackContent').innerHTML = `<div class="p-20 text-center text-slate-400">No PO data found.</div>`; return; }
+        const rows = RAW_PO_DATA.map(i => `<tr class="hover:bg-slate-50">
+                <td class="px-6 py-4 font-bold text-indigo-600 uppercase tracking-tighter">${getValueByKeys(i, ["PO Number", "poNumber"]) || "N/A"}</td>
+                <td class="px-6 py-4 text-slate-500 text-[10px]">${getLocalDateString(getValueByKeys(i, ["PO Date", "poDate"]))}</td>
+                <td class="px-6 py-4 font-medium text-slate-800">${getValueByKeys(i, ["Item Name", "itemName"]) || "Unknown"}</td>
+                <td class="px-6 py-4 text-center text-slate-500 font-bold">${Math.round(getValueByKeys(i, ["Order Qty", "orderQty"]) || 0)}</td>
+                <td class="px-6 py-4 text-center font-bold text-blue-600">${getLocalDateString(getValueByKeys(i, ["expectedDelivery", "ETA"]))}</td>
+                <td class="px-6 py-4 text-center font-black text-indigo-600 bg-indigo-50">${Math.round(getValueByKeys(i, ["Pending Qty", "pendingQty"]) || 0)}</td>
+            </tr>`).join('');
+        document.getElementById('poTrackContent').innerHTML = `<div class="overflow-x-auto"><table class="w-full text-left text-xs whitespace-nowrap">
+            <thead><tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider">
+                <th class="px-6 py-4">PO Ref</th><th class="px-6 py-4">Date</th><th class="px-6 py-4">SKU</th>
+                <th class="px-6 py-4 text-center">Order Qty</th><th class="px-6 py-4 text-center">ETA</th><th class="px-6 py-4 text-center">Balance</th>
+            </tr></thead><tbody class="divide-y divide-slate-100">${rows}</tbody></table></div>`;
+    }
+    // UPDATED REPORT LOGIC FOR SUMMARY & DETAILED VIEWS
+    function getReportContents(type) {
+        let summary = [], detailed = [];
+        switch(type) {
+            case 'gap':
+                summary = FINAL.map(r => ({ "Item Name": r.name, "Code": r.code, "Usable Stock": Math.round(r.usableStock), "Prog Variance": Math.round(r.usableStock - r.prog), "OSH Variance": Math.round(r.usableStock - r.osh), "Status": (r.usableStock < r.prog) ? "GAP DETECTED" : "HEALTHY" }));
+                detailed = FINAL.map(r => ({ ...r }));
+                break;
+            case 'short_expiry':
+                summary = BATCH_STOCK.filter(b => getValueByKeys(b, ["Expiry Type"])?.toLowerCase() === "short").map(r => ({ "Depot": getValueByKeys(r, ["Depot"]) || "Main", "SKU": getValueByKeys(r, ["Item Name"]), "Quantity": getValueByKeys(r, ["Total Quantity"]) }));
+                detailed = BATCH_STOCK.filter(b => getValueByKeys(b, ["Expiry Type"])?.toLowerCase() === "short");
+                break;
+            case 'procurement':
+                summary = FINAL.filter(r => r.holdDays < r.reqDays).map(r => {
+                    let base = Math.max(0, (r.reqDays * r.dailySales) - r.usableStock - r.openPo);
+                    return { "Item Name": r.name, "Code": r.code, "Daily Burn": r.dailySales.toFixed(2), "Suggested Order": r.moq > 0 ? Math.ceil(base / r.moq) * r.moq : Math.round(base) };
+                });
+                detailed = FINAL.filter(r => r.holdDays < r.reqDays);
+                break;
+            case 'risk_matrix':
+                summary = FINAL.filter(r => r.holdDays < 15).map(r => ({ "Item": r.name, "Coverage": r.holdDays.toFixed(1), "Risk": r.holdDays < 3 ? "CRITICAL" : (r.holdDays < 7 ? "HIGH" : "MEDIUM") }));
+                detailed = FINAL.filter(r => r.holdDays < 15);
+                break;
+            case 'depot_dist':
+                summary = FINAL.map(r => ({ 
+                    "Item Name": r.name, "Code": r.code,
+                    "Kerala": Math.round(r.kerala), "Palepu": Math.round(r.palepu), 
+                    "Coimbatore": Math.round(r.coimbatore), "Bangalore": Math.round(r.bangalore),
+                    "Total Physical": Math.round(r.stock),
+                    "Short Expiry": Math.round(r.shortQty),
+                    "Usable Stock": Math.round(r.usableStock)
+                }));
+                detailed = RAW_STOCK_DATE_FILTERED;
+                break;
+            case 'mfr_details':
+                summary = FINAL.map(r => ({ "Manufacturer": r.mfg, "Item Name": r.name, "MOQ": r.moq }));
+                detailed = FINAL.map(r => ({ "MFR": r.mfg, "SKU": r.name, "Code": r.code, "MOQ": r.moq, "LeadTime": r.lt, "SafetyStock": r.ss }));
+                break;
+        }
+        return { summary, detailed };
+    }
 
-  if (rows.length === 0) {
-    alert("No critical or urgent items to export.");
-    return;
-  }
+    function previewReport(type) {
+        const area = document.getElementById('reportPreviewArea');
+        const content = document.getElementById('previewContent');
+        const title = document.getElementById('previewTitle');
+        area.classList.remove('hidden');
+        const { summary, detailed } = getReportContents(type);
+        title.innerText = type.replace(/_/g, ' ') + " - SUMMARY PREVIEW";
 
-  const wb = XLSX.utils.book_new();
+        if (!summary.length) { content.innerHTML = `<div class="p-20 text-center text-slate-400">No records found.</div>`; return; }
 
-  // ---------- SUMMARY SHEET ----------
-  const summarySheet = XLSX.utils.aoa_to_sheet([
-    ["AI Inventory Analysis Report"],
-    ["Date", document.getElementById('displayDate').innerText],
-    [],
-    ["Total Items Analysed", FINAL.length],
-    ["Critical Items (≤7 days)", FINAL.filter(r => r.holdDays <= 7).length],
-    ["Urgent Items (8–15 days)", FINAL.filter(r => r.holdDays > 7 && r.holdDays <= 15).length],
-  ]);
-  XLSX.utils.book_append_sheet(wb, summarySheet, "Summary");
+        let html = '<table class="w-full text-left text-[11px] whitespace-nowrap"><thead><tr class="bg-slate-100 border-b border-slate-200 text-slate-600 font-black uppercase">';
+        Object.keys(summary[0]).forEach(k => html += `<th class="px-6 py-4">${k}</th>`);
+        html += '</tr></thead><tbody class="divide-y divide-slate-100 text-slate-700 font-medium">';
+        summary.forEach(row => {
+            html += `<tr>`;
+            Object.values(row).forEach(v => {
+                let cls = "px-6 py-4";
+                if (v === "CRITICAL" || v === "GAP DETECTED") cls += " text-red-600 font-black";
+                html += `<td class="${cls}">${v}</td>`;
+            });
+            html += `</tr>`;
+        });
+        html += '</tbody></table>';
+        content.innerHTML = html;
+        
+        document.getElementById('downloadSpecificBtn').onclick = () => {
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summary), "Summary");
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(detailed), "Detailed Data");
+            XLSX.writeFile(wb, `StockPro_${type}_Report.xlsx`);
+        };
+        area.scrollIntoView({ behavior: 'smooth' });
+        lucide.createIcons();
+    }
 
-  // ---------- DETAILS SHEET ----------
-  const detailHeaders = [
-    "Severity", "Item Code", "Item Name", "Manufacturer",
-    "Current Stock", "Daily Sales",
-    "Days Remaining", "Req Days", "Suggested PO"
-  ];
+    function closePreview() { document.getElementById('reportPreviewArea').classList.add('hidden'); }
 
-  const ws = XLSX.utils.aoa_to_sheet([detailHeaders, ...rows]);
-  XLSX.utils.book_append_sheet(wb, ws, "AI Analysis");
+    function exportToExcel() {
+        const wb = XLSX.utils.book_new();
+        const exportData = FINAL.map(r => ({ "Item Name": r.name, "Code": r.code, "MFR": r.mfg, "Physical": Math.round(r.stock), "ShortExp": Math.round(r.shortQty), "Usable": Math.round(r.usableStock), "MOQ": r.moq, "Coverage": r.holdDays.toFixed(1) }));
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(exportData), "Consolidated_Master");
+        XLSX.writeFile(wb, `StockPro_Full_Export.xlsx`);
+    }
 
-  XLSX.writeFile(
-    wb,
-    `AI_Analysis_Report_${document.getElementById('dateFilter').value}.xlsx`
-  );
-}
+   /* PEARL AI ENGINE - UPDATED WITH DETAILED COMMENTS */
+    let pearlReportData = [];
+    function runPearlAnalysis() {
+        const btn = document.getElementById('pearlBtn');
+        btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> GENERATING DEEP ANALYSIS...`;
+        
+        setTimeout(() => {
+            document.getElementById('pearlResults').classList.remove('hidden');
+            document.getElementById('pearlExportBtn').classList.remove('hidden');
+            
+            const totalItems = FINAL.length;
+            const criticalItems = FINAL.filter(f => f.holdDays < 7 && f.dailySales > 0).length;
+            const overstockItems = FINAL.filter(f => f.holdDays > 60).length;
 
+            document.getElementById('pearlMetrics').innerHTML = `
+                <div class="flex justify-between items-center"><span class="text-xs text-slate-500">Portfolio Scale</span><span class="font-bold text-slate-800">${totalItems} Unique SKUs</span></div>
+                <div class="flex justify-between items-center"><span class="text-xs text-slate-500">Critical Stock-Out Risk</span><span class="font-bold text-red-600">${criticalItems} Critical SKUs</span></div>
+                <div class="flex justify-between items-center"><span class="text-xs text-slate-500">Capital Lock-In (Overstock)</span><span class="font-bold text-amber-600">${overstockItems} Inactive SKUs</span></div>
+                <div class="flex justify-between items-center border-t border-slate-100 pt-3 mt-2"><span class="text-xs font-bold text-slate-800">Overall Availability Health</span><span class="font-black text-indigo-600">${(((totalItems - criticalItems)/totalItems)*100).toFixed(1)}%</span></div>
+            `;
 
-    function handleDateChange(v) { document.getElementById('displayDate').innerText = v; build(); }
+            const topAction = FINAL.filter(f => f.holdDays < 3 && f.dailySales > 0).slice(0, 3);
+            document.getElementById('pearlSuggestions').innerHTML = topAction.length 
+                ? topAction.map(a => `<div class="p-3 bg-red-50 border border-red-100 rounded-xl text-[10px] font-bold text-red-800 flex gap-2 items-start"><i data-lucide="zap" class="w-4 h-4 mt-0.5"></i> <div>PRIORITY 1: ${a.name} is dangerously low (${a.holdDays.toFixed(1)} days left). Immediate PO placement of ${Math.round(a.osh)} units suggested.</div></div>`).join('')
+                : `<div class="p-3 bg-emerald-50 text-emerald-800 rounded-xl text-[10px] font-bold">LOGISTICS STABLE: No immediate stock-outs detected in the next 72-hour window.</div>`;
+
+            // GENERATE DETAILED EXPORT DATA WITH COMMENTS
+            pearlReportData = FINAL.map(f => {
+                let status = "NORMAL";
+                let risk = "LOW";
+                let action = "MAINTAIN";
+                let comment = "";
+
+                // Health Logic & Comment Generator
+                if (f.holdDays <= 0 && f.dailySales > 0) {
+                    status = "STOCK-OUT"; risk = "CRITICAL"; action = "SOS REPLENISH";
+                    comment = `Current Stock is ZERO while Daily Burn is ${f.dailySales.toFixed(2)}. Immediate replenishment of at least ${Math.round(f.osh)} units required to meet OSH.`;
+                } else if (f.holdDays < 7 && f.dailySales > 0) {
+                    status = "CRITICAL LOW"; risk = "HIGH"; action = "URGENT PO";
+                    comment = `Severely under-stocked. Coverage only for ${f.holdDays.toFixed(1)} days. Short expiry units (if any) are excluded from this calc. Priority 1 for Procurement.`;
+                } else if (f.holdDays < 20 && f.dailySales > 0) {
+                    status = "BELOW SAFETY"; risk = "MEDIUM"; action = "PO INITIATE";
+                    comment = `Stock below Lead Time (${f.lt} days) + Safety Stock (${f.ss} days). coverage is ${f.holdDays.toFixed(1)} days. Should initiate PO process.`;
+                } else if (f.holdDays > 90) {
+                    status = "OVERSTOCK"; risk = "LIQUIDATION"; action = "PAUSE PO";
+                    comment = `Excessive inventory holding for ${f.holdDays.toFixed(0)} days. Capital locked. Recommend pausing all future POs and reviewing sales pace.`;
+                } else {
+                    status = "HEALTHY"; risk = "MINIMAL"; action = "MONITOR";
+                    comment = `Inventory levels optimal at ${f.holdDays.toFixed(1)} days coverage. Aligns with lead time and safety stock targets.`;
+                }
+
+                if (f.shortQty > 0) {
+                    comment += ` WARNING: ${Math.round(f.shortQty)} units flagged as Short Expiry. High risk of dump loss if not liquidated.`;
+                }
+
+                if (f.openPo > 0) {
+                    comment += ` Pipeline active with ${Math.round(f.openPo)} units in transit.`;
+                }
+
+                return { 
+                    "Item Code": f.code,
+                    "SKU Name": f.name, 
+                    "Usable Stock": Math.round(f.usableStock),
+                    "Daily Sales Burn": f.dailySales.toFixed(2),
+                    "Coverage (Days)": f.holdDays.toFixed(1),
+                    "Health Status": status, 
+                    "Risk Level": risk, 
+                    "Suggested Action": action,
+                    "Logistics Analysis Comment": comment
+                };
+            }).sort((a,b) => a["Coverage (Days)"] - b["Coverage (Days)"]);
+
+            document.getElementById('pearlTable').innerHTML = pearlReportData.slice(0, 15).map(r => `
+                <tr class="hover:bg-slate-50">
+                    <td class="px-6 py-4">
+                        <div class="font-bold text-slate-800">${r["SKU Name"]}</div>
+                        <div class="text-[9px] text-slate-400 font-mono">${r["Item Code"]}</div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="px-2 py-0.5 rounded text-[9px] font-black 
+                        ${r["Health Status"] === 'CRITICAL LOW' || r["Health Status"] === 'STOCK-OUT' ? 'bg-red-100 text-red-700' : 
+                          r["Health Status"] === 'OVERSTOCK' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}">
+                          ${r["Health Status"]}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-[10px] font-bold uppercase ${r["Risk Level"] === 'CRITICAL' || r["Risk Level"] === 'HIGH' ? 'text-red-600' : 'text-slate-500'}">${r["Risk Level"]}</td>
+                    <td class="px-6 py-4 text-slate-500 italic max-w-xs truncate" title="${r["Logistics Analysis Comment"]}">${r["Logistics Analysis Comment"]}</td>
+                </tr>
+            `).join('');
+
+            btn.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4"></i> ANALYSIS REFRESHED`;
+            lucide.createIcons();
+        }, 1200);
+    }
+
+    function exportPearlReport() {
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(pearlReportData);
+        
+        // Style adjustments (optional: setting column widths for the export)
+        ws['!cols'] = [
+            {wch: 15}, {wch: 35}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 15}, {wch: 60}
+        ];
+        
+        XLSX.utils.book_append_sheet(wb, ws, "Pearl Detailed Analysis");
+        XLSX.writeFile(wb, `Pearl_Strategic_Analysis_${new Date().toISOString().split('T')[0]}.xlsx`);
+    }
+    function show(id, btn) {
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('nav-active'));
+      if(btn) btn.classList.add('nav-active');
+      document.getElementById('pageTitle').innerText = btn.innerText.replace(/[0-9]/g, '').trim();
+      closePreview();
+    }
+    
+    function handleDateChange(v) { document.getElementById('displayDate').innerText = getLocalDateString(v); build(); }
   </script>
 </body>
 </html>
