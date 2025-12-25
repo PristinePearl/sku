@@ -233,6 +233,18 @@
                 <h4 class="font-bold text-slate-800 text-sm">Depot Distribution</h4>
                 <p class="text-slate-500 text-[10px] mt-1">Regional health comparison.</p>
             </div>
+<div class="report-card bg-white p-5 rounded-2xl"
+     onclick="previewReport('inter_depot')">
+  <div class="w-8 h-8 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center mb-3">
+    <i data-lucide="shuffle" class="w-4 h-4"></i>
+  </div>
+  <h4 class="font-bold text-slate-800 text-sm">
+    Inter Depot Transfer Suggestions
+  </h4>
+  <p class="text-slate-500 text-[10px] mt-1">
+    Suggested stock movement with quantity & reason.
+  </p>
+</div>
             <div class="report-card bg-white p-5 rounded-2xl" onclick="previewReport('mfr_details')">
                 <div class="w-8 h-8 bg-slate-100 text-slate-600 rounded-lg flex items-center justify-center mb-3"><i data-lucide="factory" class="w-4 h-4"></i></div>
                 <h4 class="font-bold text-slate-800 text-sm">Manufacturer Details</h4>
@@ -721,6 +733,55 @@ document.getElementById('lowCount').innerText =
                 <th class="px-6 py-4 text-center">Order Qty</th><th class="px-6 py-4 text-center">ETA</th><th class="px-6 py-4 text-center">Balance</th>
             </tr></thead><tbody class="divide-y divide-slate-100">${rows}</tbody></table></div>`;
     }
+
+function generateInterDepotTransfers() {
+  const transfers = [];
+
+  FINAL.forEach(item => {
+    const daily = item.dailySales;
+    if (daily <= 0) return;
+
+    const depots = [
+      { name: "Kerala", qty: item.kerala },
+      { name: "Palepu", qty: item.palepu },
+      { name: "Coimbatore", qty: item.coimbatore },
+      { name: "Bangalore", qty: item.bangalore }
+    ];
+
+    const coverage = d => d.qty / daily;
+
+    const needy = depots.filter(d => coverage(d) < 60);
+    const donor = depots.filter(d => coverage(d) > 180);
+
+    needy.forEach(n => {
+      donor.forEach(d => {
+        const donorExcess = Math.max(0, d.qty - daily * 180);
+        const needyGap = Math.max(0, daily * 90 - n.qty);
+        const transferQty = Math.min(donorExcess, needyGap);
+
+        if (transferQty > 0) {
+          transfers.push({
+            "Item Code": item.code,
+            "Item Name": item.name,
+            "From Depot": d.name,
+            "To Depot": n.name,
+            "Suggested Qty": Math.round(transferQty),
+            "From Depot Stock": Math.round(d.qty),
+            "To Depot Stock": Math.round(n.qty),
+            "From Coverage": formatDaysToYMD(coverage(d)),
+            "To Coverage": formatDaysToYMD(coverage(n)),
+            "Reason":
+              coverage(n) < 30
+                ? "Critical stock-out risk"
+                : "Below minimum coverage – redistribution recommended"
+          });
+        }
+      });
+    });
+  });
+
+  return transfers;
+}
     // UPDATED REPORT LOGIC FOR SUMMARY & DETAILED VIEWS
     function getReportContents(type) {
         let summary = [], detailed = [];
@@ -764,6 +825,20 @@ detailed = FINAL.filter(r => r.holdDays < MIN_COVERAGE_DAYS);
                 summary = FINAL.map(r => ({ "Manufacturer": r.mfg, "Item Name": r.name, "MOQ": r.moq }));
                 detailed = FINAL.map(r => ({ "MFR": r.mfg, "SKU": r.name, "Code": r.code, "MOQ": r.moq, "LeadTime": r.lt, "SafetyStock": r.ss }));
                 break;
+case 'risk_matrix':
+  summary = FINAL.filter(r => r.holdDays < MIN_COVERAGE_DAYS).map(r => ({
+    "Item Name": r.name,
+    "Item Code": r.code,
+    "Coverage": formatDaysToYMD(r.holdDays),
+    "Risk Level": r.holdDays < 30 ? "CRITICAL" : "BELOW MINIMUM"
+  }));
+  detailed = FINAL.filter(r => r.holdDays < MIN_COVERAGE_DAYS);
+  break;
+case 'inter_depot':
+  const transferData = generateInterDepotTransfers();
+  summary = transferData;
+  detailed = transferData;
+  break;
         }
         return { summary, detailed };
     }
@@ -980,6 +1055,3 @@ ${r["Health Status"] === 'STOCK-OUT' || r["Health Status"] === 'CRITICAL LOW'
   </script>
 </body>
 </html>
-
-
-
