@@ -797,7 +797,7 @@ detailed = FINAL.filter(r => r.holdDays < MIN_COVERAGE_DAYS);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summary), "Summary");
             XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(detailed), "Detailed Data");
-            XLSX.writeFile(wb, `StockPro_${type}_Report.xlsx`);
+            XLSX.writeFile(wb, `Pearl_${type}_Report.xlsx`);
         };
         area.scrollIntoView({ behavior: 'smooth' });
         lucide.createIcons();
@@ -809,7 +809,7 @@ detailed = FINAL.filter(r => r.holdDays < MIN_COVERAGE_DAYS);
         const wb = XLSX.utils.book_new();
         const exportData = FINAL.map(r => ({ "Item Name": r.name, "Code": r.code, "MFR": r.mfg, "Physical": Math.round(r.stock), "ShortExp": Math.round(r.shortQty), "Usable": Math.round(r.usableStock), "MOQ": r.moq, "Coverage": formatDaysToYMD(r.holdDays) }));
         XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(exportData), "Consolidated_Master");
-        XLSX.writeFile(wb, `StockPro_Full_Export.xlsx`);
+        XLSX.writeFile(wb, `Pearl_Full_Export.xlsx`);
     }
 
    /* PEARL AI ENGINE - UPDATED WITH DETAILED COMMENTS */
@@ -980,3 +980,4 @@ ${r["Health Status"] === 'STOCK-OUT' || r["Health Status"] === 'CRITICAL LOW'
   </script>
 </body>
 </html>
+
