@@ -49,7 +49,7 @@
         <i data-lucide="layout-grid" class="w-4 h-4"></i> Stock & Requirements
       </button>
       <button class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-600 rounded-xl hover:bg-slate-50" onclick="show('plan', this)">
-        <i data-lucide="clipboard-list" class="w-4 h-4"></i> Replenishment Plan
+        <i data-lucide="clipboard-list" class="w-4 h-4"></i> Reorder Plan
       </button>
       <button class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-600 rounded-xl hover:bg-slate-50" onclick="show('po-track', this)">
         <i data-lucide="truck" class="w-4 h-4"></i> PO Pipeline
@@ -122,7 +122,7 @@
                             <th class="px-6 py-4 text-center bg-indigo-50 text-indigo-700">Usable (S.ED)</th>
                             <th class="px-6 py-4 text-center">Prog Requirement</th>
                             <th class="px-6 py-4 text-center">Prog Variance</th>
-                            <th class="px-6 py-4 text-center">OSH Goal</th>
+                            <th class="px-6 py-4 text-center">OSH Requirement</th>
                             <th class="px-6 py-4 text-center">OSH Variance</th>
                         </tr>
                     </thead>
@@ -142,8 +142,8 @@
                 <th class="px-6 py-4 text-center text-orange-600">Short Exp</th>
                 <th class="px-6 py-4 text-center">Usable Stock</th>
                 <th class="px-6 py-4 text-center text-blue-700">PO Pipeline</th>
-                <th class="px-6 py-4 text-center">Daily Burn</th>
-                <th class="px-6 py-4 text-center">Coverage</th>
+                <th class="px-6 py-4 text-center">Daily Avg Sales</th>
+                <th class="px-6 py-4 text-center">Coverage (Stock holding)</th>
                 <th class="px-6 py-4 text-center bg-slate-100 text-slate-700">MOQ</th>
                 <th class="px-6 py-4 text-center bg-indigo-50 text-indigo-700 font-black">Suggested Order</th>
               </tr>
@@ -160,14 +160,14 @@
                 <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Immediate Stock-Out</p>
                 <div class="flex items-baseline gap-2 mt-1">
                     <h3 id="severeCount" class="text-3xl font-black text-slate-800">0</h3>
-                    <span class="text-red-500 text-xs font-bold font-mono">< 3 Days</span>
+                    <span class="text-red-500 text-xs font-bold font-mono">< 30 Days</span>
                 </div>
             </div>
             <div class="bg-white p-6 rounded-2xl border-l-4 border-amber-500 shadow-sm">
                 <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Low Inventory Alerts</p>
                 <div class="flex items-baseline gap-2 mt-1">
                     <h3 id="lowCount" class="text-3xl font-black text-slate-800">0</h3>
-                    <span class="text-amber-600 text-xs font-bold font-mono">3-7 Days</span>
+                    <span class="text-amber-600 text-xs font-bold font-mono">30–89 Days</span>
                 </div>
             </div>
             <div class="bg-slate-800 p-6 rounded-2xl shadow-xl">
@@ -186,7 +186,7 @@
                             <th class="px-6 py-4">Priority SKU</th>
                             <th class="px-6 py-4 text-center">Usable Qty</th>
                             <th class="px-6 py-4 text-center">Short Expiry</th>
-                            <th class="px-6 py-4 text-center">Daily Burn</th>
+                            <th class="px-6 py-4 text-center">Daily Avg Sales</th>
                             <th class="px-6 py-4 text-center">Days Remaining</th>
                         </tr>
                     </thead>
@@ -388,7 +388,7 @@
                         <p class="text-xs text-slate-500 mt-1 leading-relaxed">Minimum Order Quantity: The smallest unit of stock a supplier will accept for a single purchase order.</p>
                     </div>
                     <div class="p-5">
-                        <h4 class="text-sm font-bold text-indigo-700">Daily Burn (Per day avg sales)</h4>
+                        <h4 class="text-sm font-bold text-indigo-700">Daily Avg Sales / Daily Burn</h4>
                         <p class="text-xs text-slate-500 mt-1 leading-relaxed">The average number of units consumed per day, calculated from the previous year sales data.</p>
                     </div>
                 </div>
@@ -407,20 +407,20 @@
                     </div>
 
                     <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Daily Burn (Consumption Rate)</span>
-                        <div class="math-block mt-2">Daily Burn = Prev.Yr Sales / 180 Days (6months)</div>
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Daily Avg Sales (Consumption Rate)</span>
+                        <div class="math-block mt-2">Daily Avg Sales = Prev.Yr Sales / 180 Days (6months)</div>
                     </div>
 
                     <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
                         <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Stock Coverage (Days)</span>
-                        <div class="math-block mt-2">Coverage = Usable Stock / Daily Burn</div>
-                        <p class="text-[10px] text-slate-400 mt-2 italic">*If Daily Burn is 0, Coverage is reported as 0.</p>
+                        <div class="math-block mt-2">Coverage = Usable Stock / Daily Avg Sales</div>
+                        <p class="text-[10px] text-slate-400 mt-2 italic">*If Daily Avg Sales is 0, Coverage is reported as 0.</p>
                     </div>
 
                     <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
                         <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Suggested Order Calculation</span>
                         <div class="math-block mt-2">
-                            Base = ((Lead Time + Safety Stock) × Daily Burn) - Usable Stock - PO Pipeline<br><br>
+                            Base = ((Lead Time + Safety Stock) × Dail Avg Sales) - Usable Stock - PO Pipeline<br><br>
                             If MOQ > 0:<br>
                             Order = CEIL(Base / MOQ) × MOQ<br>
                             Else:<br>
@@ -433,7 +433,7 @@
                             <i data-lucide="info" class="w-4 h-4"></i> Data Hygiene Note
                         </h4>
                         <p class="text-indigo-200 text-[10px] leading-relaxed">
-                            System ignores negative stock values in calculations. Variance analysis compares current Usable Stock against fixed Program and OSH targets. All PO Pipeline data is filtered to show 'Pending Qty' only.
+                            System ignores negative stock values in calculations. Variance analysis compares current Usable Stock against fixed Program and OSH Requirement. All PO Pipeline data is filtered to show 'Pending Qty' only.
                         </p>
                     </div>
                 </div>
@@ -445,6 +445,7 @@
   <script>
     const apiKey = ""; 
     let STOCK = [], REQ_MAP = {}, PO_MAP = {}, FINAL = [], RAW_PO_DATA = [], BATCH_STOCK = [], MOQ_MAP = {}, RAW_STOCK_DATE_FILTERED = [];
+const MIN_COVERAGE_DAYS = 90; // 🔒 Global minimum stock holding (3 months)
 
     const STOCK_URL = "https://script.google.com/macros/s/AKfycby0zKw1g1s_yB3J2p8QC_h31DBBCaswlK8xwt07bip98txOSMvOWgGPJwUWltDdg9uo9w/exec";
     const REQ_URL = "https://script.google.com/macros/s/AKfycbzkiKxXCQAFTTaA5P5t7kpgoXARPOMv9V2u4hnDW4CdM65C_tAkc1YxfIjvN4Njix8EIA/exec";
@@ -485,6 +486,20 @@
       const [y, m, d] = iso.split('-');
       return `${d}/${m}/${y}`;
     }
+function formatDaysToYMD(totalDays) {
+    totalDays = Math.max(0, Math.floor(totalDays));
+
+    const years = Math.floor(totalDays / 365);
+    const months = Math.floor((totalDays % 365) / 30);
+    const days = totalDays % 30;
+
+    let parts = [];
+    if (years > 0) parts.push(`${years}Y`);
+    if (months > 0) parts.push(`${months}M`);
+    if (days > 0 || parts.length === 0) parts.push(`${days}D`);
+
+    return parts.join(" ");
+}
 
     async function fetchWithRetry(url, retries = 5, backoff = 1000) {
         for (let i = 0; i < retries; i++) {
@@ -615,12 +630,19 @@
       }
 
       FINAL = Object.values(dataMap);
-      FINAL.forEach(r => {
-          r.usableStock = Math.max(0, r.stock - r.shortQty); 
-          r.dailySales = (r.prevH2 || 0) / 180;
-          r.holdDays = r.dailySales > 0 ? (r.usableStock / r.dailySales) : 0;
-          r.reqDays = r.lt + r.ss;
-      });
+FINAL.forEach(r => {
+    r.usableStock = Math.max(0, r.stock - r.shortQty); 
+
+    // ✅ FORCE INTEGER DAILY BURN
+    r.dailySales = Math.round((r.prevH2 || 0) / 180);
+
+    // ✅ FORCE INTEGER COVERAGE DAYS
+    r.holdDays = r.dailySales > 0
+        ? Math.round(r.usableStock / r.dailySales)
+        : 0;
+
+    r.reqDays = r.lt + r.ss;
+});
       renderAll();
     }
 
@@ -649,8 +671,10 @@
                 <td class="px-6 py-4 text-center font-bold text-orange-600">${Math.round(r.shortQty) || '-'}</td>
                 <td class="px-6 py-4 text-center font-bold">${Math.round(r.usableStock)}</td>
                 <td class="px-6 py-4 text-center font-bold text-blue-700">${Math.round(r.openPo)}</td>
-                <td class="px-6 py-4 text-center text-slate-500 font-mono">${r.dailySales.toFixed(2)}</td>
-                <td class="px-6 py-4 text-center font-bold ${r.holdDays < r.reqDays ? 'text-red-500' : 'text-emerald-600'}">${r.holdDays.toFixed(1)}d</td>
+                <td class="px-6 py-4 text-center text-slate-500 font-mono">${r.dailySales}</td>
+                <td class="px-6 py-4 text-center font-bold ${r.holdDays < MIN_COVERAGE_DAYS ? 'text-red-500' : 'text-emerald-600'}">
+  ${formatDaysToYMD(r.holdDays)}
+</td>
                 <td class="px-6 py-4 text-center font-bold text-slate-500 bg-slate-100/50">${r.moq > 0 ? r.moq : '-'}</td>
                 <td class="px-6 py-4 text-center font-black text-indigo-600 bg-indigo-50">${finalSuggest > 0 ? finalSuggest : '-'}</td>
             </tr>`;
@@ -658,22 +682,26 @@
     }
 
     function renderAlerts() {
-        const alerts = FINAL.filter(r => r.holdDays < 7 && r.dailySales > 0).sort((a,b) => a.holdDays - b.holdDays);
+        const alerts = FINAL.filter(r => r.holdDays < MIN_COVERAGE_DAYS && r.dailySales > 0).sort((a,b) => a.holdDays - b.holdDays);
         document.getElementById('alertCount').innerText = alerts.length;
-        document.getElementById('severeCount').innerText = alerts.filter(a => a.holdDays < 3).length;
-        document.getElementById('lowCount').innerText = alerts.filter(a => a.holdDays >= 3).length;
+document.getElementById('severeCount').innerText =
+    alerts.filter(a => a.holdDays < 30).length;
+document.getElementById('lowCount').innerText =
+    alerts.filter(a => a.holdDays >= 30 && a.holdDays < MIN_COVERAGE_DAYS).length;
         document.getElementById('shortfallVal').innerText = Math.round(FINAL.reduce((a,b) => a + Math.max(0, b.osh - b.usableStock), 0)).toLocaleString();
 
         document.getElementById('alertBody').innerHTML = alerts.map(r => `
             <tr>
                 <td class="px-6 py-4 flex items-center gap-3">
-                    ${r.holdDays < 3 ? '<span class="w-2 h-2 rounded-full bg-red-500 critical-pulse"></span>' : '<span class="w-2 h-2 rounded-full bg-amber-400"></span>'}
+                    ${r.holdDays < 30 ? '<span class="w-2 h-2 rounded-full bg-red-500 critical-pulse"></span>' : '<span class="w-2 h-2 rounded-full bg-amber-400"></span>'}
                     <div><div class="font-bold text-slate-800">${r.name}</div><div class="text-[10px] text-slate-400 font-bold tracking-tighter">${r.code}</div></div>
                 </td>
                 <td class="px-6 py-4 text-center font-bold">${Math.round(r.usableStock)}</td>
                 <td class="px-6 py-4 text-center font-bold text-orange-600">${Math.round(r.shortQty) || '-'}</td>
-                <td class="px-6 py-4 text-center text-slate-500 font-mono">${r.dailySales.toFixed(2)}</td>
-                <td class="px-6 py-4 text-center"><span class="px-3 py-1 rounded-full text-[10px] font-black tracking-tighter ${r.holdDays < 3 ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}">${r.holdDays.toFixed(1)} DAYS</span></td>
+                <td class="px-6 py-4 text-center text-slate-500 font-mono">${r.dailySales}</td>
+                <td class="px-6 py-4 text-center"><span class="px-3 py-1 rounded-full text-[10px] font-black tracking-tighter ${r.holdDays < 30 ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}">
+  ${formatDaysToYMD(r.holdDays)}
+</td>
             </tr>`).join('');
     }
 
@@ -706,15 +734,20 @@
                 detailed = BATCH_STOCK.filter(b => getValueByKeys(b, ["Expiry Type"])?.toLowerCase() === "short");
                 break;
             case 'procurement':
-                summary = FINAL.filter(r => r.holdDays < r.reqDays).map(r => {
+                summary = FINAL.filter(r => r.holdDays < MIN_COVERAGE_DAYS).map(r => {
                     let base = Math.max(0, (r.reqDays * r.dailySales) - r.usableStock - r.openPo);
-                    return { "Item Name": r.name, "Code": r.code, "Daily Burn": r.dailySales.toFixed(2), "Suggested Order": r.moq > 0 ? Math.ceil(base / r.moq) * r.moq : Math.round(base) };
+                    return { "Item Name": r.name, "Code": r.code, "Daily Avg Sales": r.dailySales, "Suggested Order": r.moq > 0 ? Math.ceil(base / r.moq) * r.moq : Math.round(base) };
                 });
-                detailed = FINAL.filter(r => r.holdDays < r.reqDays);
+                detailed = FINAL.filter(r => r.holdDays < MIN_COVERAGE_DAYS);
                 break;
             case 'risk_matrix':
-                summary = FINAL.filter(r => r.holdDays < 15).map(r => ({ "Item": r.name, "Coverage": r.holdDays.toFixed(1), "Risk": r.holdDays < 3 ? "CRITICAL" : (r.holdDays < 7 ? "HIGH" : "MEDIUM") }));
-                detailed = FINAL.filter(r => r.holdDays < 15);
+              summary = FINAL.filter(r => r.holdDays < MIN_COVERAGE_DAYS).map(r => ({
+  "Item": r.name,
+  "Coverage": formatDaysToYMD(r.holdDays),
+  "Risk": r.holdDays < 30 ? "CRITICAL" : "BELOW MINIMUM"
+}));
+
+detailed = FINAL.filter(r => r.holdDays < MIN_COVERAGE_DAYS);
                 break;
             case 'depot_dist':
                 summary = FINAL.map(r => ({ 
@@ -774,7 +807,7 @@
 
     function exportToExcel() {
         const wb = XLSX.utils.book_new();
-        const exportData = FINAL.map(r => ({ "Item Name": r.name, "Code": r.code, "MFR": r.mfg, "Physical": Math.round(r.stock), "ShortExp": Math.round(r.shortQty), "Usable": Math.round(r.usableStock), "MOQ": r.moq, "Coverage": r.holdDays.toFixed(1) }));
+        const exportData = FINAL.map(r => ({ "Item Name": r.name, "Code": r.code, "MFR": r.mfg, "Physical": Math.round(r.stock), "ShortExp": Math.round(r.shortQty), "Usable": Math.round(r.usableStock), "MOQ": r.moq, "Coverage": formatDaysToYMD(r.holdDays) }));
         XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(exportData), "Consolidated_Master");
         XLSX.writeFile(wb, `StockPro_Full_Export.xlsx`);
     }
@@ -790,8 +823,8 @@
             document.getElementById('pearlExportBtn').classList.remove('hidden');
             
             const totalItems = FINAL.length;
-            const criticalItems = FINAL.filter(f => f.holdDays < 7 && f.dailySales > 0).length;
-            const overstockItems = FINAL.filter(f => f.holdDays > 60).length;
+            const criticalItems = FINAL.filter(f => f.holdDays < 30 && f.dailySales > 0).length;
+            const overstockItems = FINAL.filter(f => f.holdDays > 180).length;
 
             document.getElementById('pearlMetrics').innerHTML = `
                 <div class="flex justify-between items-center"><span class="text-xs text-slate-500">Portfolio Scale</span><span class="font-bold text-slate-800">${totalItems} Unique SKUs</span></div>
@@ -800,7 +833,7 @@
                 <div class="flex justify-between items-center border-t border-slate-100 pt-3 mt-2"><span class="text-xs font-bold text-slate-800">Overall Availability Health</span><span class="font-black text-indigo-600">${(((totalItems - criticalItems)/totalItems)*100).toFixed(1)}%</span></div>
             `;
 
-            const topAction = FINAL.filter(f => f.holdDays < 3 && f.dailySales > 0).slice(0, 3);
+            const topAction = FINAL.filter(f => f.holdDays < 30 && f.dailySales > 0).slice(0, 3);
             document.getElementById('pearlSuggestions').innerHTML = topAction.length 
                 ? topAction.map(a => `<div class="p-3 bg-red-50 border border-red-100 rounded-xl text-[10px] font-bold text-red-800 flex gap-2 items-start"><i data-lucide="zap" class="w-4 h-4 mt-0.5"></i> <div>PRIORITY 1: ${a.name} is dangerously low (${a.holdDays.toFixed(1)} days left). Immediate PO placement of ${Math.round(a.osh)} units suggested.</div></div>`).join('')
                 : `<div class="p-3 bg-emerald-50 text-emerald-800 rounded-xl text-[10px] font-bold">LOGISTICS STABLE: No immediate stock-outs detected in the next 72-hour window.</div>`;
@@ -811,24 +844,67 @@
                 let risk = "LOW";
                 let action = "MAINTAIN";
                 let comment = "";
+               // -----------------------------------------------------
+// HEALTH LOGIC – 90 DAY MINIMUM COVERAGE RULE
+// -----------------------------------------------------
+// Policy:
+// < 30 days      → CRITICAL
+// 30–89 days     → BELOW MINIMUM (Needs planning)
+// 90–180 days    → HEALTHY
+// > 180 days     → OVERSTOCK
+// -----------------------------------------------------
 
-                // Health Logic & Comment Generator
-                if (f.holdDays <= 0 && f.dailySales > 0) {
-                    status = "STOCK-OUT"; risk = "CRITICAL"; action = "SOS REPLENISH";
-                    comment = `Current Stock is ZERO while Daily Burn is ${f.dailySales.toFixed(2)}. Immediate replenishment of at least ${Math.round(f.osh)} units required to meet OSH.`;
-                } else if (f.holdDays < 7 && f.dailySales > 0) {
-                    status = "CRITICAL LOW"; risk = "HIGH"; action = "URGENT PO";
-                    comment = `Severely under-stocked. Coverage only for ${f.holdDays.toFixed(1)} days. Short expiry units (if any) are excluded from this calc. Priority 1 for Procurement.`;
-                } else if (f.holdDays < 20 && f.dailySales > 0) {
-                    status = "BELOW SAFETY"; risk = "MEDIUM"; action = "PO INITIATE";
-                    comment = `Stock below Lead Time (${f.lt} days) + Safety Stock (${f.ss} days). coverage is ${f.holdDays.toFixed(1)} days. Should initiate PO process.`;
-                } else if (f.holdDays > 90) {
-                    status = "OVERSTOCK"; risk = "LIQUIDATION"; action = "PAUSE PO";
-                    comment = `Excessive inventory holding for ${f.holdDays.toFixed(0)} days. Capital locked. Recommend pausing all future POs and reviewing sales pace.`;
-                } else {
-                    status = "HEALTHY"; risk = "MINIMAL"; action = "MONITOR";
-                    comment = `Inventory levels optimal at ${f.holdDays.toFixed(1)} days coverage. Aligns with lead time and safety stock targets.`;
-                }
+if (f.holdDays <= 0 && f.dailySales > 0) {
+    status = "STOCK-OUT";
+    risk = "CRITICAL";
+    action = "SOS REORDER";
+
+    comment = `Current usable stock is ZERO while daily burn is ${f.dailySales}. 
+Immediate replenishment required to meet minimum 90-day coverage.`;
+}
+else if (f.holdDays < 30) {
+    status = "CRITICAL LOW";
+    risk = "HIGH";
+    action = "URGENT PO";
+
+    comment = `Coverage is only ${f.holdDays} days, which is critically below the minimum 
+required coverage of 90 days. Immediate PO action is mandatory.`;
+}
+else if (f.holdDays < MIN_COVERAGE_DAYS) {
+    status = "BELOW MINIMUM";
+    risk = "HIGH";
+    action = "PLAN PO";
+
+    comment = `Stock coverage (${f.holdDays} days) is below the defined minimum of 
+90 days. Procurement planning should be initiated to avoid future stock-out.`;
+}
+else if (f.holdDays > 180) {
+    status = "OVERSTOCK";
+    risk = "LIQUIDATION";
+    action = "PAUSE PO";
+
+    comment = `Inventory holding is ${f.holdDays} days, significantly above operational 
+requirement. Capital lock-in risk identified; recommend pausing new POs and 
+evaluating liquidation or redistribution.`;
+}
+else {
+    status = "HEALTHY";
+    risk = "LOW";
+    action = "MONITOR";
+
+    comment = `Stock coverage is ${f.holdDays} days, which satisfies the minimum 
+90-day coverage policy. Inventory levels are stable and aligned with planning norms.`;
+}
+
+// Append warnings if applicable
+if (f.shortQty > 0) {
+    comment += ` WARNING: ${Math.round(f.shortQty)} units are marked as Short Expiry 
+and excluded from usable stock calculations.`;
+}
+
+if (f.openPo > 0) {
+    comment += ` Active PO pipeline detected with ${Math.round(f.openPo)} units pending receipt.`;
+}
 
                 if (f.shortQty > 0) {
                     comment += ` WARNING: ${Math.round(f.shortQty)} units flagged as Short Expiry. High risk of dump loss if not liquidated.`;
@@ -842,8 +918,8 @@
                     "Item Code": f.code,
                     "SKU Name": f.name, 
                     "Usable Stock": Math.round(f.usableStock),
-                    "Daily Sales Burn": f.dailySales.toFixed(2),
-                    "Coverage (Days)": f.holdDays.toFixed(1),
+                    "Daily Sales Burn": f.dailySales,                 // Rounded daily average sales
+"Coverage (Days)": formatDaysToYMD(f.holdDays),   // Converted to Y M D format
                     "Health Status": status, 
                     "Risk Level": risk, 
                     "Suggested Action": action,
@@ -858,11 +934,16 @@
                         <div class="text-[9px] text-slate-400 font-mono">${r["Item Code"]}</div>
                     </td>
                     <td class="px-6 py-4">
-                        <span class="px-2 py-0.5 rounded text-[9px] font-black 
-                        ${r["Health Status"] === 'CRITICAL LOW' || r["Health Status"] === 'STOCK-OUT' ? 'bg-red-100 text-red-700' : 
-                          r["Health Status"] === 'OVERSTOCK' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}">
-                          ${r["Health Status"]}
-                        </span>
+                        <span class="px-2 py-0.5 rounded text-[9px] font-black
+${r["Health Status"] === 'STOCK-OUT' || r["Health Status"] === 'CRITICAL LOW'
+  ? 'bg-red-100 text-red-700'
+  : r["Health Status"] === 'BELOW MINIMUM'
+  ? 'bg-orange-100 text-orange-700'
+  : r["Health Status"] === 'OVERSTOCK'
+  ? 'bg-blue-100 text-blue-800'
+  : 'bg-emerald-100 text-emerald-700'}">
+  ${r["Health Status"]}
+</span>
                     </td>
                     <td class="px-6 py-4 text-[10px] font-bold uppercase ${r["Risk Level"] === 'CRITICAL' || r["Risk Level"] === 'HIGH' ? 'text-red-600' : 'text-slate-500'}">${r["Risk Level"]}</td>
                     <td class="px-6 py-4 text-slate-500 italic max-w-xs truncate" title="${r["Logistics Analysis Comment"]}">${r["Logistics Analysis Comment"]}</td>
@@ -899,4 +980,3 @@
   </script>
 </body>
 </html>
-
