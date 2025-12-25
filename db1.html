@@ -216,19 +216,29 @@
      * @param {string} dateString - The date string from the data.
      * @returns {string} Date in 'YYYY-MM-DD' format or empty string.
      */
-    function getFormattedDate(dateString) {
-        if (!dateString) return '';
-        const date = new Date(dateString);
-        // Check if date is valid
-        if (isNaN(date)) return ''; 
+function getFormattedDate(value) {
+    if (!value) return '';
 
-        // Use local time methods to prevent timezone conversion from shifting the day
-        const year = date.getFullYear();
-        // Month is 0-indexed, so add 1
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
+    let date;
+
+    // ✅ If value is a Google Sheet serial number
+    if (typeof value === 'number') {
+        // Google Sheets epoch: 1899-12-30
+        date = new Date(Math.round((value - 25569) * 86400 * 1000));
+    } 
+    // ✅ If value is already a date string
+    else {
+        date = new Date(value);
     }
+
+    if (isNaN(date)) return '';
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+}
 
     /**
      * Displays a styled message box for user feedback.
@@ -800,7 +810,4 @@ if (fd || td) {
   </script>
 </body>
 
-</html>
-
-
-
+</html>	
