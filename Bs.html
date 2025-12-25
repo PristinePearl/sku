@@ -94,6 +94,12 @@
                         Combine Files
                     </button>
                 </div>
+<div class="mt-2">
+ <button id="downloadTemplate" class="text-xs font-bold text-primary-600 hover:text-primary-700 flex items-center gap-1.5 transition-colors w-fit">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                        Download Format Template (.xlsx)
+                    </button>
+</div>
             </div>
             <div class="bg-slate-50 rounded-xl p-5 border border-dashed border-slate-300">
                 <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Quick Stats</h3>
@@ -208,6 +214,35 @@
     const syncBtn = document.getElementById('saveToSheet');
     const asOfDisplay = document.getElementById('asOf');
     
+// Download template button
+document.getElementById('downloadTemplate').onclick = () => {
+  const headers = [
+    "Date",
+    "Depot Code",
+    "Depot Name",
+    "Div Code",
+    "Div Name",
+    "Item Name",
+    "Packing",
+    "Item Code",
+    "MFR",
+    "Item Group",
+    "Shipper Qty(Item)",
+    "Batch No",
+    "Expiry Date",
+    "MRP",
+    "Total Quantity",
+    "Total Value"
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet([headers]);
+  ws['!cols'] = headers.map(() => ({ wch: 18 }));
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Template");
+
+  XLSX.writeFile(wb, "Batch_Stock_Upload_Template.xlsx");
+};
     let MERGED = [];
     let DEPOT_ORDER = [];
     let GLOBAL_REPORT_DATE = "";
