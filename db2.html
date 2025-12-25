@@ -26,7 +26,89 @@
     .report-card:hover { transform: translateY(-4px); border-color: #4f46e5; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
     .preview-scroll::-webkit-scrollbar { height: 6px; width: 6px; }
     .preview-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+/* ================================
+   🤖 PEARL AI ANIMATIONS
+================================ */
+
+/* Floating AI orbs */
+@keyframes aiFloat {
+  0% { transform: translateY(0); opacity: 0.6; }
+  50% { transform: translateY(-14px); opacity: 0.9; }
+  100% { transform: translateY(0); opacity: 0.6; }
+}
+
+/* Neural pulse on buttons */
+@keyframes aiPulse {
+  0% { box-shadow: 0 0 0 0 rgba(99,102,241,0.5); }
+  70% { box-shadow: 0 0 0 14px rgba(99,102,241,0); }
+  100% { box-shadow: 0 0 0 0 rgba(99,102,241,0); }
+}
+
+.ai-orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(45px);
+  animation: aiFloat 6s ease-in-out infinite;
+}
+
+.ai-pulse {
+  animation: aiPulse 2s infinite;
+}
+
+/* Fade up effect */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-ai {
+  animation: fadeUp 0.6s ease-out forwards;
+}
+/* ================================
+   🤖 DANCING ROBOT (PEARL AI)
+================================ */
+
+@keyframes robotDance {
+  0%   { transform: translateX(0) rotate(0deg); }
+  25%  { transform: translateX(-10px) rotate(-10deg); }
+  50%  { transform: translateX(10px) rotate(10deg); }
+  75%  { transform: translateX(-6px) rotate(-6deg); }
+  100% { transform: translateX(0) rotate(0deg); }
+}
+
+.robot-dance {
+  animation: robotDance 0.8s infinite;
+}
+
+#aiRobotOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.85);
+  z-index: 9999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.robot-face {
+  font-size: 96px;
+}
+
+.robot-text {
+  margin-top: 12px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #c7d2fe;
+}
   </style>
+<script>
+  window.MathJax = {
+    tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
 </head>
 
 <body class="bg-slate-50 h-screen overflow-hidden flex flex-col md:flex-row">
@@ -157,7 +239,7 @@
     <section id="alerts" class="section">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             <div class="bg-white p-6 rounded-2xl border-l-4 border-red-500 shadow-sm">
-                <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Immediate Stock-Out</p>
+                <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Immediate PO</p>
                 <div class="flex items-baseline gap-2 mt-1">
                     <h3 id="severeCount" class="text-3xl font-black text-slate-800">0</h3>
                     <span class="text-red-500 text-xs font-bold font-mono">< 60 Days</span>
@@ -178,6 +260,12 @@
                 </div>
             </div>
         </div>
+<div class="flex justify-end mb-3">
+  <button onclick="exportCriticalAlerts()"
+    class="px-5 py-2 bg-red-600 text-white rounded-xl text-xs font-black flex items-center gap-2 hover:bg-red-700 transition-all shadow">
+    <i data-lucide="download"></i> EXPORT CRITICAL ALERTS (XLS)
+  </button>
+</div>
         <div class="table-container border-red-100">
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs whitespace-nowrap">
@@ -234,7 +322,7 @@
             <div class="report-card bg-white p-5 rounded-2xl" onclick="previewReport('depot_dist')">
                 <div class="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center mb-3"><i data-lucide="map-pin" class="w-4 h-4"></i></div>
                 <h4 class="font-bold text-slate-800 text-sm">Depot Distribution</h4>
-                <p class="text-slate-500 text-[10px] mt-1">Regional health comparison.</p>
+                <p class="text-slate-500 text-[10px] mt-1">Depot wise stock report.</p>
             </div>
 <div class="report-card bg-white p-5 rounded-2xl"
      onclick="previewReport('inter_depot')">
@@ -248,13 +336,22 @@
     Suggested stock movement with quantity & reason.
   </p>
 </div>
+<div class="report-card bg-white p-5 rounded-2xl"
+     onclick="previewReport('prev_year_sales')">
+  <div class="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center mb-3">
+    <i data-lucide="calendar-clock" class="w-4 h-4"></i>
+  </div>
+  <h4 class="font-bold text-slate-800 text-sm">Prev. Year Sales Data</h4>
+  <p class="text-slate-500 text-[10px] mt-1">
+    Month-wise previous year sales
+  </p>
+</div>
             <div class="report-card bg-white p-5 rounded-2xl" onclick="previewReport('mfr_details')">
                 <div class="w-8 h-8 bg-slate-100 text-slate-600 rounded-lg flex items-center justify-center mb-3"><i data-lucide="factory" class="w-4 h-4"></i></div>
                 <h4 class="font-bold text-slate-800 text-sm">Manufacturer Details</h4>
                 <p class="text-slate-500 text-[10px] mt-1">Item-wise MFR & MOQ mapping.</p>
             </div>
         </div>
-        
         <div id="reportPreviewArea" class="hidden">
             <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden mb-12">
                 <div class="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
@@ -280,6 +377,9 @@
     <!-- PEARL AI SECTION -->
     <section id="ai-pearl" class="section">
         <div class="pearl-gradient p-10 rounded-3xl shadow-sm mb-8 relative overflow-hidden">
+<!-- AI Ambient Orbs -->
+<div class="ai-orb bg-indigo-400 w-40 h-40 top-10 left-10"></div>
+<div class="ai-orb bg-purple-400 w-56 h-56 bottom-0 right-0" style="animation-delay:2s"></div>
             <div class="relative z-10 flex flex-col md:flex-row items-center gap-8">
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
                     <img src="https://www.pristinepearlpharma.in/images/alt-logo.png" alt="Pearl AI" class="h-16 w-auto object-contain">
@@ -288,7 +388,7 @@
                     <h2 class="text-3xl font-black text-slate-800 tracking-tight">Pearl AI</h2>
                     <p class="text-slate-500 text-sm max-w-md mt-1 italic">AI designed to study & analyse the data & provide analytical reports </p>
                     <div class="mt-6 flex flex-wrap gap-3">
-                        <button onclick="runPearlAnalysis()" id="pearlBtn" class="px-6 py-3 bg-slate-900 text-white rounded-xl font-bold text-xs flex items-center gap-2 hover:bg-black transition-all">
+                        <button onclick="runPearlAnalysis()" id="pearlBtn" class="px-6 py-3 bg-slate-900 text-white rounded-xl font-bold text-xs flex items-center gap-2 hover:bg-black transition-all ai-pulse">
                             <i data-lucide="play" class="w-4 h-4"></i> EXECUTE DEEP ANALYSIS
                         </button>
                         <button onclick="exportPearlReport()" id="pearlExportBtn" class="hidden px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold text-xs flex items-center gap-2 hover:bg-indigo-700 transition-all shadow-md">
@@ -299,17 +399,18 @@
             </div>
         </div>
 
-        <div id="pearlResults" class="hidden space-y-6">
+        <div id="pearlResults" class="hidden space-y-6 animate-ai">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Metrics -->
                 <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                     <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Vital Health Indicators</h3>
-                    <div class="space-y-4" id="pearlMetrics"></div>
+                    <div class="space-y-4 animate-ai" id="pearlMetrics"></div>
                 </div>
                 <!-- Suggestions -->
                 <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                     <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Executive AI Suggestions</h3>
-                    <div class="space-y-3" id="pearlSuggestions"></div>
+                    <div class="space-y-3 animate-ai" id="pearlSuggestions"></div>
+
                 </div>
             </div>
 
@@ -334,132 +435,224 @@
             </div>
         </div>
     </section>
-
-    <section id="reports" class="section">
-        <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-                <h3 class="text-xl font-bold text-slate-800">Export Hub</h3>
-                <p class="text-slate-500 text-xs">Internal Logistics Reporting Center.</p>
-            </div>
-            <button onclick="exportToExcel()" class="px-6 py-3 bg-slate-900 text-white rounded-xl font-bold text-xs flex items-center gap-2 hover:bg-slate-800 transition-all shadow-lg active:scale-95">
-                <i data-lucide="download-cloud" class="w-4 h-4"></i> EXPORT MASTER LOGISTICS FILE
-            </button>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-            <div class="report-card bg-white p-5 rounded-2xl" onclick="previewReport('gap')">
-                <div class="w-8 h-8 bg-slate-100 text-slate-800 rounded-lg flex items-center justify-center mb-3"><i data-lucide="sigma" class="w-4 h-4"></i></div>
-                <h4 class="font-bold text-slate-800 text-sm">GAP Analysis Report</h4>
-                <p class="text-[10px] text-slate-400 mt-1">Variance against OSH targets.</p>
-            </div>
-            <div class="report-card bg-white p-5 rounded-2xl" onclick="previewReport('short_expiry')">
-                <div class="w-8 h-8 bg-orange-100 text-orange-600 rounded-lg flex items-center justify-center mb-3"><i data-lucide="hourglass" class="w-4 h-4"></i></div>
-                <h4 class="font-bold text-slate-800 text-sm">Short Expiry Aging</h4>
-                <p class="text-[10px] text-slate-400 mt-1">Items requiring immediate liquidation.</p>
-            </div>
-            <div class="report-card bg-white p-5 rounded-2xl" onclick="previewReport('procurement')">
-                <div class="w-8 h-8 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center mb-3"><i data-lucide="shopping-cart" class="w-4 h-4"></i></div>
-                <h4 class="font-bold text-slate-800 text-sm">Procurement Priorities</h4>
-                <p class="text-[10px] text-slate-400 mt-1">Suggested PO quantities based on burn.</p>
-            </div>
-        </div>
-        <div id="reportPreviewArea" class="hidden">
-            <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden mb-12">
-                <div id="previewContent" class="overflow-auto max-h-[600px] p-0"></div>
-            </div>
-        </div>
-    </section>
     <!-- NEW KNOWLEDGE HUB SECTION -->
     <section id="knowledge" class="section">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <!-- Terminology Definitions -->
-            <div class="space-y-6">
-                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                    <i data-lucide="book" class="w-5 h-5 text-indigo-600"></i> Dictionary of Terms
-                </h3>
-                <div class="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100 shadow-sm overflow-hidden">
-                    <div class="p-5">
-                        <h4 class="text-sm font-bold text-indigo-700">Physical Stock</h4>
-                        <p class="text-xs text-slate-500 mt-1 leading-relaxed">The total quantity currently stored across all depots (Kerala, Palepu, Coimbatore, Bangalore) as reported in the latest snapshot.</p>
-                    </div>
-                    <div class="p-5">
-                        <h4 class="text-sm font-bold text-indigo-700">Usable Stock</h4>
-                        <p class="text-xs text-slate-500 mt-1 leading-relaxed">The total quantity of current stock across all depots (Kerala, Palepu, Coimbatore, Bangalore) - Short Expiry stock .</p>
-                    </div>
-                    <div class="p-5">
-                        <h4 class="text-sm font-bold text-indigo-700">Short Expiry</h4>
-                        <p class="text-xs text-slate-500 mt-1 leading-relaxed">Stock quantity labeled as 'Short' in the batch master. These items are excluded from 'Usable Stock' to prevent distribution of aging inventory.</p>
-                    </div>
-                    <div class="p-5">
-                        <h4 class="text-sm font-bold text-indigo-700">Prog Requirement</h4>
-                        <p class="text-xs text-slate-500 mt-1 leading-relaxed">Program Requirement: Stock Requirement plan automated by this program.</p>
-                    </div>
-                    <div class="p-5">
-                        <h4 class="text-sm font-bold text-indigo-700">OSH Requirement</h4>
-                        <p class="text-xs text-slate-500 mt-1 leading-relaxed">Operational Sales Head Requirement: The Stock requirement plan by OSH.</p>
-                    </div>
-                    <div class="p-5">
-                        <h4 class="text-sm font-bold text-indigo-700">MOQ</h4>
-                        <p class="text-xs text-slate-500 mt-1 leading-relaxed">Minimum Order Quantity: The smallest unit of stock a supplier will accept for a single purchase order.</p>
-                    </div>
-                    <div class="p-5">
-                        <h4 class="text-sm font-bold text-indigo-700">Daily Avg Sales / Daily Burn</h4>
-                        <p class="text-xs text-slate-500 mt-1 leading-relaxed">The average number of units consumed per day, calculated from the previous year sales data.</p>
-                    </div>
-                </div>
-            </div>
+  <div class="space-y-10">
 
-            <!-- Formulas & Calculations -->
-            <div class="space-y-6">
-                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                    <i data-lucide="variable" class="w-5 h-5 text-indigo-600"></i> Formulas & Calculations
-                </h3>
-                
-                <div class="space-y-4">
-                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Usable Stock Logic</span>
-                        <div class="math-block mt-2">Usable Stock = Physical Stock - Short Expiry Qty</div>
-                    </div>
+    <!-- HEADER -->
+    <div class="bg-gradient-to-r from-indigo-600 to-purple-600 p-8 rounded-3xl text-white shadow-lg">
+      <h2 class="text-2xl font-black tracking-tight">Knowledge Hub</h2>
+      <p class="text-indigo-100 text-sm mt-1 max-w-xl">
+        Inventory planning definitions, formulas, and policy logic used across the system.
+      </p>
+    </div>
 
-                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Daily Avg Sales (Consumption Rate)</span>
-                        <div class="math-block mt-2">Daily Avg Sales = Prev.Yr Sales / 180 Days (6months)</div>
-                    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Stock Coverage (Days)</span>
-                        <div class="math-block mt-2">Coverage = Usable Stock / Daily Avg Sales</div>
-                        <p class="text-[10px] text-slate-400 mt-2 italic">*If Daily Avg Sales is 0, Coverage is reported as 0.</p>
-                    </div>
-
-                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Suggested Order Calculation</span>
-                        <div class="math-block mt-2">
-                            Base = ((Lead Time + Safety Stock) × Dail Avg Sales) - Usable Stock - PO Pipeline<br><br>
-                            If MOQ > 0:<br>
-                            Order = CEIL(Base / MOQ) × MOQ<br>
-                            Else:<br>
-                            Order = ROUND(Base)
-                        </div>
-                    </div>
-                    
-                    <div class="bg-indigo-900 p-5 rounded-2xl shadow-lg">
-                        <h4 class="text-white font-bold text-sm mb-2 flex items-center gap-2">
-                            <i data-lucide="info" class="w-4 h-4"></i> Data Hygiene Note
-                        </h4>
-                        <p class="text-indigo-200 text-[10px] leading-relaxed">
-                            System ignores negative stock values in calculations. Variance analysis compares current Usable Stock against fixed Program and OSH Requirement. All PO Pipeline data is filtered to show 'Pending Qty' only.
-                        </p>
-                    </div>
-                </div>
-            </div>
+      <!-- 📘 DEFINITIONS -->
+      <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b bg-slate-50">
+          <h3 class="text-sm font-black text-slate-700 uppercase tracking-wider">
+            📘 Inventory Terminology
+          </h3>
         </div>
-    </section>
-  </main>
+
+        <div class="divide-y text-xs">
+          <div class="p-5">
+            <p class="font-bold text-indigo-700">Physical Stock</p>
+            <p class="text-slate-500 mt-1">
+              Total on-hand quantity across all depots as per latest snapshot.
+            </p>
+          </div>
+
+          <div class="p-5">
+            <p class="font-bold text-indigo-700">Usable Stock</p>
+            <p class="text-slate-500 mt-1">
+              Available stock after excluding short-expiry inventory.
+            </p>
+          </div>
+
+          <div class="p-5">
+            <p class="font-bold text-indigo-700">Program Requirement</p>
+            <p class="text-slate-500 mt-1">
+              Monthly sales planning requirement derived from prior-year sales with 30%.
+            </p>
+          </div>
+
+          <div class="p-5">
+            <p class="font-bold text-indigo-700">OSH Requirement</p>
+            <p class="text-slate-500 mt-1">
+              Monthly Stock requirement defined by Operational Sales Head.
+            </p>
+          </div>
+
+          <div class="p-5">
+            <p class="font-bold text-indigo-700">MOQ</p>
+            <p class="text-slate-500 mt-1">
+              Minimum Order Quantity mandated by the manufacturer.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 📐 FORMULAS (MathJax) -->
+      <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b bg-slate-50">
+          <h3 class="text-sm font-black text-slate-700 uppercase tracking-wider">
+            📐 Planning Formulas
+          </h3>
+        </div>
+
+        <div class="space-y-5 p-6 text-xs">
+
+          <div class="bg-slate-50 p-4 rounded-xl border">
+            <p class="font-bold text-slate-600 mb-2">Usable Stock</p>
+            <p class="text-center text-sm">
+              $$\text{Usable Stock} = \text{Physical Stock} - \text{Short Expiry Qty}$$
+            </p>
+          </div>
+
+          <div class="bg-slate-50 p-4 rounded-xl border">
+            <p class="font-bold text-slate-600 mb-2">Daily Average Sales</p>
+            <p class="text-center text-sm">
+              $$\text{Daily Avg Sales} = \frac{\text{Program Requirement}}{30}$$
+            </p>
+          </div>
+
+          <div class="bg-slate-50 p-4 rounded-xl border">
+            <p class="font-bold text-slate-600 mb-2">Stock Coverage (Days)</p>
+            <p class="text-center text-sm">
+              $$\text{Coverage Days} = \frac{\text{Usable Stock}}{\text{Daily Avg Sales}}$$
+            </p>
+          </div>
+
+          <div class="bg-slate-50 p-4 rounded-xl border">
+            <p class="font-bold text-slate-600 mb-2">Suggested Order Quantity</p>
+            <p class="text-center text-sm">
+              $$\text{Base Qty} = (\text{Lead Time} + \text{Safety Stock}) \times \text{Daily Avg Sales}$$
+              $$\text{Suggested Order} = \max(\text{Base Qty} - \text{Usable Stock} - \text{Open PO}, 0)$$
+            </p>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 🧠 POLICY RULES -->
+    <div class="bg-indigo-900 rounded-3xl p-8 text-indigo-100 shadow-lg">
+      <h3 class="text-sm font-black uppercase tracking-wider mb-4">
+        🧠 Inventory Policy Rules
+      </h3>
+      <ul class="space-y-2 text-xs">
+        <li>🔴 Coverage &lt; 30 days → <b>Critical Stock-Out Risk</b></li>
+        <li>🟠 30–89 days → <b>Below Minimum (Planning Required)</b></li>
+        <li>🟢 90–180 days → <b>Healthy Inventory</b></li>
+        <li>🔵 &gt; 180 days → <b>Overstock / Capital Lock-In</b></li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<div class="h-6"></div>
+<!-- 🤖 PEARL AI ENGINE -->
+<div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+  <div class="px-6 py-4 border-b bg-gradient-to-r from-emerald-600 to-teal-600 text-white">
+    <h3 class="text-sm font-black uppercase tracking-wider">
+      🤖 Pearl AI – Inventory Intelligence Engine
+    </h3>
+    <p class="text-emerald-100 text-xs mt-1">
+      How the system analyses data and generates alerts, priorities, and recommendations.
+    </p>
+  </div>
+
+  <div class="p-6 space-y-6 text-xs text-slate-600">
+
+    <!-- WHAT PEARL AI DOES -->
+    <div>
+      <p class="font-bold text-emerald-700 mb-2">What Pearl AI Does</p>
+      <ul class="space-y-2">
+        <li>• Continuously evaluates stock health using demand, supply, and risk signals</li>
+        <li>• Detects shortages, excess inventory, and imbalance across depots</li>
+        <li>• Converts raw inventory data into <b>actionable planning insights</b></li>
+      </ul>
+    </div>
+
+    <!-- CORE INPUTS -->
+    <div>
+      <p class="font-bold text-emerald-700 mb-2">Core Inputs Used</p>
+      <ul class="space-y-2">
+        <li>• Program Requirement (monthly)</li>
+        <li>• Usable Stock (net of short expiry)</li>
+        <li>• Lead Time & Safety Stock</li>
+        <li>• Open Purchase Orders</li>
+        <li>• Depot-wise stock distribution</li>
+      </ul>
+    </div>
+
+    <!-- AI LOGIC -->
+    <div>
+      <p class="font-bold text-emerald-700 mb-3">Core AI Logic</p>
+
+      <div class="bg-slate-50 border rounded-xl p-4 space-y-3">
+
+        <div>
+          <p class="font-bold text-slate-500 mb-1">Daily Consumption Model</p>
+          <p class="text-center text-sm">
+            $$\text{Daily Avg Sales} = \frac{\text{Program Requirement}}{30}$$
+          </p>
+        </div>
+
+        <div>
+          <p class="font-bold text-slate-500 mb-1">Stock Depletion Forecast</p>
+          <p class="text-center text-sm">
+            $$\text{Coverage Days} = \frac{\text{Usable Stock}}{\text{Daily Avg Sales}}$$
+          </p>
+        </div>
+
+        <div>
+          <p class="font-bold text-slate-500 mb-1">Net Requirement Calculation</p>
+          <p class="text-center text-sm">
+            $$\text{Net Requirement} =
+            (\text{Lead Time} + \text{Safety Stock}) \times \text{Daily Avg Sales}
+            - \text{Usable Stock} - \text{Open PO}$$
+          </p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- DECISION OUTPUTS -->
+    <div>
+      <p class="font-bold text-emerald-700 mb-2">Pearl AI Outputs</p>
+      <ul class="space-y-2">
+        <li>• 🚨 Critical Stock Alerts (&lt; 60 days)</li>
+        <li>• ⚠️ Low Inventory Alerts (60–90 days)</li>
+        <li>• 📦 Suggested Order Quantities</li>
+        <li>• 🔄 Inter-Depot Transfer Recommendations</li>
+        <li>• 🔵 Overstock Identification</li>
+      </ul>
+    </div>
+
+    <!-- DECISION PHILOSOPHY -->
+    <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+      <p class="font-bold text-emerald-800 mb-1">Decision Philosophy</p>
+      <p class="text-emerald-700">
+        Pearl AI prioritizes <b>stock availability</b>, <b>capital efficiency</b>, and
+        <b>operational feasibility</b>. All recommendations are explainable,
+        traceable, and aligned with company inventory policy.
+      </p>
+    </div>
+
+  </div>
+</div>
+</section>  </main>
 
   <script>
     const apiKey = ""; 
     let STOCK = [], REQ_MAP = {}, PO_MAP = {}, FINAL = [], RAW_PO_DATA = [], BATCH_STOCK = [], MOQ_MAP = {}, RAW_STOCK_DATE_FILTERED = [];
+let PREV_YEAR_CACHE = null;
 const MIN_COVERAGE_DAYS = 90; // 🔒 Global minimum stock holding (3 months)
 
     const STOCK_URL = "https://script.google.com/macros/s/AKfycbwSzWZ5E-DRulTQRFdiWWq_PAGCooPKXzugvvOiQvNPwNmfIMwzcZaYtA5_Mqo9SLkRXg/exec";
@@ -467,6 +660,7 @@ const MIN_COVERAGE_DAYS = 90; // 🔒 Global minimum stock holding (3 months)
     const PO_URL = "https://script.google.com/macros/s/AKfycbzFZOc1qQw5kn7M88w251WOnZGzBwBznytNpx-QqxMRE89kHUkN8feVxH_qG38H3KXd/exec";
     const BATCH_URL = "https://script.google.com/macros/s/AKfycbx4hqFN0DhMDm22q0_EkS_E4EAApVavgZz8FEZEdUV0Jg0uMVaUUg3S8FyL9vy3H5KM/exec";
     const MOQ_URL = "https://script.google.com/macros/s/AKfycbwfWL5Iu25uPYWxsRA0pLNtjSzDo86K3jXhSAw_P-RrPTlK5rLPpbLnv00X7972skCj/exec";
+const PREV_YEAR_SALES_URL = "https://script.google.com/macros/s/AKfycbwQ4NVdINtOuws1zx9YIvml75iBnWszPdrIG8TAnBwqUAJQP8W1hRkYFQWwxTGUd0k4Ug/exec";
 
     window.onload = fetchData;
 
@@ -649,7 +843,7 @@ FINAL.forEach(r => {
     r.usableStock = Math.max(0, r.stock - r.shortQty); 
 
     // ✅ FORCE INTEGER DAILY BURN
-    r.dailySales = Math.round((r.prevH2 || 0) / 180);
+    r.dailySales = Math.round((r.prog || 0) / 30);
 
     // ✅ FORCE INTEGER COVERAGE DAYS
     r.holdDays = r.dailySales > 0
@@ -746,7 +940,59 @@ document.getElementById('alertBody').innerHTML = alerts.map(r => {
     </tr>
   `;
 }).join('');
-    }
+}
+function exportCriticalAlerts() {
+
+  // 🔴 FILTER CRITICAL & LOW INVENTORY ITEMS
+  const critical = FINAL.filter(r =>
+    r.holdDays < MIN_COVERAGE_DAYS && r.dailySales > 0
+  ).sort((a, b) => a.holdDays - b.holdDays);
+
+  if (!critical.length) {
+    alert("No critical alerts to export.");
+    return;
+  }
+
+  // 🟡 SUMMARY SHEET
+  const summary = critical.map(r => ({
+    "Item Code": r.code,
+    "Item Name": r.name,
+    "Usable Stock": Math.round(r.usableStock),
+    "Daily Avg Sales": r.dailySales,
+    "Coverage": formatDaysToYMD(r.holdDays),
+    "Status":
+      r.holdDays < 60 ? "CRITICAL (<60 Days)" : "LOW INVENTORY (60–90 Days)"
+  }));
+
+  // 🔵 DETAILED SHEET
+  const detailed = critical.map(r => ({
+    "Item Code": r.code,
+    "Item Name": r.name,
+    "Kerala": Math.round(r.kerala),
+    "Palepu": Math.round(r.palepu),
+    "Coimbatore": Math.round(r.coimbatore),
+    "Bangalore": Math.round(r.bangalore),
+    "Physical Stock": Math.round(r.stock),
+    "Short Expiry": Math.round(r.shortQty),
+    "Usable Stock": Math.round(r.usableStock),
+    "Program Requirement": Math.round(r.prog),
+    "OSH Requirement": Math.round(r.osh),
+    "Daily Avg Sales": r.dailySales,
+    "Coverage (Days)": formatDaysToYMD(r.holdDays),
+    "Open PO Qty": Math.round(r.openPo),
+    "MOQ": r.moq
+  }));
+
+  // 📥 CREATE EXCEL
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summary), "Summary");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(detailed), "Detailed");
+
+  XLSX.writeFile(
+    wb,
+    `Critical_Alerts_${new Date().toISOString().split("T")[0]}.xlsx`
+  );
+}
 
     function renderPOTrack() {
         if (!RAW_PO_DATA.length) { document.getElementById('poTrackContent').innerHTML = `<div class="p-20 text-center text-slate-400">No PO data found.</div>`; return; }
@@ -813,6 +1059,14 @@ function generateInterDepotTransfers() {
 
   return transfers;
 }
+async function loadPrevYearSales() {
+  if (PREV_YEAR_CACHE) return;
+
+  const res = await fetch(PREV_YEAR_SALES_URL);
+  const json = await res.json();
+
+  PREV_YEAR_CACHE = json;
+}
     // UPDATED REPORT LOGIC FOR SUMMARY & DETAILED VIEWS
     function getReportContents(type) {
         let summary = [], detailed = [];
@@ -870,11 +1124,25 @@ case 'inter_depot':
   summary = transferData;
   detailed = transferData;
   break;
+case 'prev_year_sales':
+  if (!PREV_YEAR_CACHE || !PREV_YEAR_CACHE.data || !PREV_YEAR_CACHE.data.length) {
+    summary = [];
+    detailed = [];
+    break;
+  }
+
+  summary = PREV_YEAR_CACHE.data;
+  detailed = PREV_YEAR_CACHE.data;
+  break;
         }
         return { summary, detailed };
+
     }
 
-    function previewReport(type) {
+    async function previewReport(type) {
+if (type === 'prev_year_sales') {
+  await loadPrevYearSales();
+}
         const area = document.getElementById('reportPreviewArea');
         const content = document.getElementById('previewContent');
         const title = document.getElementById('previewTitle');
@@ -921,8 +1189,14 @@ case 'inter_depot':
    /* PEARL AI ENGINE - UPDATED WITH DETAILED COMMENTS */
     let pearlReportData = [];
     function runPearlAnalysis() {
+// 🤖 Show dancing robot for 5 seconds
+showRobot();
+setTimeout(hideRobot, 5000);
         const btn = document.getElementById('pearlBtn');
-        btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> GENERATING DEEP ANALYSIS...`;
+        btn.innerHTML = `
+<i data-lucide="loader" class="w-4 h-4 animate-spin"></i>
+AI ANALYSING INVENTORY PATTERNS...
+`;
         
         setTimeout(() => {
             document.getElementById('pearlResults').classList.remove('hidden');
@@ -1081,8 +1355,20 @@ ${r["Health Status"] === 'STOCK-OUT' || r["Health Status"] === 'CRITICAL LOW'
       document.getElementById('pageTitle').innerText = btn.innerText.replace(/[0-9]/g, '').trim();
       closePreview();
     }
+function showRobot() {
+  document.getElementById("aiRobotOverlay").style.display = "flex";
+}
+
+function hideRobot() {
+  document.getElementById("aiRobotOverlay").style.display = "none";
+}
     
     function handleDateChange(v) { document.getElementById('displayDate').innerText = getLocalDateString(v); build(); }
   </script>
+<!-- 🤖 Pearl AI Dancing Robot -->
+<div id="aiRobotOverlay">
+  <div class="robot-face robot-dance"></div>
+  <div class="robot-text">PEARL AI IS THINKING…</div>
+</div>
 </body>
 </html>
