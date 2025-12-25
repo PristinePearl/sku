@@ -883,7 +883,7 @@ else if (f.holdDays > 180) {
     risk = "LIQUIDATION";
     action = "PAUSE PO";
 
-    comment = `Inventory holding is ${f.holdDays} days, significantly above operational 
+    comment = `Inventory holding is ${f.holdDays} days, significantly above OSH 
 requirement. Capital lock-in risk identified; recommend pausing new POs and 
 evaluating liquidation or redistribution.`;
 }
@@ -923,7 +923,7 @@ if (f.openPo > 0) {
                     "Health Status": status, 
                     "Risk Level": risk, 
                     "Suggested Action": action,
-                    "Logistics Analysis Comment": comment
+                    "Pearl AI Comments Comment": comment
                 };
             }).sort((a,b) => a["Coverage (Days)"] - b["Coverage (Days)"]);
 
@@ -946,7 +946,7 @@ ${r["Health Status"] === 'STOCK-OUT' || r["Health Status"] === 'CRITICAL LOW'
 </span>
                     </td>
                     <td class="px-6 py-4 text-[10px] font-bold uppercase ${r["Risk Level"] === 'CRITICAL' || r["Risk Level"] === 'HIGH' ? 'text-red-600' : 'text-slate-500'}">${r["Risk Level"]}</td>
-                    <td class="px-6 py-4 text-slate-500 italic max-w-xs truncate" title="${r["Logistics Analysis Comment"]}">${r["Logistics Analysis Comment"]}</td>
+                    <td class="px-6 py-4 text-slate-500 italic max-w-xs truncate" title="${r["Pearl AI Comments Comment"]}">${r["Pearl AI Comments Comment"]}</td>
                 </tr>
             `).join('');
 
@@ -980,4 +980,5 @@ ${r["Health Status"] === 'STOCK-OUT' || r["Health Status"] === 'CRITICAL LOW'
   </script>
 </body>
 </html>
+
 
