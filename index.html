@@ -3,249 +3,406 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-   <link rel="icon" type="image/png" href="https://www.pristinepearlpharma.in/images/alt-logo.png">
-  <title>Pristine Pearl Pharma PVT LTD - Stock</title>
+  <link rel="icon" type="image/png" href="https://www.pristinepearlpharma.in/images/alt-logo.png">
+  <title>Pearl SKU</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <script>
     tailwind.config = {
       theme: {
         extend: {
           fontFamily: {
-            sans: ['Inter', 'system-ui', 'Segoe UI', 'Roboto', 'Arial', 'sans-serif'],
+            sans: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
           },
           colors: {
-            primary: '#0ea5a4',
+            primary: {
+              DEFAULT: '#0ea5a4',
+              50: '#f0fdfa',
+              100: '#ccfbf1',
+              500: '#0ea5a4',
+              600: '#0d9488',
+              700: '#0f766e',
+            }
           }
         }
       }
     }
   </script>
   <style>
-    body { font-family: 'Inter', sans-serif; }
-    .card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-    .card-hover:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 12px 20px -5px rgba(14, 165, 164, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+    :root {
+      --primary-glow: rgba(14, 165, 164, 0.2);
     }
-    [v-cloak] { display: none; }
+    body { 
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+
+    /* Background Animations */
+    .blob {
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, var(--primary-glow) 0%, rgba(255,255,255,0) 70%);
+      filter: blur(60px);
+      z-index: -1;
+      animation: float 20s infinite alternate;
+    }
+
+    @keyframes float {
+      0% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(100px, 50px) scale(1.1); }
+      100% { transform: translate(-50px, 100px) scale(0.9); }
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes scaleIn {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-8px); }
+      75% { transform: translateX(8px); }
+    }
+
+    .animate-fade-up { animation: fadeInUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+    .animate-scale-in { animation: scaleIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+    .animate-shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+
+    .stagger-1 { animation-delay: 0.1s; opacity: 0; }
+    .stagger-2 { animation-delay: 0.2s; opacity: 0; }
+    .stagger-3 { animation-delay: 0.3s; opacity: 0; }
+    .stagger-4 { animation-delay: 0.4s; opacity: 0; }
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
+    }
+
+    .card-interaction {
+      transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .card-interaction:hover {
+      transform: translateY(-12px) scale(1.02);
+      box-shadow: 0 30px 60px -15px var(--primary-glow);
+    }
+
+    .db-grid-card {
+      background: white;
+      border: 1px solid #f1f5f9;
+      transition: all 0.3s ease;
+    }
+
+    .db-grid-card:hover {
+      border-color: #0ea5a4;
+      background: #fafcfc;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #0ea5a4; }
   </style>
 </head>
-<body class="bg-slate-50 text-gray-900 min-h-screen">
-  
-  <!-- Login Screen Overlay -->
-  <div id="login-screen" class="fixed inset-0 z-[100] bg-slate-100 flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl p-8 border border-gray-100">
-      <div class="text-center mb-8">
-        <img src="https://www.pristinepearlpharma.in/images/alt-logo.png" alt="Logo" class="h-16 mx-auto mb-4" />
-        <h2 class="text-2xl font-bold text-gray-800">PEARL SKU</h2>
-        <p class="text-gray-500 text-sm mt-1">Please enter your credentials to continue</p>
+<body class="bg-[#fcfdfe] text-slate-900 min-h-screen">
+
+  <!-- Background Blobs -->
+  <div class="blob top-0 -left-20"></div>
+  <div class="blob bottom-0 -right-20" style="animation-delay: -5s;"></div>
+
+  <!-- Login Screen -->
+  <div id="login-screen" class="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-white/40 backdrop-blur-md transition-all duration-700">
+    <div class="w-full max-w-md animate-scale-in">
+      <div id="login-container" class="glass-card rounded-[3rem] p-10 relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary via-teal-400 to-primary-700"></div>
+        
+        <div class="text-center mb-10">
+          <div class="inline-flex p-5 bg-white rounded-[2rem] shadow-xl shadow-primary/5 mb-8">
+            <img src="https://www.pristinepearlpharma.in/images/alt-logo.png" alt="Logo" class="h-14 w-auto" />
+          </div>
+          <h2 class="text-4xl font-black text-slate-900 tracking-tighter mb-2">PEARL<span class="text-primary"> SKU</span></h2>
+          <p class="text-slate-500 font-medium">Smart inventory planning starts here.</p>
+        </div>
+
+        <form id="login-form" class="space-y-6">
+          <div class="space-y-2">
+            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">System Username</label>
+            <input type="text" id="username" required spellcheck="false" autocomplete="off" 
+                   class="w-full px-6 py-4 rounded-2xl bg-white/80 border border-slate-100 outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-slate-700 font-semibold" 
+                   placeholder="Enter username">
+          </div>
+          <div class="space-y-2">
+            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Secure Password</label>
+            <input type="password" id="password" required 
+                   class="w-full px-6 py-4 rounded-2xl bg-white/80 border border-slate-100 outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-slate-700 font-semibold" 
+                   placeholder="••••••••">
+          </div>
+          
+          <div id="login-error" class="hidden bg-red-50 text-red-500 text-xs font-bold p-4 rounded-xl border border-red-100 animate-fade-up">
+            Authentication failed. Verify credentials.
+          </div>
+
+          <button type="submit" id="login-btn" class="group relative w-full bg-slate-900 hover:bg-primary text-white font-bold py-5 rounded-2xl shadow-2xl transition-all active:scale-95 overflow-hidden">
+            <span class="relative z-10 flex items-center justify-center gap-2">
+              Sign Into Portal
+              <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
+            </span>
+          </button>
+        </form>
       </div>
-      
-      <form id="login-form" class="space-y-5">
-        <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1">Username</label>
-          <input type="text" id="username" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" placeholder="Enter username">
-        </div>
-        <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1">Password</label>
-          <input type="password" id="password" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" placeholder="••••••••">
-        </div>
-        <div id="login-error" class="hidden text-red-500 text-sm font-medium bg-red-50 p-3 rounded-lg border border-red-100">
-          Invalid username or password.
-        </div>
-        <button type="submit" class="w-full bg-primary hover:bg-teal-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-teal-500/20 transition-all active:scale-95">
-          Sign In
-        </button>
-      </form>
     </div>
   </div>
 
-  <!-- Main Portal Content (Initially Hidden) -->
-  <div id="portal-content" class="hidden">
-    <!-- Navigation/Header -->
-    <nav class="bg-white border-b sticky top-0 z-50 shadow-sm">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-20 items-center">
-          <div class="flex items-center gap-4">
-            <img src="https://www.pristinepearlpharma.in/images/alt-logo.png" alt="Logo" class="h-12 w-auto object-contain" />
-            <div class="h-8 w-px bg-gray-200 hidden sm:block"></div>
-            <span class="text-lg font-bold tracking-tight text-gray-800 hidden sm:block">Pristine Pearl Pharma PVT LTD</span>
+  <!-- Main Content -->
+  <div id="portal-content" class="hidden flex flex-col min-h-screen">
+    <nav class="sticky top-0 z-40 bg-white/60 backdrop-blur-xl border-b border-slate-100">
+      <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+        <div class="flex items-center gap-4 group cursor-default">
+          <div class="p-2 bg-primary/5 rounded-xl group-hover:scale-110 transition-transform">
+            <img src="https://www.pristinepearlpharma.in/images/alt-logo.png" alt="Logo" class="h-8" />
           </div>
-          <div class="flex items-center gap-4">
-            <div class="hidden md:flex items-center gap-2 text-primary font-semibold text-sm bg-teal-50 px-4 py-2 rounded-full border border-teal-100">
-              User: <span id="display-user">Admin</span>
-            </div>
-            <button onclick="logout()" class="text-sm font-bold text-red-500 hover:text-red-700 transition-colors flex items-center gap-1">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-              Logout
-            </button>
+          <h1 class="text-xl font-black tracking-tighter text-slate-800">PEARL<span class="text-primary"> SKU</span></h1>
+        </div>
+        
+        <div class="flex items-center gap-6">
+          <div class="hidden sm:flex flex-col items-end">
+            <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">USER</span>
+            <span id="display-user" class="text-sm font-extrabold text-slate-900">User</span>
           </div>
+          <button onclick="logout()" class="group flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 text-slate-500 hover:bg-red-50 hover:text-red-500 transition-all font-bold text-xs uppercase tracking-widest">
+            Logout
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+          </button>
         </div>
       </div>
     </nav>
 
-    <main class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-      <div class="mb-12">
-        <h1 class="text-3xl font-extrabold text-gray-900 sm:text-4xl tracking-tight">
-        </h1>
-        <p class="mt-3 text-lg text-gray-500 max-w-2xl leading-relaxed">
-          Welcome <span id="welcome-name" class="font-bold text-primary">Admin</span>. Select an authorized module below.
+    <main class="flex-grow container mx-auto px-6 py-16 max-w-7xl">
+      <header class="mb-20 animate-fade-up">
+        <div class="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase tracking-[0.2em] mb-6 stagger-1 animate-fade-up">
+          Active Dashboard
+        </div>
+        <h2 class="text-5xl md:text-6xl font-black text-slate-900 tracking-tight leading-none">
+          Greetings, <span id="welcome-name" class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-emerald-500">User</span>
+        </h2>
+        <p class="text-slate-500 mt-6 text-xl font-medium max-w-xl leading-relaxed stagger-2 animate-fade-up">
+          Access your inventory tools and real-time stock insights for Pristine Pearl Pharma.
         </p>
-      </div>
+      </header>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        
-        <!-- Column 1: Data Entry (ADMIN ONLY) -->
-        <div id="data-ops-section" class="space-y-6">
-          <h2 class="flex items-center text-xs font-bold text-gray-400 uppercase tracking-widest px-1">
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-            Data Operations (Admin)
-          </h2>
-          
-          <a href="Bs.html" class="block group">
-            <div class="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm card-hover">
-              <div class="flex items-start">
-                <div class="p-4 bg-teal-50 text-primary rounded-2xl group-hover:bg-primary group-hover:text-white transition-all">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </div>
-                <div class="ml-6">
-                  <h3 class="text-xl font-bold text-gray-900 group-hover:text-primary">Batch Wise Upload</h3>
-                  <p class="mt-2 text-gray-500 text-sm leading-relaxed">Merge and validate batch-specific inventory reports.</p>
-                </div>
-              </div>
-            </div>
-          </a>
-
-          <a href="Cs.html" class="block group">
-            <div class="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm card-hover">
-              <div class="flex items-start">
-                <div class="p-4 bg-emerald-50 text-emerald-600 rounded-2xl group-hover:bg-emerald-600 group-hover:text-white transition-all">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                  </svg>
-                </div>
-                <div class="ml-6">
-                  <h3 class="text-xl font-bold text-gray-900 group-hover:text-emerald-600">Current Stock Upload</h3>
-                  <p class="mt-2 text-gray-500 text-sm leading-relaxed">Process real-time depot quantities to update central records.</p>
-                </div>
-              </div>
-            </div>
-          </a>
-        </div>
-
-        <!-- Column 2: Analysis (ADMIN & OSH) -->
-        <div id="analytics-section" class="space-y-6">
-          <h2 class="flex items-center text-xs font-bold text-gray-400 uppercase tracking-widest px-1">
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-            Analytics & Visibility
-          </h2>
-
-          <a href="db1.html" class="block group">
-            <div class="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm card-hover">
-              <div class="flex items-start">
-                <div class="p-4 bg-blue-50 text-blue-600 rounded-2xl group-hover:bg-blue-600 group-hover:text-white transition-all">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
-                <div class="ml-6">
-                  <h3 class="text-xl font-bold text-gray-900 group-hover:text-blue-600">Stock Explorer</h3>
-                  <p class="mt-2 text-gray-500 text-sm leading-relaxed">Interactive data table with multi-level filtering and batch-wise details.</p>
-                </div>
-              </div>
-            </div>
-          </a>
-
-          <a href="db2.html" class="block group">
-            <div class="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm card-hover">
-              <div class="flex items-start">
-                <div class="p-4 bg-indigo-50 text-indigo-600 rounded-2xl group-hover:bg-indigo-600 group-hover:text-white transition-all">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                </div>
-                <div class="ml-6">
-                  <h3 class="text-xl font-bold text-gray-900 group-hover:text-indigo-600">Planning & Dashboard</h3>
-                  <p class="mt-2 text-gray-500 text-sm leading-relaxed">Planning, Analysis & Reports.</p>
-                </div>
-              </div>
-            </div>
-          </a>
-        </div>
-
-      </div>
-
-      <!-- Footer -->
-      <footer class="mt-24 pt-10 border-t border-gray-200">
-        <div class="flex flex-col md:flex-row justify-between items-center gap-6">
+      <div class="grid lg:grid-cols-12 gap-12">
+        <!-- Operations Section -->
+        <section id="data-ops-section" class="lg:col-span-5 space-y-10 animate-fade-up stagger-2">
           <div class="flex items-center gap-4">
-            <img src="https://www.pristinepearlpharma.in/images/alt-logo.png" alt="Logo" class="h-8 opacity-50 grayscale" />
-            <p class="text-sm text-gray-400">Pristine Pearl Pharma PVT LTD.</p>
+            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] whitespace-nowrap">Core Operations</h3>
+            <div class="h-px w-full bg-slate-100"></div>
           </div>
-          <div class="flex gap-6 text-xs font-bold text-gray-400 uppercase tracking-widest">
-            <span class="text-primary" id="role-tag">Access: Admin</span>
-            <span>v2.5.0</span>
+          <div class="space-y-8">
+            <a href="Bs.html" class="block group card-interaction">
+              <div class="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm relative overflow-hidden">
+                <div class="absolute -right-4 -top-4 w-32 h-32 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-colors"></div>
+                <div class="w-16 h-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mb-8">
+                  <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                </div>
+                <h4 class="text-2xl font-black text-slate-900 tracking-tight">Batch-wise Stock Upload</h4>
+                <p class="text-slate-500 mt-3 text-sm font-medium leading-relaxed">Upload depot wise "Batch-wise" stock (Should be exported from Interact).</p>
+              </div>
+            </a>
+            <a href="Cs.html" class="block group card-interaction">
+              <div class="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm relative overflow-hidden">
+                <div class="absolute -right-4 -top-4 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl group-hover:bg-emerald-500/10 transition-colors"></div>
+                <div class="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-8">
+                  <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
+                </div>
+                <h4 class="text-2xl font-black text-slate-900 tracking-tight">Current Stock Upload</h4>
+                <p class="text-slate-500 mt-3 text-sm font-medium leading-relaxed">Upload Depot wise "Current Stock" (Should be exported from Interact)</p>
+              </div>
+            </a>
           </div>
-        </div>
-      </footer>
+        </section>
+
+        <!-- Insights Section -->
+        <section id="analytics-section" class="lg:col-span-7 space-y-10 animate-fade-up stagger-3">
+          <div class="flex items-center gap-4">
+            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] whitespace-nowrap">Intelligence & Insights</h3>
+            <div class="h-px w-full bg-slate-100"></div>
+          </div>
+          <div class="grid sm:grid-cols-2 gap-8">
+            <!-- Planning Hub (MAIN OPTION - Themed to Primary Palette) -->
+            <a href="db2.html" class="block group card-interaction h-full">
+              <div class="bg-gradient-to-br from-primary-600 to-primary-700 rounded-[2.5rem] p-10 shadow-2xl shadow-primary/30 relative h-full flex flex-col justify-end min-h-[320px] overflow-hidden">
+                <div class="absolute -right-10 -top-10 w-48 h-48 bg-white/10 rounded-full blur-3xl"></div>
+                <div class="absolute top-10 left-10 w-16 h-16 bg-white/20 text-white rounded-2xl flex items-center justify-center backdrop-blur-md">
+                  <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                </div>
+                <div>
+                  <div class="inline-flex px-3 py-1 bg-white/20 rounded-full text-[9px] text-white font-black uppercase tracking-widest mb-4 backdrop-blur-sm">Primary Module</div>
+                  <h4 class="text-2xl font-black text-white tracking-tight">Planning Hub</h4>
+                  <p class="text-primary-50 mt-3 text-sm font-medium leading-relaxed">Stock Planning & Pearl AI integrated reports.</p>
+                </div>
+              </div>
+            </a>
+            
+            <a href="db1.html" class="block group card-interaction h-full">
+              <div class="bg-slate-900 rounded-[2.5rem] p-10 border border-slate-800 shadow-2xl relative h-full flex flex-col justify-end min-h-[320px] overflow-hidden">
+                <div class="absolute top-10 left-10 w-16 h-16 bg-white/5 text-primary-400 rounded-2xl flex items-center justify-center">
+                  <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+                <div>
+                  <h4 class="text-2xl font-black text-white tracking-tight">Stock Explorer</h4>
+                  <p class="text-slate-400 mt-3 text-sm font-medium leading-relaxed">Simple view of Batch wise & Current stock</p>
+                </div>
+              </div>
+            </a>
+          </div>
+        </section>
+
+        <!-- Database Section -->
+        <section id="database-section" class="lg:col-span-12 space-y-10 animate-fade-up stagger-4 mt-8">
+          <div class="flex items-center gap-4">
+            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] whitespace-nowrap">MASTER DATABASE</h3>
+            <div class="h-px w-full bg-slate-100"></div>
+          </div>
+          <div id="db-grid" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+            <a id="db-batch" href="https://docs.google.com/spreadsheets/d/1EXPegfFVJbBzb_MPvaYJluXjmYRfjmgWh6Yw7y4oGzM/edit?usp=sharing" target="_blank" class="db-grid-card group p-8 rounded-3xl flex flex-col gap-8 transition-all hover:shadow-xl">
+              <div class="icon-container w-12 h-12 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+              </div>
+              <h5 class="text-sm font-black text-slate-800 group-hover:text-primary">Stock - Batch Wise</h5>
+            </a>
+            <a id="db-current" href="https://docs.google.com/spreadsheets/d/14N7-50jXXjP9dTbMIKrBfEwTHvoIrtzn17xLa1Spij4/edit?usp=sharing" target="_blank" class="db-grid-card group p-8 rounded-3xl flex flex-col gap-8 transition-all hover:shadow-xl">
+              <div class="icon-container w-12 h-12 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              </div>
+              <h5 class="text-sm font-black text-slate-800 group-hover:text-primary">Stock - Current</h5>
+            </a>
+            <a id="db-req" href="https://docs.google.com/spreadsheets/d/1_Zb-YOxwLJNVHeZ9l9giJROD6TST0fd68zJxZbJEYLs/edit?gid=0#gid=0" target="_blank" class="db-grid-card group p-8 rounded-3xl flex flex-col gap-8 transition-all hover:shadow-xl">
+              <div class="icon-container w-12 h-12 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4"></path></svg>
+              </div>
+              <h5 class="text-sm font-black text-slate-800 group-hover:text-primary">Requirement & MFR</h5>
+            </a>
+            <a id="db-sales" href="https://docs.google.com/spreadsheets/d/1OlMhxZaF0y4xavLSYgdzjc5FdT1GLFdARByj8UJH7EE/edit?gid=0#gid=0" target="_blank" class="db-grid-card group p-8 rounded-3xl flex flex-col gap-8 transition-all hover:shadow-xl">
+              <div class="icon-container w-12 h-12 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+              </div>
+              <h5 class="text-sm font-black text-slate-800 group-hover:text-primary">Sales History</h5>
+            </a>
+            <a id="db-po" href="https://docs.google.com/spreadsheets/d/1NPDO00MrI3-wblNOz8gzytdeTocDg3xs-BA0WYVYMwk/edit?gid=0#gid=0" target="_blank" class="db-grid-card group p-8 rounded-3xl flex flex-col gap-8 transition-all hover:shadow-xl">
+              <div class="icon-container w-12 h-12 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"></path></svg>
+              </div>
+              <h5 class="text-sm font-black text-slate-800 group-hover:text-primary">Purchase Orders</h5>
+            </a>
+          </div>
+        </section>
+      </div>
     </main>
+
+    <footer class="py-16 px-6 border-t border-slate-100 text-center bg-slate-50/50">
+      <img src="https://www.pristinepearlpharma.in/images/alt-logo.png" alt="Logo" class="h-8 mx-auto grayscale opacity-20 mb-6" />
+      <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">PRISTINE PEARL PHARMA PVT LTD</p>
+    </footer>
   </div>
 
   <script>
     const users = {
-      "Admin": "admin123",
-      "OSH": "osh123"
+      "adminpro": "surya2282",
+      "admin": "admin123",
+      "osh": "osh123"
     };
 
     const loginScreen = document.getElementById('login-screen');
     const portalContent = document.getElementById('portal-content');
     const loginForm = document.getElementById('login-form');
     const loginError = document.getElementById('login-error');
-
-    function checkAuth() {
-      const activeUser = sessionStorage.getItem('ppp_user');
-      if (activeUser) {
-        showPortal(activeUser);
-      } else {
-        loginScreen.classList.remove('hidden');
-        portalContent.classList.add('hidden');
-      }
-    }
+    const loginContainer = document.getElementById('login-container');
+    const loginBtn = document.getElementById('login-btn');
 
     function showPortal(username) {
-      loginScreen.classList.add('hidden');
-      portalContent.classList.remove('hidden');
+      const key = username.toLowerCase();
       
-      document.getElementById('display-user').innerText = username;
-      document.getElementById('welcome-name').innerText = username;
-      document.getElementById('role-tag').innerText = `Access: ${username}`;
-
-      const dataOps = document.getElementById('data-ops-section');
-      
-      // Role-based visibility logic
-      if (username === "OSH") {
-        dataOps.classList.add('hidden');
+      let formattedName;
+      if (key === 'osh') {
+        formattedName = "Aashik";
       } else {
-        dataOps.classList.remove('hidden');
+        formattedName = key.charAt(0).toUpperCase() + key.slice(1);
+      }
+
+      loginScreen.classList.add('opacity-0', 'pointer-events-none');
+      setTimeout(() => {
+        loginScreen.classList.add('hidden');
+        portalContent.classList.remove('hidden');
+      }, 500);
+
+      document.getElementById('display-user').innerText = formattedName;
+      document.getElementById('welcome-name').innerText = formattedName;
+
+      const ops = document.getElementById('data-ops-section');
+      const dbSec = document.getElementById('database-section');
+      const analyticsSec = document.getElementById('analytics-section');
+
+      const dbBatch = document.getElementById('db-batch');
+      const dbCurrent = document.getElementById('db-current');
+      const dbReq = document.getElementById('db-req');
+      const dbSales = document.getElementById('db-sales');
+      const dbPO = document.getElementById('db-po');
+
+      const allDbs = [dbBatch, dbCurrent, dbReq, dbSales, dbPO];
+      allDbs.forEach(el => el.classList.remove('hidden'));
+
+      if (key === "adminpro") {
+        ops.classList.remove('hidden');
+        dbSec.classList.remove('hidden');
+        analyticsSec.classList.replace('lg:col-span-12', 'lg:col-span-7');
+      } 
+      else if (key === "admin") {
+        ops.classList.remove('hidden');
+        dbSec.classList.remove('hidden');
+        analyticsSec.classList.replace('lg:col-span-12', 'lg:col-span-7');
+        dbBatch.classList.add('hidden');
+        dbCurrent.classList.add('hidden');
+        dbReq.classList.add('hidden');
+        dbSales.classList.add('hidden');
+      } 
+      else if (key === "osh") {
+        ops.classList.add('hidden');
+        dbSec.classList.add('hidden');
+        analyticsSec.classList.replace('lg:col-span-7', 'lg:col-span-12');
       }
     }
 
-    loginForm.onsubmit = (e) => {
+    loginForm.onsubmit = async (e) => {
       e.preventDefault();
-      const user = document.getElementById('username').value;
-      const pass = document.getElementById('password').value;
+      const userInput = document.getElementById('username').value.trim().toLowerCase();
+      const passInput = document.getElementById('password').value.trim();
 
-      if (users[user] && users[user] === pass) {
-        sessionStorage.setItem('ppp_user', user);
-        loginError.classList.add('hidden');
-        showPortal(user);
-      } else {
-        loginError.classList.remove('hidden');
-      }
+      loginBtn.disabled = true;
+      loginBtn.innerHTML = '<span class="flex items-center gap-2"><svg class="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Authenticating...</span>';
+
+      setTimeout(() => {
+        if (users[userInput] && users[userInput].toLowerCase() === passInput.toLowerCase()) {
+          sessionStorage.setItem('ppp_user', userInput);
+          loginError.classList.add('hidden');
+          showPortal(userInput);
+        } else {
+          loginBtn.disabled = false;
+          loginBtn.innerHTML = '<span class="relative z-10 flex items-center justify-center gap-2">Sign Into Portal <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg></span>';
+          loginError.classList.remove('hidden');
+          loginContainer.classList.add('animate-shake');
+          setTimeout(() => loginContainer.classList.remove('animate-shake'), 400);
+        }
+      }, 800);
     };
 
     function logout() {
@@ -253,10 +410,8 @@
       window.location.reload();
     }
 
-    // Initialize
-    checkAuth();
+    const savedUser = sessionStorage.getItem('ppp_user');
+    if (savedUser) showPortal(savedUser);
   </script>
 </body>
 </html>
-
-
