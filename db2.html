@@ -160,14 +160,14 @@
                 <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Immediate Stock-Out</p>
                 <div class="flex items-baseline gap-2 mt-1">
                     <h3 id="severeCount" class="text-3xl font-black text-slate-800">0</h3>
-                    <span class="text-red-500 text-xs font-bold font-mono">< 30 Days</span>
+                    <span class="text-red-500 text-xs font-bold font-mono">< 60 Days</span>
                 </div>
             </div>
             <div class="bg-white p-6 rounded-2xl border-l-4 border-amber-500 shadow-sm">
                 <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Low Inventory Alerts</p>
                 <div class="flex items-baseline gap-2 mt-1">
                     <h3 id="lowCount" class="text-3xl font-black text-slate-800">0</h3>
-                    <span class="text-amber-600 text-xs font-bold font-mono">30–89 Days</span>
+                    <span class="text-amber-600 text-xs font-bold font-mono">60–90 Days</span>
                 </div>
             </div>
             <div class="bg-slate-800 p-6 rounded-2xl shadow-xl">
@@ -685,21 +685,21 @@ FINAL.forEach(r => {
         const alerts = FINAL.filter(r => r.holdDays < MIN_COVERAGE_DAYS && r.dailySales > 0).sort((a,b) => a.holdDays - b.holdDays);
         document.getElementById('alertCount').innerText = alerts.length;
 document.getElementById('severeCount').innerText =
-    alerts.filter(a => a.holdDays < 30).length;
+    alerts.filter(a => a.holdDays < 60).length;
 document.getElementById('lowCount').innerText =
-    alerts.filter(a => a.holdDays >= 30 && a.holdDays < MIN_COVERAGE_DAYS).length;
+    alerts.filter(a => a.holdDays >= 60 && a.holdDays < MIN_COVERAGE_DAYS).length;
         document.getElementById('shortfallVal').innerText = Math.round(FINAL.reduce((a,b) => a + Math.max(0, b.osh - b.usableStock), 0)).toLocaleString();
 
         document.getElementById('alertBody').innerHTML = alerts.map(r => `
             <tr>
                 <td class="px-6 py-4 flex items-center gap-3">
-                    ${r.holdDays < 30 ? '<span class="w-2 h-2 rounded-full bg-red-500 critical-pulse"></span>' : '<span class="w-2 h-2 rounded-full bg-amber-400"></span>'}
+                    ${r.holdDays < 60 ? '<span class="w-2 h-2 rounded-full bg-red-500 critical-pulse"></span>' : '<span class="w-2 h-2 rounded-full bg-amber-400"></span>'}
                     <div><div class="font-bold text-slate-800">${r.name}</div><div class="text-[10px] text-slate-400 font-bold tracking-tighter">${r.code}</div></div>
-                </td>
+                </td>	
                 <td class="px-6 py-4 text-center font-bold">${Math.round(r.usableStock)}</td>
                 <td class="px-6 py-4 text-center font-bold text-orange-600">${Math.round(r.shortQty) || '-'}</td>
                 <td class="px-6 py-4 text-center text-slate-500 font-mono">${r.dailySales}</td>
-                <td class="px-6 py-4 text-center"><span class="px-3 py-1 rounded-full text-[10px] font-black tracking-tighter ${r.holdDays < 30 ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}">
+                <td class="px-6 py-4 text-center"><span class="px-3 py-1 rounded-full text-[10px] font-black tracking-tighter ${r.holdDays < 60 ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}">
   ${formatDaysToYMD(r.holdDays)}
 </td>
             </tr>`).join('');
