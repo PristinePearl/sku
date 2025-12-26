@@ -695,6 +695,15 @@ const PREV_YEAR_SALES_URL = "https://script.google.com/macros/s/AKfycbwQ4NVdINtO
       const [y, m, d] = iso.split('-');
       return `${d}/${m}/${y}`;
     }
+function getDaysBetween(poDate) {
+  const iso = getISOStringFromMixed(poDate);
+  if (!iso) return "-";
+
+  const po = new Date(iso);
+  const today = new Date();
+  const diffMs = today - po;
+  return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+}
 function formatDaysToYMD(totalDays) {
     totalDays = Math.max(0, Math.floor(totalDays));
 
@@ -999,14 +1008,29 @@ function exportCriticalAlerts() {
         const rows = RAW_PO_DATA.map(i => `<tr class="hover:bg-slate-50">
                 <td class="px-6 py-4 font-bold text-indigo-600 uppercase tracking-tighter">${getValueByKeys(i, ["PO Number", "poNumber"]) || "N/A"}</td>
                 <td class="px-6 py-4 text-slate-500 text-[10px]">${getLocalDateString(getValueByKeys(i, ["PO Date", "poDate"]))}</td>
-                <td class="px-6 py-4 font-medium text-slate-800">${getValueByKeys(i, ["Item Name", "itemName"]) || "Unknown"}</td>
-                <td class="px-6 py-4 text-center text-slate-500 font-bold">${Math.round(getValueByKeys(i, ["Order Qty", "orderQty"]) || 0)}</td>
+                <td class="px-6 py-4 font-medium text-slate-800">
+  ${getValueByKeys(i, ["Item Name", "itemName"]) || "Unknown"}
+</td>
+
+<!-- 🆕 PO AGE COLUMN -->
+<td class="px-6 py-4 text-center font-black
+  ${getDaysBetween(getValueByKeys(i, ["PO Date", "poDate"])) > 60
+    ? 'text-red-600'
+    : 'text-emerald-600'}">
+  ${formatDaysToYMD(
+    getDaysBetween(getValueByKeys(i, ["PO Date", "poDate"]))
+  )}
+</td>
+
+<td class="px-6 py-4 text-center text-slate-500 font-bold">
+  ${Math.round(getValueByKeys(i, ["Order Qty", "orderQty"]) || 0)}
+</td>
                 <td class="px-6 py-4 text-center font-bold text-blue-600">${getLocalDateString(getValueByKeys(i, ["expectedDelivery", "ETA"]))}</td>
                 <td class="px-6 py-4 text-center font-black text-indigo-600 bg-indigo-50">${Math.round(getValueByKeys(i, ["Pending Qty", "pendingQty"]) || 0)}</td>
             </tr>`).join('');
         document.getElementById('poTrackContent').innerHTML = `<div class="overflow-x-auto"><table class="w-full text-left text-xs whitespace-nowrap">
             <thead><tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider">
-                <th class="px-6 py-4">PO Ref</th><th class="px-6 py-4">Date</th><th class="px-6 py-4">SKU</th>
+                <th class="px-6 py-4">PO Ref</th><th class="px-6 py-4">Date</th><th class="px-6 py-4">SKU</th><th class="px-6 py-4 text-center">PO Age</th>
                 <th class="px-6 py-4 text-center">Order Qty</th><th class="px-6 py-4 text-center">ETA</th><th class="px-6 py-4 text-center">Balance</th>
             </tr></thead><tbody class="divide-y divide-slate-100">${rows}</tbody></table></div>`;
     }
