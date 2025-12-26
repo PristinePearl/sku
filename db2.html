@@ -214,27 +214,38 @@
         </div>
     </section>
 
-    <section id="plan" class="section">
-      <div class="table-container shadow-sm">
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs whitespace-nowrap">
-            <thead>
-              <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider">
-                <th class="px-6 py-4">Item Catalog</th>
-                <th class="px-6 py-4 text-center text-orange-600">Short Exp</th>
-                <th class="px-6 py-4 text-center">Usable Stock</th>
-                <th class="px-6 py-4 text-center text-blue-700">PO Pipeline</th>
-                <th class="px-6 py-4 text-center">Daily Avg Sales</th>
-                <th class="px-6 py-4 text-center">Coverage (Stock holding)</th>
-                <th class="px-6 py-4 text-center bg-slate-100 text-slate-700">MOQ</th>
-                <th class="px-6 py-4 text-center bg-indigo-50 text-indigo-700 font-black">Suggested Order</th>
-              </tr>
-            </thead>
-            <tbody id="planBody" class="divide-y divide-slate-100 text-slate-700"></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
+<section id="plan" class="section space-y-3">
+
+  <!-- EXPORT BUTTON -->
+  <div class="flex justify-end">
+    <button onclick="exportReorderPlan()"
+      class="px-5 py-2 bg-emerald-600 text-white rounded-xl text-xs font-black flex items-center gap-2 hover:bg-emerald-700 transition-all shadow">
+      <i data-lucide="download"></i> EXPORT REORDER PLAN (XLS)
+    </button>
+  </div>
+
+  <!-- TABLE -->
+  <div class="table-container shadow-sm">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs whitespace-nowrap">
+        <thead>
+          <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider">
+            <th class="px-6 py-4">Item Catalog</th>
+            <th class="px-6 py-4 text-center text-orange-600">Short Exp</th>
+            <th class="px-6 py-4 text-center">Usable Stock</th>
+            <th class="px-6 py-4 text-center text-blue-700">PO Pipeline</th>
+            <th class="px-6 py-4 text-center">Daily Avg Sales</th>
+            <th class="px-6 py-4 text-center">Coverage (Stock holding)</th>
+            <th class="px-6 py-4 text-center bg-slate-100 text-slate-700">MOQ</th>
+            <th class="px-6 py-4 text-center bg-indigo-50 text-indigo-700 font-black">Suggested Order</th>
+          </tr>
+        </thead>
+        <tbody id="planBody" class="divide-y divide-slate-100 text-slate-700"></tbody>
+      </table>
+    </div>
+  </div>
+
+</section>
 
     <section id="alerts" class="section">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
@@ -370,9 +381,20 @@
         </div>
     </section>
 
-    <section id="po-track" class="section">
-        <div class="table-container" id="poTrackContent"></div>
-    </section>
+<section id="po-track" class="section space-y-3">
+
+  <!-- EXPORT BUTTON -->
+  <div class="flex justify-end">
+    <button onclick="exportPOPipleline()"
+      class="px-5 py-2 bg-indigo-600 text-white rounded-xl text-xs font-black flex items-center gap-2 hover:bg-indigo-700 transition-all shadow">
+      <i data-lucide="download"></i> EXPORT PO PIPELINE (XLS)
+    </button>
+  </div>
+
+  <!-- TABLE -->
+  <div class="table-container" id="poTrackContent"></div>
+
+</section>
 
     <!-- PEARL AI SECTION -->
     <section id="ai-pearl" class="section">
@@ -1002,6 +1024,76 @@ function exportCriticalAlerts() {
     `Critical_Alerts_${new Date().toISOString().split("T")[0]}.xlsx`
   );
 }
+
+
+function exportPOPipleline() {
+
+  if (!RAW_PO_DATA || !RAW_PO_DATA.length) {
+    alert("No PO data available to export.");
+    return;
+  }
+
+  const exportData = RAW_PO_DATA.map(i => {
+    const poDate = getValueByKeys(i, ["PO Date", "poDate"]);
+    const ageDays = getDaysBetween(poDate);
+
+    return {
+      "PO Ref": getValueByKeys(i, ["PO Number", "poNumber"]) || "N/A",
+      "PO Date": getLocalDateString(poDate),
+      "SKU": getValueByKeys(i, ["Item Name", "itemName"]) || "Unknown",
+      "PO Age (Y M D)": formatDaysToYMD(ageDays),
+      "Order Qty": Math.round(getValueByKeys(i, ["Order Qty", "orderQty"]) || 0),
+      "ETA": getLocalDateString(getValueByKeys(i, ["expectedDelivery", "ETA"])),
+      "Pending Qty": Math.round(getValueByKeys(i, ["Pending Qty", "pendingQty"]) || 0)
+    };
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(exportData);
+
+  XLSX.utils.book_append_sheet(wb, ws, "PO Pipeline");
+
+  XLSX.writeFile(
+    wb,
+    `PO_Pipeline_${new Date().toISOString().split("T")[0]}.xlsx`
+  );
+}
+
+function exportReorderPlan() {
+
+  if (!FINAL || !FINAL.length) {
+    alert("No reorder plan data available.");
+    return;
+  }
+
+  const exportData = FINAL.map(r => {
+    let base = Math.max(0, (r.reqDays * r.dailySales) - r.usableStock - r.openPo);
+    let suggested =
+      r.moq > 0 ? Math.ceil(base / r.moq) * r.moq : Math.round(base);
+
+    return {
+      "Item Code": r.code,
+      "Item Name": r.name,
+      "Short Expiry Qty": Math.round(r.shortQty),
+      "Usable Stock": Math.round(r.usableStock),
+      "Open PO Qty": Math.round(r.openPo),
+      "Daily Avg Sales": r.dailySales,
+      "Coverage (Y M D)": formatDaysToYMD(r.holdDays),
+      "MOQ": r.moq > 0 ? r.moq : "",
+      "Suggested Order Qty": suggested > 0 ? suggested : 0
+    };
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(exportData);
+
+  XLSX.utils.book_append_sheet(wb, ws, "Reorder Plan");
+
+  XLSX.writeFile(
+    wb,
+    `Reorder_Plan_${new Date().toISOString().split("T")[0]}.xlsx`
+  );
+}	
 
     function renderPOTrack() {
         if (!RAW_PO_DATA.length) { document.getElementById('poTrackContent').innerHTML = `<div class="p-20 text-center text-slate-400">No PO data found.</div>`; return; }
