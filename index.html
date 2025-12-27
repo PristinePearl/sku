@@ -265,6 +265,18 @@
                 </div>
               </div>
             </a>
+<!-- Purchase Orders -->
+            <a href="Po.html" class="block group card-interaction">
+              <div class="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-xl relative min-h-[280px] flex flex-col justify-end overflow-hidden">
+                <div class="absolute -right-10 -top-10 w-32 h-32 bg-slate-50 rounded-full blur-3xl"></div>
+                <div class="absolute top-10 left-10 w-14 h-14 bg-slate-100 text-slate-800 rounded-2xl flex items-center justify-center">
+                  <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                </div>
+                <h4 class="text-xl font-black text-slate-900 tracking-tight">Purchase Orders</h4>
+                <p class="text-slate-500 mt-2 text-xs font-medium leading-relaxed">View procurement details and PO status.</p>
+              </div>
+            </a>
+          </div>
           </div>
         </section>
 
@@ -299,12 +311,7 @@
               </div>
               <h5 class="text-sm font-black text-slate-800 group-hover:text-primary">Sales History</h5>
             </a>
-            <a id="db-po" href="Po.html" target="_blank" class="db-grid-card group p-8 rounded-3xl flex flex-col gap-8 transition-all hover:shadow-xl">
-              <div class="icon-container w-12 h-12 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"></path></svg>
-              </div>
-              <h5 class="text-sm font-black text-slate-800 group-hover:text-primary">Purchase Orders</h5>
-            </a>
+
           </div>
         </section>
       </div>
@@ -359,29 +366,38 @@
       const dbSales = document.getElementById('db-sales');
       const dbPO = document.getElementById('db-po');
 
-      const allDbs = [dbBatch, dbCurrent, dbReq, dbSales, dbPO];
+      const allDbs = [dbBatch, dbCurrent, dbReq, dbSales];
       allDbs.forEach(el => el.classList.remove('hidden'));
 
-      if (key === "adminpro") {
-        ops.classList.remove('hidden');
-        dbSec.classList.remove('hidden');
-        analyticsSec.classList.replace('lg:col-span-12', 'lg:col-span-7');
-      } 
-      else if (key === "admin") {
-        ops.classList.remove('hidden');
-        dbSec.classList.remove('hidden');
-        analyticsSec.classList.replace('lg:col-span-12', 'lg:col-span-7');
-        dbBatch.classList.add('hidden');
-        dbCurrent.classList.add('hidden');
-        dbReq.classList.add('hidden');
-        dbSales.classList.add('hidden');
-      } 
-      else if (key === "osh") {
-        ops.classList.add('hidden');
-        dbSec.classList.add('hidden');
-        analyticsSec.classList.replace('lg:col-span-7', 'lg:col-span-12');
-      }
-    }
+// RESET VISIBILITY (important)
+ops.classList.remove('hidden');
+dbSec.classList.remove('hidden');
+analyticsSec.classList.remove('hidden');
+
+// ROLE BASED ACCESS
+if (key === "adminpro") {
+  // Adminpro → Everything visible
+  ops.classList.remove('hidden');
+  dbSec.classList.remove('hidden');
+  analyticsSec.classList.replace('lg:col-span-12', 'lg:col-span-7');
+}
+
+/* ADMIN */
+else if (key === "admin") {
+  // Core Ops ✅ | Master DB ❌ | Analytics ✅
+  ops.classList.remove('hidden');
+  dbSec.classList.add('hidden');   // 🔴 Hide Master Database
+  analyticsSec.classList.replace('lg:col-span-12', 'lg:col-span-7');
+}
+
+/* OSH */
+else if (key === "osh") {
+  // Only Planning / Analytics
+  ops.classList.add('hidden');     // 🔴 Hide Core Operations
+  dbSec.classList.add('hidden');   // 🔴 Hide Master Database
+  analyticsSec.classList.replace('lg:col-span-7', 'lg:col-span-12');
+}
+}
 
     loginForm.onsubmit = async (e) => {
       e.preventDefault();
@@ -416,5 +432,4 @@
   </script>
 </body>
 </html>
-
 
