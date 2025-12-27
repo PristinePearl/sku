@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" href="https://www.pristinepearlpharma.in/images/alt-logo.png">
-    <title>Purchase Orders</title>
+     <link rel="icon" type="image/png" href="https://www.pristinepearlpharma.in/images/alt-logo.png">
+    <title>PO Management System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS for Excel Export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -262,10 +262,9 @@
         let allPoData = [];
         let groupedData = {};
         let currentTab = 'OPEN';
-        let pendingAction = null; // Store whether we are editing or creating new
+        let pendingAction = null; 
         let isAuthenticated = false;
 
-        // Auto-fetch data on load since login gate is removed
         window.onload = fetchData;
 
         function triggerNewEntry() {
@@ -297,7 +296,6 @@
                 document.getElementById('gatePassword').value = '';
                 document.getElementById('gateError').classList.add('hidden');
                 
-                // Execute the action that was blocked
                 if (pendingAction === 'NEW') {
                     openForm();
                 } else if (pendingAction && pendingAction.type === 'EDIT') {
@@ -636,6 +634,107 @@
             const t = document.getElementById('toast');
             t.classList.remove('hidden');
             setTimeout(() => t.classList.add('hidden'), 2500);
+        }
+
+        // --- NEW: Reporting & Export Functions ---
+        function generateReport() {
+            const start = document.getElementById('repStart').value;
+            const end = document.getElementById('repEnd').value;
+            const type = document.getElementById('repType').value;
+            const status = document.getElementById('repStatus').value;
+
+            let filtered = allPoData.filter(row => {
+                const poDate = row.poDate;
+                const statusMatch = status === 'ALL' || row.status === status;
+                const dateMatch = (!start || poDate >= start) && (!end || poDate <= end);
+                return statusMatch && dateMatch;
+            });
+
+            const header = document.getElementById('reportTableHeader');
+            const body = document.getElementById('reportTableBody');
+            header.innerHTML = '';
+            body.innerHTML = '';
+
+            const createHeader = (cols) => {
+                const tr = document.createElement('tr');
+                cols.forEach(c => {
+                    const th = document.createElement('th');
+                    th.className = "px-4 py-3 text-[10px] font-black text-white uppercase tracking-widest";
+                    th.innerText = c;
+                    tr.appendChild(th);
+                });
+                header.appendChild(tr);
+            };
+
+            if (type === 'DETAIL') {
+                createHeader(['Date', 'PO #', 'MFR', 'Item', 'Code', 'Ord', 'Recv', 'Pend', 'ETA']);
+                filtered.forEach(r => {
+                    body.innerHTML += `<tr>
+                        <td class="px-4 py-3 font-bold">${formatDate(r.poDate)}</td>
+                        <td class="px-4 py-3 font-black">${r.poNumber}</td>
+                        <td class="px-4 py-3">${r.manufacturer}</td>
+                        <td class="px-4 py-3 font-medium">${r.itemName}</td>
+                        <td class="px-4 py-3 text-xs text-gray-400">${r.itemCode}</td>
+                        <td class="px-4 py-3 text-center">${r.orderQty}</td>
+                        <td class="px-4 py-3 text-center">${r.receivedQty}</td>
+                        <td class="px-4 py-3 text-center font-black text-orange-600">${r.pendingQty}</td>
+                        <td class="px-4 py-3">${formatDate(r.expectedDelivery)}</td>
+                    </tr>`;
+                });
+            } else if (type === 'MFR') {
+                createHeader(['Manufacturer', 'Total POs', 'Unique Items', 'Total Pending']);
+                const mfrData = {};
+                filtered.forEach(r => {
+                    if(!mfrData[r.manufacturer]) mfrData[r.manufacturer] = { pos: new Set(), items: new Set(), pend: 0 };
+                    mfrData[r.manufacturer].pos.add(r.poNumber);
+                    mfrData[r.manufacturer].items.add(r.itemCode);
+                    mfrData[r.manufacturer].pend += Number(r.pendingQty);
+                });
+                Object.entries(mfrData).forEach(([name, data]) => {
+                    body.innerHTML += `<tr>
+                        <td class="px-4 py-3 font-black text-blue-600">${name}</td>
+                        <td class="px-4 py-3 font-bold text-center">${data.pos.size}</td>
+                        <td class="px-4 py-3 font-bold text-center">${data.items.size}</td>
+                        <td class="px-4 py-3 font-black text-center text-orange-600">${data.pend}</td>
+                    </tr>`;
+                });
+            } else if (type === 'AGING') {
+                createHeader(['PO #', 'Date', 'Aging (Days)', 'Manufacturer', 'Total Pending Qty']);
+                const today = new Date();
+                const processedPos = new Set();
+                filtered.forEach(r => {
+                    if (processedPos.has(r.poNumber)) return;
+                    const po = groupedData[r.poNumber];
+                    body.innerHTML += `<tr>
+                        <td class="px-4 py-3 font-black">${po.poNumber}</td>
+                        <td class="px-4 py-3">${formatDate(po.poDate)}</td>
+                        <td class="px-4 py-3 font-black ${po.agingDays > 30 ? 'text-red-600' : 'text-slate-800'}">${po.agingDays}d</td>
+                        <td class="px-4 py-3">${po.manufacturer}</td>
+                        <td class="px-4 py-3 font-black text-orange-600">${po.totalPending}</td>
+                    </tr>`;
+                    processedPos.add(r.poNumber);
+                });
+            } else if (type === 'PENDING') {
+                createHeader(['PO #', 'Item', 'Code', 'Pending Qty', 'ETA']);
+                filtered.filter(r => r.pendingQty > 0).forEach(r => {
+                    body.innerHTML += `<tr>
+                        <td class="px-4 py-3 font-black">${r.poNumber}</td>
+                        <td class="px-4 py-3 font-medium">${r.itemName}</td>
+                        <td class="px-4 py-3 text-xs text-gray-400">${r.itemCode}</td>
+                        <td class="px-4 py-3 font-black text-orange-600 text-center">${r.pendingQty}</td>
+                        <td class="px-4 py-3">${formatDate(r.expectedDelivery)}</td>
+                    </tr>`;
+                });
+            }
+
+            document.getElementById('reportPreviewContainer').classList.remove('hidden');
+            document.getElementById('reportCount').innerText = `${filtered.length} records matched`;
+        }
+
+        function exportToExcel() {
+            const table = document.getElementById("excelData");
+            const wb = XLSX.utils.table_to_book(table, { sheet: "PO Report" });
+            XLSX.writeFile(wb, `PO_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
         }
     </script>
 </body>
