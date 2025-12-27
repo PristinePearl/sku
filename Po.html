@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-     <link rel="icon" type="image/png" href="https://www.pristinepearlpharma.in/images/alt-logo.png">
     <title>PO Management System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS for Excel Export -->
@@ -255,7 +254,7 @@
     <datalist id="itemList"></datalist>
 
     <script>
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx3Ihabo06aL-i1xhmeA1xWiPVk2GVtFomWuOGE9M-oUs3one-G6vLNYZwu70_TNPxU/exec';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwgmAQKcyrjWVd-CvKGQiArR7JOt60aOKw-xFUprgkPM9b5PcEhG4LNvROgyl06Qcam/exec';
         const ITEM_MASTER_URL = 'https://script.google.com/macros/s/AKfycbwfWL5Iu25uPYWxsRA0pLNtjSzDo86K3jXhSAw_P-RrPTlK5rLPpbLnv00X7972skCj/exec';
         const APP_PASSWORD = "po123";
 
@@ -562,11 +561,20 @@
             };
 
             try {
-                await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+                await fetch(SCRIPT_URL, {
+  method: 'POST',
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify(payload)
+});
                 showToast();
                 closeForm();
                 setTimeout(fetchData, 1500);
-            } catch (err) { alert("Sync Failed"); }
+            } catch (err) {
+  console.error(err);
+  alert("Sync Failed – check console");
+}
             finally { btn.disabled = false; btn.innerText = 'SYNC PO TO DATABASE'; }
         }
 
