@@ -561,22 +561,23 @@
             };
 
             try {
-                await fetch(SCRIPT_URL, {
-  method: 'POST',
-  headers: {
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify(payload)
-});
-                showToast();
-                closeForm();
-                setTimeout(fetchData, 1500);
-            } catch (err) {
-  console.error(err);
-  alert("Sync Failed – check console");
+    await fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload)   // ✅ correct, no headers
+    });
+
+    showToast();
+    closeForm();
+    setTimeout(fetchData, 1500);
+
+} catch (err) {
+    console.error(err);
+    alert("Sync Failed – check console");
+} finally {
+    btn.disabled = false;
+    btn.innerText = 'SYNC PO TO DATABASE';
 }
-            finally { btn.disabled = false; btn.innerText = 'SYNC PO TO DATABASE'; }
-        }
+}
 
         function editPo(poNum) {
             const po = groupedData[poNum];
