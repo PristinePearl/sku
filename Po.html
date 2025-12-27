@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="icon" type="image/png" href="https://www.pristinepearlpharma.in/images/alt-logo.png">
-    <title>PO Management System</title>
+    <link rel="icon" type="image/png" href="https://www.pristinepearlpharma.in/images/alt-logo.png">
+    <title>Purchase Orders</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS for Excel Export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -34,24 +34,27 @@
 </head>
 <body class="bg-gray-50 font-sans text-gray-900 overflow-x-hidden">
 
-    <!-- LOGIN GATE -->
-    <div id="loginGate" class="fixed inset-0 z-[100] bg-slate-900 flex items-center justify-center p-4">
+    <!-- AUTH MODAL (Triggered on Edit/New) -->
+    <div id="authGate" class="fixed inset-0 z-[100] hidden bg-slate-900 bg-opacity-80 flex items-center justify-center p-4">
         <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md text-center border-t-4 border-blue-600">
             <div class="mb-6 inline-flex p-4 bg-blue-50 rounded-full text-blue-600">
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
             </div>
-            <h2 class="text-2xl font-black text-gray-800 mb-2">PO DATABASE</h2>
-            <p class="text-gray-500 text-sm mb-8">Enter Password to unlock.</p>
-            <form onsubmit="verifyGate(event)" class="space-y-4">
+            <h2 class="text-2xl font-black text-gray-800 mb-2">Management Access</h2>
+            <p class="text-gray-500 text-sm mb-8">Verification required to modify records.</p>
+            <form onsubmit="verifyAccess(event)" class="space-y-4">
                 <input type="password" id="gatePassword" placeholder="••••••••" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-center font-bold tracking-widest" autofocus>
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg uppercase tracking-wider">Unlock System</button>
+                <div class="flex gap-2">
+                    <button type="button" onclick="closeAuthGate()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-3 rounded-xl transition-all">Cancel</button>
+                    <button type="submit" class="flex-[2] bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg uppercase tracking-wider">Verify</button>
+                </div>
             </form>
             <p id="gateError" class="text-red-500 text-xs mt-4 font-bold hidden">Invalid Password.</p>
         </div>
     </div>
 
     <!-- MAIN APP CONTENT -->
-    <div id="appContainer" class="hidden">
+    <div id="appContainer">
         <header class="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
                 <div class="flex items-center gap-8">
@@ -68,7 +71,7 @@
                     <button onclick="fetchData()" class="bg-gray-100 hover:bg-gray-200 text-gray-600 p-2 rounded-lg transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
                     </button>
-                    <button onclick="openForm()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-bold shadow-md transition-all flex items-center gap-2 text-sm uppercase tracking-wide">
+                    <button onclick="triggerNewEntry()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-bold shadow-md transition-all flex items-center gap-2 text-sm uppercase tracking-wide">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
                         <span>New Entry</span>
                     </button>
@@ -259,17 +262,59 @@
         let allPoData = [];
         let groupedData = {};
         let currentTab = 'OPEN';
+        let pendingAction = null; // Store whether we are editing or creating new
+        let isAuthenticated = false;
 
-        function verifyGate(e) {
+        // Auto-fetch data on load since login gate is removed
+        window.onload = fetchData;
+
+        function triggerNewEntry() {
+            if (isAuthenticated) {
+                openForm();
+            } else {
+                pendingAction = 'NEW';
+                document.getElementById('authGate').classList.remove('hidden');
+                document.getElementById('gatePassword').focus();
+            }
+        }
+
+        function triggerEdit(poNum) {
+            if (isAuthenticated) {
+                editPo(poNum);
+            } else {
+                pendingAction = { type: 'EDIT', poNum: poNum };
+                document.getElementById('authGate').classList.remove('hidden');
+                document.getElementById('gatePassword').focus();
+            }
+        }
+
+        function verifyAccess(e) {
             e.preventDefault();
-            if (document.getElementById('gatePassword').value === APP_PASSWORD) {
-                document.getElementById('loginGate').classList.add('hidden');
-                document.getElementById('appContainer').classList.remove('hidden');
-                fetchData();
+            const pass = document.getElementById('gatePassword').value;
+            if (pass === APP_PASSWORD) {
+                isAuthenticated = true;
+                document.getElementById('authGate').classList.add('hidden');
+                document.getElementById('gatePassword').value = '';
+                document.getElementById('gateError').classList.add('hidden');
+                
+                // Execute the action that was blocked
+                if (pendingAction === 'NEW') {
+                    openForm();
+                } else if (pendingAction && pendingAction.type === 'EDIT') {
+                    editPo(pendingAction.poNum);
+                }
+                pendingAction = null;
             } else {
                 document.getElementById('gateError').classList.remove('hidden');
                 document.getElementById('gatePassword').value = '';
             }
+        }
+
+        function closeAuthGate() {
+            document.getElementById('authGate').classList.add('hidden');
+            document.getElementById('gatePassword').value = '';
+            document.getElementById('gateError').classList.add('hidden');
+            pendingAction = null;
         }
 
         async function fetchData() {
@@ -295,7 +340,7 @@
                         poNumber: po,
                         poDate: row.poDate,
                         manufacturer: row.manufacturer || 'General',
-                        status: 'CLOSED', // Default to closed, will switch if any item is open
+                        status: 'CLOSED',
                         items: [],
                         totalOrdered: 0,
                         totalPending: 0,
@@ -307,7 +352,6 @@
                 groupedData[po].totalOrdered += Number(row.orderQty);
                 groupedData[po].totalPending += Number(row.pendingQty);
                 
-                // Track earliest ETA
                 if (row.expectedDelivery) {
                     const rowDate = new Date(row.expectedDelivery);
                     if (!groupedData[po].nextEta || rowDate < new Date(groupedData[po].nextEta)) {
@@ -318,7 +362,6 @@
                 if (row.status === 'OPEN') groupedData[po].status = 'OPEN';
             });
 
-            // Calculate Aging
             const today = new Date();
             Object.values(groupedData).forEach(po => {
                 const createDate = new Date(po.poDate);
@@ -402,7 +445,7 @@
                         <p class="text-sm font-bold text-slate-400 mt-1">${formatDate(po.poDate)} • ${po.manufacturer}</p>
                     </div>
                     <div class="flex gap-4">
-                        <button onclick="editPo('${po.poNumber}')" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg transition-all">Edit Record</button>
+                        <button onclick="triggerEdit('${po.poNumber}')" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg transition-all">Edit Record</button>
                         <button onclick="toggleDetails()" class="bg-slate-800 text-slate-400 p-3 rounded-xl hover:text-white transition-all">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
                         </button>
@@ -521,7 +564,6 @@
             };
 
             try {
-                // Using POST for data submission (batch operation in GS)
                 await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
                 showToast();
                 closeForm();
@@ -532,7 +574,7 @@
 
         function editPo(poNum) {
             const po = groupedData[poNum];
-            toggleDetails();
+            document.getElementById('detailsModal').classList.add('hidden');
             
             document.getElementById('originalPoNumber').value = po.poNumber;
             document.getElementById('poNumber').value = po.poNumber;
