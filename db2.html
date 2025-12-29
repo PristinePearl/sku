@@ -717,6 +717,20 @@ const PREV_YEAR_SALES_URL = "https://script.google.com/macros/s/AKfycbwQ4NVdINtO
       const [y, m, d] = iso.split('-');
       return `${d}/${m}/${y}`;
     }
+// ✅ SHORT EXPIRY REPORT – DATE +1 ONLY
+function getShortExpiryReportDate(rawDate) {
+  const iso = getISOStringFromMixed(rawDate);
+  if (!iso) return "N/A";
+
+  const [y, m, d] = iso.split("-").map(Number);
+  const next = new Date(y, m - 1, d + 1);
+
+  const dd = String(next.getDate()).padStart(2, "0");
+  const mm = String(next.getMonth() + 1).padStart(2, "0");
+  const yyyy = next.getFullYear();
+
+  return `${dd}/${mm}/${yyyy}`;
+}
 function getDaysBetween(poDate) {
   const iso = getISOStringFromMixed(poDate);
   if (!iso) return "-";
@@ -1273,9 +1287,19 @@ async function loadPrevYearSales() {
                 detailed = FINAL.map(r => ({ ...r }));
                 break;
             case 'short_expiry':
-                summary = BATCH_STOCK.filter(b => getValueByKeys(b, ["Expiry Type"])?.toLowerCase() === "short").map(r => ({ "Depot": getValueByKeys(r, ["Depot"]) || "Main", "SKU": getValueByKeys(r, ["Item Name"]), "Quantity": getValueByKeys(r, ["Total Quantity"]) }));
-                detailed = BATCH_STOCK.filter(b => getValueByKeys(b, ["Expiry Type"])?.toLowerCase() === "short");
-                break;
+
+  summary = BATCH_STOCK.filter(b => getValueByKeys(b, ["Expiry Type"])?.toLowerCase() === "short").map(r => ({ "Depot": getValueByKeys(r, ["Depot"]) || "Main", "SKU": getValueByKeys(r, ["Item Name"]), "Quantity": getValueByKeys(r, ["Total Quantity"]) }));
+
+  detailed = BATCH_STOCK
+    .filter(b => getValueByKeys(b, ["Expiry Type"])?.toLowerCase() === "short")
+    .map(b => ({
+      ...b,
+      "Date": getShortExpiryReportDate(          // ✅ DATE +1
+        getValueByKeys(b, ["Date", "date"])
+      ),
+    }));
+
+  break;
             case 'procurement':
                 summary = FINAL.filter(r => r.holdDays < MIN_COVERAGE_DAYS).map(r => {
                     let base = Math.max(0, (r.reqDays * r.dailySales) - r.usableStock - r.openPo);
@@ -1569,4 +1593,3 @@ function hideRobot() {
 </div>
 </body>
 </html>
-
