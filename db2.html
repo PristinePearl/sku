@@ -11,7 +11,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@3	00;400;500;600;700&display=swap');
     body { font-family: 'Inter', sans-serif; }
     .section { display: none; }
     .section.active { display: block; animation: fadeIn 0.3s ease-out; }
@@ -101,6 +101,29 @@
   letter-spacing: 0.08em;
   color: #c7d2fe;
 }
+/* ================================
+   BUFFER STATUS ICONS
+================================ */
+.buffer-safe {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.buffer-warning {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.buffer-breach {
+  background: #fee2e2;
+  color: #991b1b;
+  animation: bufferBlink 1s infinite;
+}
+
+@keyframes bufferBlink {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.15); }
+}
   </style>
 <script>
   window.MathJax = {
@@ -130,6 +153,11 @@
       <button class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-600 rounded-xl hover:bg-slate-50 nav-active" onclick="show('req', this)">
         <i data-lucide="layout-grid" class="w-4 h-4"></i> Stock & Requirements
       </button>
+<button class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-600 rounded-xl hover:bg-slate-50"
+        onclick="show('buffer', this)">
+  <i data-lucide="layers" class="w-4 h-4"></i>
+  Buffer Stock
+</button>
       <button class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-600 rounded-xl hover:bg-slate-50" onclick="show('plan', this)">
         <i data-lucide="clipboard-list" class="w-4 h-4"></i> Reorder Plan
       </button>
@@ -173,7 +201,6 @@
         </button>
       </div>
     </header>
-
     <div id="loader" class="hidden flex items-center justify-center p-20">
         <div class="flex flex-col items-center gap-4">
             <div class="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
@@ -213,6 +240,38 @@
             </div>
         </div>
     </section>
+
+<section id="buffer" class="section space-y-3">
+
+  <!-- HEADER ACTION -->
+  <div class="flex justify-end">
+    <button onclick="exportBufferStock()"
+      class="px-5 py-2 bg-indigo-600 text-white rounded-xl text-xs font-black flex items-center gap-2 hover:bg-indigo-700 shadow">
+      <i data-lucide="download"></i> EXPORT BUFFER STOCK (XLS)
+    </button>
+  </div>
+
+  <!-- TABLE -->
+  <div class="table-container shadow-sm">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs whitespace-nowrap">
+        <thead>
+          <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider">
+            <th class="px-6 py-4">Item</th>
+            <th class="px-6 py-4 text-center">Buffer Qty</th>
+            <th class="px-6 py-4 text-center">Physical Stock</th>
+            <th class="px-6 py-4 text-center text-orange-600">Short Expiry</th>
+            <th class="px-6 py-4 text-center bg-indigo-50 text-indigo-700">Usable Stock</th>
+            <th class="px-6 py-4 text-center text-blue-700">Open PO</th>
+            <th class="px-6 py-4 text-center bg-emerald-50 text-emerald-700">Suggested Qty</th>
+          </tr>
+        </thead>
+        <tbody id="bufferBody" class="divide-y divide-slate-100"></tbody>
+      </table>
+    </div>
+  </div>
+
+</section>
 
 <section id="plan" class="section space-y-3">
 
@@ -673,7 +732,15 @@
 
   <script>
     const apiKey = ""; 
-    let STOCK = [], REQ_MAP = {}, PO_MAP = {}, FINAL = [], RAW_PO_DATA = [], BATCH_STOCK = [], MOQ_MAP = {}, RAW_STOCK_DATE_FILTERED = [];
+    let STOCK = [],
+    REQ_MAP = {},
+    PO_MAP = {},
+    FINAL = [],
+    RAW_PO_DATA = [],
+    BATCH_STOCK = [],
+    MOQ_MAP = {},
+    RAW_STOCK_DATE_FILTERED = [],
+    BUFFER_DATA = [];
 let PREV_YEAR_CACHE = null;
 const MIN_COVERAGE_DAYS = 90; // 🔒 Global minimum stock holding (3 months)
 
@@ -683,6 +750,7 @@ const MIN_COVERAGE_DAYS = 90; // 🔒 Global minimum stock holding (3 months)
     const BATCH_URL = "https://script.google.com/macros/s/AKfycbx4hqFN0DhMDm22q0_EkS_E4EAApVavgZz8FEZEdUV0Jg0uMVaUUg3S8FyL9vy3H5KM/exec";
     const MOQ_URL = "https://script.google.com/macros/s/AKfycbwfWL5Iu25uPYWxsRA0pLNtjSzDo86K3jXhSAw_P-RrPTlK5rLPpbLnv00X7972skCj/exec";
 const PREV_YEAR_SALES_URL = "https://script.google.com/macros/s/AKfycbwQ4NVdINtOuws1zx9YIvml75iBnWszPdrIG8TAnBwqUAJQP8W1hRkYFQWwxTGUd0k4Ug/exec";
+const BUFFER_URL = "https://script.google.com/macros/s/AKfycbxMcORHpxDOe4EnE5MhHHxVYk_NJLDs35tZCaCVeckOtmTxzOq09Ss9CHkTrUZ7ZLtL/exec";
 
     window.onload = fetchData;
 
@@ -782,9 +850,10 @@ function formatDaysToYMD(totalDays) {
             fetchWithRetry(REQ_URL),
             fetchWithRetry(PO_URL),
             fetchWithRetry(BATCH_URL),
-            fetchWithRetry(MOQ_URL)
+            fetchWithRetry(MOQ_URL),
+            fetchWithRetry(BUFFER_URL)
           ]);
-          const [sRes, rRes, pRes, bRes, mRes] = results;
+          const [sRes, rRes, pRes, bRes, mRes, bufRes] = results;
           if (sRes.status === 'fulfilled') STOCK = sRes.value; 
           else throw new Error("Stock data unreachable.");
           if (rRes.status === 'fulfilled') {
@@ -804,6 +873,9 @@ function formatDaysToYMD(totalDays) {
                   if (code) MOQ_MAP[code] = val;
               });
           }
+if (bufRes.status === 'fulfilled' && Array.isArray(bufRes.value)) {
+  BUFFER_DATA = bufRes.value;
+}
           if(STOCK && STOCK.length > 0) {
               const dateMap = STOCK.map(i => getISOStringFromMixed(getValueByKeys(i, ["Date", "date"]))).filter(d => d);
               if (dateMap.length > 0) {
@@ -910,6 +982,23 @@ if (
 }
 
       FINAL = Object.values(dataMap);
+const BUFFER_MAP = {};
+BUFFER_DATA.forEach(b => {
+  const code = String(b["Item Code"] || "").trim().toLowerCase();
+  if (code) {
+    BUFFER_MAP[code] = Number(b["Buffer Qty"]) || 0;
+  }
+});
+
+FINAL.forEach(r => {
+  r.bufferQty = BUFFER_MAP[r.code.toLowerCase()] || 0;
+
+  // Suggested Buffer Order
+  r.bufferSuggested = Math.max(
+    0,
+    r.bufferQty - (r.usableStock + r.openPo)
+  );
+});
 FINAL.forEach(r => {
     r.usableStock = Math.max(0, r.stock - r.shortQty); 
 
@@ -926,12 +1015,49 @@ FINAL.forEach(r => {
       renderAll();
     }
 
-    function renderAll() { renderReq(); renderPlan(); renderPOTrack(); renderAlerts(); lucide.createIcons(); }
+    function renderAll() { renderReq(); renderBufferStock(); renderPlan(); renderPOTrack(); renderAlerts(); lucide.createIcons(); }
 
     function renderReq() {
       document.getElementById('reqBody').innerHTML = FINAL.map(r => `
           <tr class="hover:bg-slate-50">
-            <td class="px-6 py-4"><div class="font-semibold text-slate-800">${r.name}</div><div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">${r.code}</div></td>
+            <td class="px-6 py-4"><div class="flex items-center gap-2 font-semibold text-slate-800">
+  ${r.name}
+
+  ${
+    r.bufferQty > 0
+      ? (() => {
+          const bufferGap = (r.usableStock + r.openPo) - r.bufferQty;
+          const dangerLimit = -Math.round(r.bufferQty * 0.2);
+
+          if (bufferGap >= 0) {
+            // 🟢 BUFFER SAFE
+            return `
+              <span title="Buffer Safe"
+                class="inline-flex items-center justify-center w-4 h-4 rounded-full buffer-safe">
+                <i data-lucide="shield-check" class="w-3 h-3"></i>
+              </span>`;
+          }
+
+          if (bufferGap >= dangerLimit) {
+            // 🟡 BUFFER ON DANGER
+            return `
+              <span title="Buffer on Danger"
+                class="inline-flex items-center justify-center w-4 h-4 rounded-full buffer-warning">
+                <i data-lucide="alert-circle" class="w-3 h-3"></i>
+              </span>`;
+          }
+
+          // 🔴 BUFFER BREACH (BLINK)
+          return `
+            <span title="Buffer Breached"
+              class="inline-flex items-center justify-center w-4 h-4 rounded-full buffer-breach">
+              <i data-lucide="zap" class="w-3 h-3"></i>
+            </span>`;
+        })()
+      : ''
+  }
+</div>
+<div class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">${r.code}</div></td>
             <td class="px-6 py-4 text-center">${Math.round(r.stock)}</td>
             <td class="px-6 py-4 text-center font-bold text-orange-600">${Math.round(r.shortQty) || '-'}</td>
             <td class="px-6 py-4 text-center font-black bg-indigo-50 text-indigo-800">${Math.round(r.usableStock)}</td>
@@ -941,6 +1067,71 @@ FINAL.forEach(r => {
             <td class="px-6 py-4 text-center font-bold ${r.usableStock < r.osh ? 'text-red-500' : 'text-emerald-600'}">${Math.round(r.usableStock - r.osh)}</td>
           </tr>`).join('');
     }
+function renderBufferStock() {
+
+  // ✅ SHOW ONLY ITEMS WITH BUFFER POLICY
+  const bufferItems = FINAL.filter(r => r.bufferQty > 0);
+
+  if (!bufferItems.length) {
+    document.getElementById("bufferBody").innerHTML = `
+      <tr>
+        <td colspan="7" class="px-6 py-10 text-center text-slate-400 font-medium">
+          No Buffer Stock items defined
+        </td>
+      </tr>`;
+    return;
+  }
+
+  document.getElementById("bufferBody").innerHTML = bufferItems.map(r => `
+    <tr class="hover:bg-slate-50 ${r.bufferSuggested > 0 ? 'bg-red-50' : ''}">
+      <td class="px-6 py-4">
+        <div class="font-semibold text-slate-800">${r.name}</div>
+        <div class="text-[10px] text-slate-400 font-bold uppercase">${r.code}</div>
+      </td>
+      <td class="px-6 py-4 text-center font-bold">${r.bufferQty}</td>
+      <td class="px-6 py-4 text-center">${Math.round(r.stock)}</td>
+      <td class="px-6 py-4 text-center font-bold text-orange-600">${Math.round(r.shortQty) || '-'}</td>
+      <td class="px-6 py-4 text-center font-black text-indigo-700">${Math.round(r.usableStock)}</td>
+      <td class="px-6 py-4 text-center font-bold text-blue-700">${Math.round(r.openPo)}</td>
+      <td class="px-6 py-4 text-center font-black
+        ${r.bufferSuggested > 0 ? 'text-red-600' : 'text-emerald-600'}">
+        ${r.bufferSuggested}
+      </td>
+    </tr>
+  `).join('');
+}
+
+function exportBufferStock() {
+
+  // ✅ Export ONLY buffer-defined items
+  const bufferItems = FINAL.filter(r => r.bufferQty > 0);
+
+  if (!bufferItems.length) {
+    alert("No Buffer Stock items available to export.");
+    return;
+  }
+
+  const exportData = bufferItems.map(r => ({
+    "Item Code": r.code,
+    "Item Name": r.name,
+    "Buffer Qty": r.bufferQty,
+    "Physical Stock": Math.round(r.stock),
+    "Short Expiry": Math.round(r.shortQty),
+    "Usable Stock": Math.round(r.usableStock),
+    "Open PO Qty": Math.round(r.openPo),
+    "Suggested Qty": r.bufferSuggested
+  }));
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(exportData);
+
+  XLSX.utils.book_append_sheet(wb, ws, "Buffer Stock");
+
+  XLSX.writeFile(
+    wb,
+    `Buffer_Stock_${new Date().toISOString().split("T")[0]}.xlsx`
+  );
+}
 
     function renderPlan() {
         document.getElementById('planBody').innerHTML = FINAL.map(r => {
@@ -1301,12 +1492,37 @@ async function loadPrevYearSales() {
 
   break;
             case 'procurement':
-                summary = FINAL.filter(r => r.holdDays < MIN_COVERAGE_DAYS).map(r => {
-                    let base = Math.max(0, (r.reqDays * r.dailySales) - r.usableStock - r.openPo);
-                    return { "Item Name": r.name, "Code": r.code, "Daily Avg Sales": r.dailySales, "Suggested Order": r.moq > 0 ? Math.ceil(base / r.moq) * r.moq : Math.round(base) };
-                });
-                detailed = FINAL.filter(r => r.holdDays < MIN_COVERAGE_DAYS);
-                break;
+    summary = FINAL
+        .filter(r => r.holdDays < MIN_COVERAGE_DAYS)
+        .map(r => {
+
+            let base = Math.max(
+                0,
+                (r.reqDays * r.dailySales) - r.usableStock - r.openPo
+            );
+
+            let suggestedOrder = r.moq > 0
+                ? Math.ceil(base / r.moq) * r.moq
+                : Math.round(base);
+
+            let openPO = Math.round(r.openPo || 0);
+            let pending = Math.max(0, suggestedOrder - openPO);
+
+            return {
+                "Item Name": r.name,
+                "Code": r.code,
+                "Daily Avg Sales": r.dailySales,
+                "Suggested Order": suggestedOrder,
+                "Open PO": openPO,
+                "Pending to Order": pending
+            };
+        })
+        // 🔴 THIS LINE HIDES PENDING = 0
+        .filter(r => r["Pending to Order"] > 0);
+
+    detailed = FINAL.filter(r => r.holdDays < MIN_COVERAGE_DAYS);
+    break;
+
             case 'risk_matrix':
               summary = FINAL.filter(r => r.holdDays < MIN_COVERAGE_DAYS).map(r => ({
   "Item": r.name,
