@@ -344,26 +344,37 @@ document.getElementById('downloadTemplate').onclick = () => {
       classify();
     }
 
-    function classify() {
-      // Logic based on global report date or current month
-      const reportDate = moment(GLOBAL_REPORT_DATE, 'DD-MM-YYYY');
-      
-      MERGED.forEach(r => {
-        if (!r.expiry) { r.expiry_type = 'Unknown'; return; }
-        const exp = moment(r.expiry);
-        
-        if (exp.isBefore(reportDate, 'month')) {
-            r.expiry_type = 'Expired';
-        } else {
-            const diffMonths = exp.diff(reportDate, 'months', true);
-            if (diffMonths <= 6) {
-                r.expiry_type = 'Short';
-            } else {
-                r.expiry_type = 'Long';
-            }
-        }
-      });
+function classify() {
+  // Month-based logic using report month
+  const report = moment(GLOBAL_REPORT_DATE, 'DD-MM-YYYY').startOf('month');
+
+  MERGED.forEach(r => {
+    if (!r.expiry) {
+      r.expiry_type = 'Unknown';
+      return;
     }
+
+    const exp = moment(r.expiry).startOf('month');
+
+    // Month difference
+    const monthDiff =
+      (exp.year() - report.year()) * 12 +
+      (exp.month() - report.month());
+
+    if (monthDiff <= 0) {
+      // Current month OR past months
+      r.expiry_type = 'Expired';
+    }
+    else if (monthDiff <= 6) {
+      // Next 1 to 6 months
+      r.expiry_type = 'Short';
+    }
+    else {
+      // Beyond 6 months
+      r.expiry_type = 'Long';
+    }
+  });
+}
 
     function renderTable(filter = null) {
       const rows = MERGED.filter(r => !filter || r.expiry_type === filter);
