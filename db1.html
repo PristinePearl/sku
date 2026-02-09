@@ -154,6 +154,10 @@
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 014 9H7z"></path></svg>
             Export XLSX
         </button>
+<button id="exportProductExpiry"
+  class="bg-rose-600 hover:bg-rose-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition duration-300 transform hover:scale-[1.02] active:scale-[0.98] flex items-center">
+  📅 Product Wise Expiry
+</button>
       </div>
 
       <!-- Message Box Styling: Enhanced appearance for feedback -->
@@ -643,7 +647,10 @@ if (fd || td) {
         XLSX.writeFile(workbook, `Merged_Depot_Stock_Report_${sourceName}_${viewMode}.xlsx`);
         showMessage(`Exported ${dataToExport.length} records to Excel.`);
     };
-
+/* ✅ PRODUCT WISE EXPIRY — MUST BE HERE */
+document.getElementById("exportProductExpiry").onclick = () => {
+  exportProductWiseExpiryReport();
+};
     // --- Data Fetch and Switch Logic ---
     
     /**
@@ -786,27 +793,157 @@ if (fd || td) {
           });
     }
 
+function exportProductWiseExpiryReport() {
 
-    // --- Setup Listeners for Data Source Switch ---
-    switchBatch.onclick = () => {
-        if (CURRENT_DATA_SOURCE !== "BATCH") {
-            CURRENT_DATA_SOURCE = "BATCH";
-            fetchDataAndRender();
-        }
-    };
+  if (!FILTERED_DATA || FILTERED_DATA.length === 0) {
+    showMessage("No batch data to export. Apply filter first.", "error");
+    return;
+  }
 
-    switchCurrent.onclick = () => {
-        if (CURRENT_DATA_SOURCE !== "CURRENT") {
-            CURRENT_DATA_SOURCE = "CURRENT";
-            fetchDataAndRender();
-        }
-    };
-    
-    // --- Initial Load ---
-    window.onload = () => {
-        fetchDataAndRender();
-    };
+const DEPOTS = ["Kerala", "Palepu", "Coimbatore", "Bangalore"];
 
+  /* ===============================
+     COLLECT EXPIRY HEADERS
+  =============================== */
+const MONTHS = [...new Set(
+  FILTERED_DATA.map(r => r["Expiry (MM-YYYY)"]).filter(Boolean)
+)].sort((a, b) => {
+  const [am, ay] = a.split('-').map(Number);
+  const [bm, by] = b.split('-').map(Number);
+  return ay !== by ? ay - by : am - bm;
+});
+
+  if (!MONTHS.length) {
+    showMessage("No expiry data found.", "error");
+    return;
+  }
+
+  /* ===============================
+     HELPERS
+  =============================== */
+  const initMonthCols = obj => {
+    MONTHS.forEach(m => obj[m] = 0);
+    obj["TOTAL"] = 0;
+  };
+
+  /* ===============================
+     SHEET 1 — ALL DEPOTS SUMMARY
+  =============================== */
+  const S1 = {};
+
+  FILTERED_DATA.forEach(r => {
+    const code = r["Item Code"];
+    const name = r["Item Name"];
+    const qty = Number(r["Total Quantity"] || 0);
+    const m = r["Expiry (MM-YYYY)"];
+    if (!code || !m) return;
+
+    if (!S1[code]) {
+      S1[code] = { "Product Code": code, "Product Name": name };
+      initMonthCols(S1[code]);
+    }
+    S1[code][m] += qty;
+    S1[code]["TOTAL"] += qty;
+  });
+
+/* ===============================
+   SHEET 2 — DEPOT SUMMARY
+=============================== */
+const S2 = {};
+
+FILTERED_DATA.forEach(r => {
+  const code = r["Item Code"];
+  const name = r["Item Name"];
+  const m    = r["Expiry (MM-YYYY)"];
+  if (!code || !m) return;
+
+  DEPOTS.forEach(depot => {
+    const qty = Number(r[depot] || 0);
+    if (qty <= 0) return;
+
+    const key = depot + "_" + code;
+
+    if (!S2[key]) {
+      S2[key] = {
+        "Depot": depot,
+        "Product Code": code,
+        "Product Name": name
+      };
+      initMonthCols(S2[key]);
+    }
+
+    S2[key][m] += qty;
+    S2[key]["TOTAL"] += qty;
+  });
+});
+/* ===============================
+   SHEET 3–6 — DEPOT BREAKUPS
+=============================== */
+const DEPOT_SHEETS = {};
+DEPOTS.forEach(d => DEPOT_SHEETS[d] = {});
+
+FILTERED_DATA.forEach(r => {
+  const code  = r["Item Code"];
+  const name  = r["Item Name"];
+  const batch = r["Batch No"];
+  const m     = r["Expiry (MM-YYYY)"];
+  if (!code || !batch || !m) return;
+
+  DEPOTS.forEach(depot => {
+    const qty = Number(r[depot] || 0);
+    if (qty <= 0) return;
+
+    const key = code + "_" + batch;
+
+    if (!DEPOT_SHEETS[depot][key]) {
+      DEPOT_SHEETS[depot][key] = {
+        "Product Code": code,
+        "Product Name": name,
+        "Batch": batch
+      };
+      initMonthCols(DEPOT_SHEETS[depot][key]);
+    }
+
+    DEPOT_SHEETS[depot][key][m] += qty;
+    DEPOT_SHEETS[depot][key]["TOTAL"] += qty;
+  });
+});
+
+  /* ===============================
+     EXPORT EXCEL
+  =============================== */
+  const wb = XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(
+    wb,
+    XLSX.utils.json_to_sheet(Object.values(S1)),
+    "Summary"
+  );
+
+  XLSX.utils.book_append_sheet(
+    wb,
+    XLSX.utils.json_to_sheet(Object.values(S2)),
+    "Depot Summary"
+  );
+
+DEPOTS.forEach((d, i) => {
+  XLSX.utils.book_append_sheet(
+    wb,
+    XLSX.utils.json_to_sheet(Object.values(DEPOT_SHEETS[d])),
+    `Depot ${i + 1} - ${d}`
+  );
+});
+
+  XLSX.writeFile(
+    wb,
+    `Product_Wise_Expiry_${new Date().toISOString().split("T")[0]}.xlsx`
+  );
+
+  showMessage("Product Wise Expiry report exported successfully.");
+}
+window.onload = () => {
+  fetchDataAndRender();
+};
   </script>
 </body>
 
