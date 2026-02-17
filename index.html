@@ -6,6 +6,7 @@
   <link rel="icon" type="image/png" href="https://www.pristinepearlpharma.in/images/alt-logo.png">
   <title>Pearl SKU</title>
   <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <script>
     tailwind.config = {
@@ -227,7 +228,7 @@
 <!-- SMART SUMMARY CARDS -->
 <div id="summaryCards" class="grid grid-cols-2 md:grid-cols-5 gap-6 mb-16">
 
-  <div class="bg-white rounded-3xl p-6 shadow border border-slate-100 text-center">
+<div onclick="openProductsPopup()" class="bg-white rounded-3xl p-6 shadow border border-slate-100 text-center cursor-pointer hover:scale-105 transition">
     <p class="text-xs font-bold text-slate-400">TOTAL PRODUCTS</p>
     <h2 id="sumProducts" class="text-3xl font-black mt-2 h-8 flex items-center justify-center"><div class="h-8 w-20 mx-auto rounded-lg skeleton"></div></h2>
   </div>
@@ -237,6 +238,7 @@
 <h2 id="sumQty" class="text-3xl font-black mt-2 h-8 flex items-center justify-center"><div class="h-8 w-24 mx-auto rounded-lg skeleton"></div></h2>
   </div>
 
+
   <div class="bg-white rounded-3xl p-6 shadow border border-slate-100 text-center">
     <p class="text-xs font-bold text-slate-400">TODAY</p>
 <h2 id="todayDate" class="text-3xl font-black text-primary mt-2">
@@ -244,12 +246,12 @@
 </h2>
   </div>
 
-  <div class="bg-white rounded-3xl p-6 shadow border border-slate-100 text-center">
-    <p class="text-xs font-bold text-slate-400">NEAR EXPIRY QTY</p>
+  <div onclick="openExpiryPopup('short')" class="bg-white rounded-3xl p-6 shadow border border-slate-100 text-center cursor-pointer hover:scale-105 transition">
+    <p class="text-xs font-bold text-slate-400">SHORT EXPIRY QTY</p>
 <h2 id="sumNear" class="text-3xl font-black mt-2 h-8 flex items-center justify-center"><div class="h-8 w-16 mx-auto rounded-lg skeleton" style="background:#fed7aa"></div></h2>
   </div>
 
-  <div class="bg-white rounded-3xl p-6 shadow border border-slate-100 text-center">
+  <div onclick="openExpiryPopup('expired')" class="bg-white rounded-3xl p-6 shadow border border-slate-100 text-center cursor-pointer hover:scale-105 transition">
     <p class="text-xs font-bold text-slate-400">EXPIRED QTY</p>
 <h2 id="sumExpired" class="text-3xl font-black mt-2 h-8 flex items-center justify-center"><div class="h-8 w-16 mx-auto rounded-lg skeleton" style="background:#fecaca"></div></h2>
   </div>
@@ -377,6 +379,75 @@
       <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">PRISTINE PEARL PHARMA PVT LTD</p>
     </footer>
   </div>
+<!-- Expiry Popup -->
+<div id="expiryPopup" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center">
+  <div class="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl w-[92%] max-w-5xl p-8 relative animate-scale-in border border-white/40">
+
+    <button onclick="closeExpiryPopup()" class="absolute top-3 right-4 text-xl font-bold">✕</button>
+
+    <h3 id="popupTitle" class="text-2xl font-black mb-6 text-transparent bg-clip-text bg-gradient-to-r from-primary to-emerald-500"></h3>
+
+    <div class="flex justify-end mb-3">
+      <button id="popupDownload"
+        class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold">
+        Download Excel
+      </button>
+    </div>
+
+    <div class="max-h-[400px] overflow-auto border rounded-lg">
+      <table class="min-w-full text-sm rounded-xl overflow-hidden border-separate border-spacing-0">
+
+
+        <thead class="bg-gradient-to-r from-primary/10 to-emerald-100 text-slate-700 sticky top-0 z-20">
+          <tr>
+<th class="p-2 text-left">Code</th>
+            <th class="p-2 text-left">Item</th>
+            <th class="p-2">Batch</th>
+            <th class="p-2">Expiry</th>
+<th class="p-2">CBE</th>
+<th class="p-2">BLR</th>
+<th class="p-2">KL</th>
+<th class="p-2">SS</th>
+            <th class="p-2 text-right">Total</th>
+          </tr>
+        </thead>
+        <tbody id="popupBody"></tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+<!-- Products Popup -->
+<div id="productsPopup" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center">
+  <div class="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl w-[92%] max-w-6xl p-8 relative animate-scale-in">
+
+    <button onclick="closeProductsPopup()" class="absolute top-3 right-4 text-xl font-bold">✕</button>
+
+    <h3 class="text-2xl font-black mb-6 text-transparent bg-clip-text bg-gradient-to-r from-primary to-emerald-500">
+      Product Availability
+    </h3>
+
+    <div class="max-h-[500px] overflow-auto border rounded-xl">
+      <table class="min-w-full text-sm">
+
+        <thead class="bg-slate-100 font-bold sticky top-0 z-10">
+          <tr>
+            <th class="p-2 text-left">Item Code</th>
+            <th class="p-2 text-left">Item Name</th>
+            <th class="p-2">CBE</th>
+            <th class="p-2">BLR</th>
+            <th class="p-2">KL</th>
+            <th class="p-2">SS</th>
+          </tr>
+        </thead>
+
+        <tbody id="productsBody"></tbody>
+
+      </table>
+    </div>
+
+  </div>
+</div>
 
   <script>
 function animateValue(id, end, duration = 2500) {
@@ -434,7 +505,7 @@ if (!chosenDate){
 const data = raw.filter(r =>
   r["Date"] === chosenDate
 );
-
+window.latestSummaryData = data;
     if (!data || !data.length) return;
 
     const products = new Set();
@@ -449,7 +520,7 @@ document.getElementById("sumNear").className="text-3xl font-black mt-2 text-oran
 document.getElementById("sumExpired").className="text-3xl font-black mt-2 text-red-600";
 
 ["sumProducts","sumQty","sumNear","sumExpired"].forEach(id=>{
-  document.getElementById(id).innerText="0";
+  document.getElementById(id).innerHTML="0";
 });
 
     const today = new Date();
@@ -479,6 +550,113 @@ animateValue("sumExpired", expired, 2200);
     console.error("Summary load error", err);
   }
 }
+let POPUP_ROWS = [];
+
+function openExpiryPopup(type){
+
+  const filtered = window.latestSummaryData.filter(r =>
+    (r["Expiry Type"]||"").toLowerCase() === type
+  );
+
+  POPUP_ROWS = filtered;
+
+  document.getElementById("popupTitle").innerText =
+    type==="expired" ? "Expired Stock" : "Near Expiry Stock";
+
+  const body = document.getElementById("popupBody");
+  body.innerHTML="";
+
+  filtered.forEach(r=>{
+    body.innerHTML += `
+      <tr class="border-t hover:bg-primary/5 transition">
+<td class="p-2">${r["Item Code"]}</td>
+        <td class="p-2">${r["Item Name"]}</td>
+        <td class="p-2 text-center">${r["Batch No"]||""}</td>
+        <td class="p-2 text-center">${r["Expiry (MM-YYYY)"]||""}</td>
+<td class="p-2 text-center">${r["Coimbatore"]||""}</td>
+<td class="p-2 text-center">${r["Bangalore"]||""}</td>
+<td class="p-2 text-center">${r["Kerala"]||""}</td>
+<td class="p-2 text-center">${r["Palepu"]||""}</td>
+        <td class="p-2 text-right font-bold">${r["Total Quantity"]||0}</td>
+      </tr>
+    `;
+  });
+
+  document.getElementById("expiryPopup").classList.remove("hidden");
+}
+
+function closeExpiryPopup(){
+  document.getElementById("expiryPopup").classList.add("hidden");
+}
+
+  document.getElementById("popupDownload").onclick = ()=>{
+  if(!POPUP_ROWS.length) return;
+
+  const rows = POPUP_ROWS.map(r=>({
+Code: r["Item Code"],    
+Item: r["Item Name"],
+    Batch: r["Batch No"],
+    Expiry: r["Expiry (MM-YYYY)"],
+CBE: r["Coimbatore"] || 0,
+    BLR: r["Bangalore"] || 0,
+    KL: r["Kerala"] || 0,
+    SS: r["Palepu"] || 0,
+    Total: r["Total Quantity"]
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Report");
+
+  XLSX.writeFile(wb,"PearlSKU_BatchReport.xlsx");
+};
+function openProductsPopup(){
+
+  const body = document.getElementById("productsBody");
+  body.innerHTML="";
+
+  const map = {};
+
+  window.latestSummaryData.forEach(r=>{
+    const code = r["Item Code"];
+
+    if(!map[code]){
+      map[code] = {
+        code,
+        name: r["Item Name"],
+        CBE:0, BLR:0, KL:0, SS:0
+      };
+    }
+
+    map[code].CBE += Number(r["Coimbatore"]||0);
+    map[code].BLR += Number(r["Bangalore"]||0);
+    map[code].KL += Number(r["Kerala"]||0);
+    map[code].SS += Number(r["Palepu"]||0);
+  });
+
+  Object.values(map).forEach(p=>{
+    body.innerHTML += `
+      <tr class="border-t hover:bg-slate-50">
+        <td class="p-2 font-semibold">${p.code}</td>
+        <td class="p-2">${p.name}</td>
+        <td class="p-2 text-center">${p.CBE>0 ? '<span class="inline-block w-5 h-5 rounded-full bg-emerald-500"></span>' : '<span class="inline-block w-5 h-5 rounded-full bg-slate-300"></span>'}</td>
+
+<td class="p-2 text-center">${p.BLR>0 ? '<span class="inline-block w-5 h-5 rounded-full bg-emerald-500"></span>' : '<span class="inline-block w-5 h-5 rounded-full bg-slate-300"></span>'}</td>
+
+<td class="p-2 text-center">${p.KL>0 ? '<span class="inline-block w-5 h-5 rounded-full bg-emerald-500"></span>' : '<span class="inline-block w-5 h-5 rounded-full bg-slate-300"></span>'}</td>
+
+<td class="p-2 text-center">${p.SS>0 ? '<span class="inline-block w-5 h-5 rounded-full bg-emerald-500"></span>' : '<span class="inline-block w-5 h-5 rounded-full bg-slate-300"></span>'}</td>
+      </tr>
+    `;
+  });
+
+  document.getElementById("productsPopup").classList.remove("hidden");
+}
+
+function closeProductsPopup(){
+  document.getElementById("productsPopup").classList.add("hidden");
+}
+
     const users = {
       "adminpro": "surya2282",
       "admin": "admin123",
@@ -598,3 +776,4 @@ setTimeout(()=>{
   </script>
 </body>
 </html>
+
