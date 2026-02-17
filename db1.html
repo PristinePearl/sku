@@ -984,6 +984,19 @@ DEPOTS.forEach((d, i) => {
 
   showMessage("Product Wise Expiry report exported successfully.");
 }
+switchBatch.addEventListener("click", () => {
+  if (CURRENT_DATA_SOURCE !== "BATCH") {
+    CURRENT_DATA_SOURCE = "BATCH";
+    fetchDataAndRender();
+  }
+});
+
+switchCurrent.addEventListener("click", () => {
+  if (CURRENT_DATA_SOURCE !== "CURRENT") {
+    CURRENT_DATA_SOURCE = "CURRENT";
+    fetchDataAndRender();
+  }
+});
 window.onload = () => {
   fetchDataAndRender();
 };
