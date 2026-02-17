@@ -112,6 +112,29 @@
     ::-webkit-scrollbar-track { background: #f1f5f9; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     ::-webkit-scrollbar-thumb:hover { background: #0ea5a4; }
+/* Skeleton shimmer animation */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: #e5e7eb;
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255,255,255,.6),
+    transparent
+  );
+  animation: shimmer 1.4s infinite;
+}
+
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
   </style>
 </head>
 <body class="bg-[#fcfdfe] text-slate-900 min-h-screen">
@@ -200,6 +223,38 @@
           Access your inventory tools and real-time stock insights for Pristine Pearl Pharma.
         </p>
       </header>
+
+<!-- SMART SUMMARY CARDS -->
+<div id="summaryCards" class="grid grid-cols-2 md:grid-cols-5 gap-6 mb-16">
+
+  <div class="bg-white rounded-3xl p-6 shadow border border-slate-100 text-center">
+    <p class="text-xs font-bold text-slate-400">TOTAL PRODUCTS</p>
+    <h2 id="sumProducts" class="text-3xl font-black mt-2 h-8 flex items-center justify-center"><div class="h-8 w-20 mx-auto rounded-lg skeleton"></div></h2>
+  </div>
+
+  <div class="bg-white rounded-3xl p-6 shadow border border-slate-100 text-center">
+    <p class="text-xs font-bold text-slate-400">TOTAL QTY</p>
+<h2 id="sumQty" class="text-3xl font-black mt-2 h-8 flex items-center justify-center"><div class="h-8 w-24 mx-auto rounded-lg skeleton"></div></h2>
+  </div>
+
+  <div class="bg-white rounded-3xl p-6 shadow border border-slate-100 text-center">
+    <p class="text-xs font-bold text-slate-400">TODAY</p>
+<h2 id="todayDate" class="text-3xl font-black text-primary mt-2">
+  <span class="animate-pulse">Loading...</span>
+</h2>
+  </div>
+
+  <div class="bg-white rounded-3xl p-6 shadow border border-slate-100 text-center">
+    <p class="text-xs font-bold text-slate-400">NEAR EXPIRY QTY</p>
+<h2 id="sumNear" class="text-3xl font-black mt-2 h-8 flex items-center justify-center"><div class="h-8 w-16 mx-auto rounded-lg skeleton" style="background:#fed7aa"></div></h2>
+  </div>
+
+  <div class="bg-white rounded-3xl p-6 shadow border border-slate-100 text-center">
+    <p class="text-xs font-bold text-slate-400">EXPIRED QTY</p>
+<h2 id="sumExpired" class="text-3xl font-black mt-2 h-8 flex items-center justify-center"><div class="h-8 w-16 mx-auto rounded-lg skeleton" style="background:#fecaca"></div></h2>
+  </div>
+
+</div>
 
       <div class="grid lg:grid-cols-12 gap-12">
         <!-- Operations Section -->
@@ -324,6 +379,106 @@
   </div>
 
   <script>
+function animateValue(id, end, duration = 2500) {
+  const el = document.getElementById(id);
+  if (!el) return;
+
+  let start = 0;
+  const startTime = performance.now();
+
+  function frame(now) {
+    const progress = Math.min((now - startTime) / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3); // smooth ease-out
+    const value = Math.floor(eased * end);
+
+    el.innerHTML = `<span style="display:inline-block;min-width:60px;text-align:center">${value.toLocaleString()}</span>`;
+
+    if (progress < 1) requestAnimationFrame(frame);
+  }
+
+  requestAnimationFrame(frame);
+}
+function formatIndianCurrency(num){
+  if(num >= 10000000) return "₹" + (num/10000000).toFixed(1) + " Cr";
+  if(num >= 100000) return "₹" + (num/100000).toFixed(2) + " L";
+  if(num >= 1000) return "₹" + (num/1000).toFixed(1) + " K";
+  return "₹" + num;
+}
+
+async function loadSummaryCards() {
+  try {
+    const url = "https://script.google.com/macros/s/AKfycbx4hqFN0DhMDm22q0_EkS_E4EAApVavgZz8FEZEdUV0Jg0uMVaUUg3S8FyL9vy3H5KM/exec";
+    const res = await fetch(url);
+    const raw = await res.json();
+
+// 1) get list of unique dates
+const dates = Array.from(
+  new Set(raw.map(r => r["Date"]))
+).sort((a,b)=>
+  new Date(b) - new Date(a)
+);
+
+// 2) pick current date if exists
+const todayStr = new Date().toISOString().slice(0,10);
+
+let chosenDate = dates.find(d=> d === todayStr);
+
+// 3) if today not available, pick closest previous
+if (!chosenDate){
+  const prevDates = dates.filter(d =>
+    new Date(d) < new Date(todayStr)
+  );
+  chosenDate = prevDates.length ? prevDates[0] : dates[0];
+}
+
+const data = raw.filter(r =>
+  r["Date"] === chosenDate
+);
+
+    if (!data || !data.length) return;
+
+    const products = new Set();
+    let qty = 0;
+    let value = 0;
+    let near = 0;
+    let expired = 0;
+// remove loading placeholders before animation
+document.getElementById("sumProducts").className="text-3xl font-black mt-2 text-slate-900";
+document.getElementById("sumQty").className="text-3xl font-black mt-2 text-slate-900";
+document.getElementById("sumNear").className="text-3xl font-black mt-2 text-orange-500";
+document.getElementById("sumExpired").className="text-3xl font-black mt-2 text-red-600";
+
+["sumProducts","sumQty","sumNear","sumExpired"].forEach(id=>{
+  document.getElementById(id).innerText="0";
+});
+
+    const today = new Date();
+
+    data.forEach(r => {
+      products.add(r["Item Code"]);
+
+      const q = Number(r["Total Quantity"] || 0);
+      const mrp = Number(r["MRP"] || 0);
+      qty += q;
+      value += q * mrp;
+
+const type = (r["Expiry Type"] || "").toLowerCase();
+
+if (type === "expired") expired += q;
+else if (type === "short") near += q;
+    });
+
+animateValue("sumProducts", products.size, 2500);
+animateValue("sumQty", qty, 2800);
+animateValue("sumNear", near, 2200);
+animateValue("sumExpired", expired, 2200);
+
+
+
+  } catch(err) {
+    console.error("Summary load error", err);
+  }
+}
     const users = {
       "adminpro": "surya2282",
       "admin": "admin123",
@@ -397,6 +552,17 @@ else if (key === "osh") {
   dbSec.classList.add('hidden');   // 🔴 Hide Master Database
   analyticsSec.classList.replace('lg:col-span-7', 'lg:col-span-12');
 }
+loadSummaryCards();
+setTimeout(()=>{
+  const d = new Date();
+  const formatted =
+    d.toLocaleDateString("en-IN",{
+      day:"numeric",
+      month:"short",
+      year:"numeric"
+    });
+  document.getElementById("todayDate").innerText = formatted;
+},600);
 }
 
     loginForm.onsubmit = async (e) => {
@@ -432,4 +598,3 @@ else if (key === "osh") {
   </script>
 </body>
 </html>
-
