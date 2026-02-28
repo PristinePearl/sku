@@ -639,13 +639,21 @@ function openProductsPopup(){
       <tr class="border-t hover:bg-slate-50">
         <td class="p-2 font-semibold">${p.code}</td>
         <td class="p-2">${p.name}</td>
-        <td class="p-2 text-center">${p.CBE>0 ? '<span class="inline-block w-5 h-5 rounded-full bg-emerald-500"></span>' : '<span class="inline-block w-5 h-5 rounded-full bg-slate-300"></span>'}</td>
+        <td class="p-2 text-center font-semibold ${p.CBE > 0 ? 'text-emerald-600' : 'text-slate-400'}">
+  ${p.CBE}
+</td>
 
-<td class="p-2 text-center">${p.BLR>0 ? '<span class="inline-block w-5 h-5 rounded-full bg-emerald-500"></span>' : '<span class="inline-block w-5 h-5 rounded-full bg-slate-300"></span>'}</td>
+<td class="p-2 text-center font-semibold ${p.BLR > 0 ? 'text-emerald-600' : 'text-slate-400'}">
+  ${p.BLR}
+</td>
 
-<td class="p-2 text-center">${p.KL>0 ? '<span class="inline-block w-5 h-5 rounded-full bg-emerald-500"></span>' : '<span class="inline-block w-5 h-5 rounded-full bg-slate-300"></span>'}</td>
+<td class="p-2 text-center font-semibold ${p.KL > 0 ? 'text-emerald-600' : 'text-slate-400'}">
+  ${p.KL}
+</td>
 
-<td class="p-2 text-center">${p.SS>0 ? '<span class="inline-block w-5 h-5 rounded-full bg-emerald-500"></span>' : '<span class="inline-block w-5 h-5 rounded-full bg-slate-300"></span>'}</td>
+<td class="p-2 text-center font-semibold ${p.SS > 0 ? 'text-emerald-600' : 'text-slate-400'}">
+  ${p.SS}
+</td>
       </tr>
     `;
   });
@@ -661,6 +669,7 @@ function closeProductsPopup(){
       "adminpro": "surya2282",
       "admin": "admin123",
       "osh": "osh123"
+
     };
 
     const loginScreen = document.getElementById('login-screen');
@@ -776,4 +785,3 @@ setTimeout(()=>{
   </script>
 </body>
 </html>
-
