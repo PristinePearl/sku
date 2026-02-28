@@ -76,6 +76,16 @@
   border-radius: 9999px;
 }
 
+/* Loading Text Pulse */
+@keyframes textPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.animate-text-pulse {
+  animation: textPulse 1.5s ease-in-out infinite;
+}
+
   </style>
 </head>
 
@@ -85,12 +95,24 @@
   <div class="container mx-auto px-4 py-8">
     
     <!-- Loading Spinner (Visible by default, hidden by JS on load) -->
-    <div id="loadingSpinner" class="flex flex-col items-center justify-center h-[70vh] text-indigo-600">
-        <svg class="animate-spin-custom w-16 h-16 mb-4" viewBox="0 0 50 50">
-            <circle class="spinner-path" cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="4"></circle>
-        </svg>
-        <p class="text-xl font-semibold text-gray-700">Loading stock data, please wait...</p>
+    <div id="loadingSpinner" class="flex flex-col items-center justify-center h-[70vh]">
+  
+  <p class="text-lg font-semibold text-gray-700 mb-4 animate-text-pulse">
+  Loading stock data...
+</p>
+
+  <div class="w-80 bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner">
+    <div id="progressBar"
+         class="bg-gray-800 h-3 transition-all duration-200 ease-out"
+         style="width: 0%">
     </div>
+  </div>
+
+  <p id="progressText" class="mt-3 text-sm text-gray-500">
+    0%
+  </p>
+
+</div>
 
     <!-- Dashboard Card (Hidden by default, shown by JS after load) -->
     <div id="dashboardContent" class="hidden bg-white p-6 md:p-10 rounded-xl shadow-2xl border border-gray-100 max-w-7xl mx-auto">
@@ -835,33 +857,73 @@ document.getElementById("exportProductExpiry").onclick = () => {
         dashboardContent.classList.add('hidden');
         loadingSpinner.classList.remove('hidden');
 
-        fetch(url)
-          .then(res => res.json())
-          .then(json => {
-            MERGED_SAVED = json;
-            FILTERED_DATA = json; 
-            
-            // Repopulate filters (especially Product/Div code)
-            populateFilters(json);
-            
-            // Render in the default Consolidated view on load (which is sorted)
-const consolidatedData = groupDataConsolidated(json);
-renderTable(consolidatedData, "", "Consolidated");
-            
-            loadingSpinner.classList.add('hidden');
-            dashboardContent.classList.remove('hidden');
-            
-            const sourceName = isBatch ? "Batch Wise Merged Stock" : "Current Stock";
-            showMessage(`${sourceName} data loaded successfully. Showing Consolidated View.`);
-          })
-          .catch((e) => {
-            console.error("Fetch error:", e);
-            
-            loadingSpinner.classList.add('hidden');
-            dashboardContent.classList.remove('hidden'); 
-            
-            showMessage(`❌ Failed to load data from ${CURRENT_DATA_SOURCE} source. Check the script URL and network connection.`, "error");
-          });
+        const progressBar = document.getElementById("progressBar");
+const progressText = document.getElementById("progressText");
+
+function updateProgress(percent, text) {
+  progressBar.style.width = percent + "%";
+  progressText.innerText = text || percent + "%";
+}
+
+updateProgress(5, "Connecting to database...");
+
+
+
+fetch(url)
+  .then(res => {
+    updateProgress(20, "Please wait...");
+    return res.json();
+  })
+  .then(json => {
+
+    updateProgress(40, "Parsing data...");
+
+    MERGED_SAVED = json;
+    FILTERED_DATA = json;
+
+    return new Promise(resolve => {
+      setTimeout(() => resolve(json), 50);
+    });
+  })
+  .then(json => {
+
+    updateProgress(60, "Preparing filters...");
+    populateFilters(json);
+
+    return new Promise(resolve => {
+      setTimeout(() => resolve(json), 50);
+    });
+  })
+  .then(json => {
+
+    updateProgress(80, "Grouping & processing...");
+
+    const consolidatedData = groupDataConsolidated(json);
+
+    return new Promise(resolve => {
+      setTimeout(() => resolve(consolidatedData), 50);
+    });
+  })
+  .then(consolidatedData => {
+
+    updateProgress(95, "Rendering table...");
+    renderTable(consolidatedData, "", "Consolidated");
+
+    updateProgress(100, "Ready");
+
+    setTimeout(() => {
+      loadingSpinner.classList.add('hidden');
+      dashboardContent.classList.remove('hidden');
+    }, 300);
+
+    showMessage("Data loaded successfully.");
+  })
+  .catch(e => {
+    console.error("Fetch error:", e);
+    loadingSpinner.classList.add('hidden');
+    dashboardContent.classList.remove('hidden');
+    showMessage("Failed to load data.", "error");
+  });
     }
 
 function exportProductWiseExpiryReport() {
