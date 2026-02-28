@@ -181,7 +181,7 @@
         </button>
 <button id="exportProductExpiry"
   class="bg-rose-600 hover:bg-rose-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition duration-300 transform hover:scale-[1.02] active:scale-[0.98] flex items-center">
-  📅 Product Wise Expiry
+  📅 Monthwise Expiry Report
 </button>
       </div>
 
@@ -268,6 +268,18 @@ function getFormattedDate(value) {
 
     return `${year}-${month}-${day}`;
 }
+
+/* ==============================
+   INDIAN NUMBER FORMATTER
+============================== */
+function formatIndianNumber(value) {
+  const num = Number(value || 0);
+
+  if (!num) return "-"; // if 0 → "-"
+
+  return num.toLocaleString("en-IN");
+}
+
 
     /**
      * Displays a styled message box for user feedback.
@@ -394,7 +406,7 @@ function getFormattedDate(value) {
         const recordDate = getFormattedDate(r["Date"]);
 
         const rawMrp = parseFloat(r["MRP"] || 0);
-        const mrp = rawMrp.toFixed(2);
+const mrp = rawMrp ? formatIndianNumber(rawMrp.toFixed(2)) : "-";
         
         // Apply zebra striping
         const rowClass = index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
@@ -417,11 +429,21 @@ function getFormattedDate(value) {
 
         rowCells += `
           <td class="p-3 text-right font-mono text-gray-700 whitespace-nowrap">₹${mrp}</td>
-          <td class="p-3 text-right">${!selectedDepot || selectedDepot === "Kerala" ? (r["Kerala"] ?? 0) : ""}</td>
-          <td class="p-3 text-right">${!selectedDepot || selectedDepot === "Palepu" ? (r["Palepu"] ?? 0) : ""}</td>
-          <td class="p-3 text-right">${!selectedDepot || selectedDepot === "Coimbatore" ? (r["Coimbatore"] ?? 0) : ""}</td>
-          <td class="p-3 text-right">${!selectedDepot || selectedDepot === "Bangalore" ? (r["Bangalore"] ?? 0) : ""}</td>
-          <td class="p-3 text-right font-bold text-indigo-600">${r["Total Quantity"] ?? 0}</td>
+          <td class="p-3 text-right">
+  ${!selectedDepot || selectedDepot === "Kerala" ? formatIndianNumber(r["Kerala"]) : ""}
+</td>
+<td class="p-3 text-right">
+  ${!selectedDepot || selectedDepot === "Palepu" ? formatIndianNumber(r["Palepu"]) : ""}
+</td>
+<td class="p-3 text-right">
+  ${!selectedDepot || selectedDepot === "Coimbatore" ? formatIndianNumber(r["Coimbatore"]) : ""}
+</td>
+<td class="p-3 text-right">
+  ${!selectedDepot || selectedDepot === "Bangalore" ? formatIndianNumber(r["Bangalore"]) : ""}
+</td>
+<td class="p-3 text-right font-bold text-indigo-600">
+  ${formatIndianNumber(r["Total Quantity"])}
+</td>
         `;
 
         if (!isConsolidated && expiryTypeInsert) {
@@ -514,7 +536,7 @@ function getFormattedDate(value) {
         detailedRecords.forEach((r, index) => {
             const rowClass = index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
             const rawMrp = parseFloat(r["MRP"] || 0);
-            const mrp = rawMrp.toFixed(2);
+const mrp = rawMrp ? formatIndianNumber(rawMrp.toFixed(2)) : "-";
             
             // Depot quantities - only show value if All Depots selected or it matches the filtered depot
             const qtyKerala = !depot || depot === "Kerala" ? (r["Kerala"] ?? 0) : "";
@@ -538,11 +560,11 @@ const etClass =
       <span class="${etClass}">${et}</span>
     </td>
     <td class="p-3 text-right font-mono">₹${mrp}</td>
-    <td class="p-3 text-right">${qtyKerala}</td>
-    <td class="p-3 text-right">${qtyPalepu}</td>
-    <td class="p-3 text-right">${qtyCoimbatore}</td>
-    <td class="p-3 text-right">${qtyBangalore}</td>
-    <td class="p-3 text-right font-bold text-indigo-600">${totalQty}</td>
+    <td class="p-3 text-right">${formatIndianNumber(qtyKerala)}</td>
+<td class="p-3 text-right">${formatIndianNumber(qtyPalepu)}</td>
+<td class="p-3 text-right">${formatIndianNumber(qtyCoimbatore)}</td>
+<td class="p-3 text-right">${formatIndianNumber(qtyBangalore)}</td>
+<td class="p-3 text-right font-bold text-indigo-600">${formatIndianNumber(totalQty)}</td>
   </tr>
 `;
         });
@@ -628,68 +650,74 @@ if (fd || td) {
     };
     
     document.getElementById("exportExcel").onclick = () => {
-        // Use the currently available detailed FILTERED_DATA for comprehensive export
-        const viewMode = document.getElementById("viewModeFilter").value;
-        const isBatch = CURRENT_DATA_SOURCE === "BATCH";
-        let dataToExport;
-        
-        if (viewMode === 'Consolidated') {
-             // Re-run grouping and sorting on the filtered data for consolidated export structure
-            dataToExport = groupDataConsolidated(FILTERED_DATA).map(r => ({
-                Date: getFormattedDate(r["Date"]),
-                "Div Code": r["Div Code"],
-                "Div Name": r["Div Name"],
-                "Item Code": r["Item Code"],
-                "Item Name": r["Item Name"],
-                "MRP": parseFloat(r["MRP"] || 0).toFixed(2),
-                Kerala: r["Kerala"] ?? 0,
-                Palepu: r["Palepu"] ?? 0,
-                Coimbatore: r["Coimbatore"] ?? 0,
-                Bangalore: r["Bangalore"] ?? 0,
-                "Total Quantity": r["Total Quantity"] ?? 0,
+
+    const viewMode = document.getElementById("viewModeFilter").value;
+    const isBatch = CURRENT_DATA_SOURCE === "BATCH";
+    let dataToExport;
+
+    if (viewMode === 'Consolidated') {
+
+        dataToExport = groupDataConsolidated(FILTERED_DATA).map(r => ({
+            Date: getFormattedDate(r["Date"]),
+            "Div Code": r["Div Code"],
+            "Div Name": r["Div Name"],
+            "Item Code": r["Item Code"],
+            "Item Name": r["Item Name"],
+            "MRP": formatIndianNumber(parseFloat(r["MRP"] || 0).toFixed(2)),
+            Kerala: formatIndianNumber(r["Kerala"]),
+            Palepu: formatIndianNumber(r["Palepu"]),
+            Coimbatore: formatIndianNumber(r["Coimbatore"]),
+            Bangalore: formatIndianNumber(r["Bangalore"]),
+            "Total Quantity": formatIndianNumber(r["Total Quantity"]),
+"Total Value": formatIndianNumber(
+  (parseFloat(r["MRP"] || 0) * Number(r["Total Quantity"] || 0)).toFixed(2)
+),
+        }));
+
+    } else {
+
+        const baseExport = FILTERED_DATA.map(r => ({
+            Date: getFormattedDate(r["Date"]),
+            "Div Code": r["Div Code"],
+            "Div Name": r["Div Name"],
+            "Item Code": r["Item Code"],
+            "Item Name": r["Item Name"],
+            "MRP": formatIndianNumber(parseFloat(r["MRP"] || 0).toFixed(2)),
+            Kerala: formatIndianNumber(r["Kerala"]),
+            Palepu: formatIndianNumber(r["Palepu"]),
+            Coimbatore: formatIndianNumber(r["Coimbatore"]),
+            Bangalore: formatIndianNumber(r["Bangalore"]),
+            "Total Quantity": formatIndianNumber(r["Total Quantity"]),
+"Total Value": formatIndianNumber(
+  (parseFloat(r["MRP"] || 0) * Number(r["Total Quantity"] || 0)).toFixed(2)
+),
+        }));
+
+        if (isBatch) {
+            dataToExport = baseExport.map((r, i) => ({
+                ...r,
+                "Batch No": FILTERED_DATA[i]["Batch No"],
+                "Expiry (MM-YYYY)": FILTERED_DATA[i]["Expiry (MM-YYYY)"],
+                "Expiry Type": FILTERED_DATA[i]["Expiry Type"]
             }));
         } else {
-            // Detailed View - use FILTERED_DATA directly
-            const baseExport = FILTERED_DATA.map(r => ({
-                Date: getFormattedDate(r["Date"]),
-                "Div Code": r["Div Code"],
-                "Div Name": r["Div Name"],
-                "Item Code": r["Item Code"],
-                "Item Name": r["Item Name"],
-                "MRP": parseFloat(r["MRP"] || 0).toFixed(2),
-                Kerala: r["Kerala"] ?? 0,
-                Palepu: r["Palepu"] ?? 0,
-                Coimbatore: r["Coimbatore"] ?? 0,
-                Bangalore: r["Bangalore"] ?? 0,
-                "Total Quantity": r["Total Quantity"] ?? 0,
-            }));
-
-            if (isBatch) {
-                // Add batch and expiry columns only for Batch Wise data
-                dataToExport = baseExport.map((r, i) => ({
-                    ...r,
-                    "Batch No": FILTERED_DATA[i]["Batch No"],
-                    "Expiry (MM-YYYY)": FILTERED_DATA[i]["Expiry (MM-YYYY)"],
-                    "Expiry Type": FILTERED_DATA[i]["Expiry Type"]
-                }));
-            } else {
-                dataToExport = baseExport;
-            }
+            dataToExport = baseExport;
         }
+    }
 
-        if (dataToExport.length === 0) {
-            showMessage("No data to export. Apply a filter first or wait for data to load.", "error");
-            return;
-        }
+    if (!dataToExport || dataToExport.length === 0) {
+        showMessage("No data to export.", "error");
+        return;
+    }
 
+    const sourceName = CURRENT_DATA_SOURCE === "BATCH" ? "Batch" : "Current";
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, `${sourceName} Report (${viewMode})`);
+    XLSX.writeFile(workbook, `Combined_StockReport-${sourceName}_${viewMode}.xlsx`);
 
-        const sourceName = CURRENT_DATA_SOURCE === "BATCH" ? "Batch" : "Current";
-        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, `${sourceName} Report (${viewMode})`);
-        XLSX.writeFile(workbook, `Merged_Depot_Stock_Report_${sourceName}_${viewMode}.xlsx`);
-        showMessage(`Exported ${dataToExport.length} records to Excel.`);
-    };
+    showMessage(`Exported ${dataToExport.length} records to Excel.`);
+};
 /* ✅ PRODUCT WISE EXPIRY — MUST BE HERE */
 document.getElementById("exportProductExpiry").onclick = () => {
   exportProductWiseExpiryReport();
@@ -817,8 +845,8 @@ document.getElementById("exportProductExpiry").onclick = () => {
             populateFilters(json);
             
             // Render in the default Consolidated view on load (which is sorted)
-            const consolidatedData = groupDataConsolidated(json);
-            renderTable(consolidatedData, "", "Consolidated");
+const consolidatedData = groupDataConsolidated(json);
+renderTable(consolidatedData, "", "Consolidated");
             
             loadingSpinner.classList.add('hidden');
             dashboardContent.classList.remove('hidden');
@@ -864,10 +892,10 @@ const MONTHS = [...new Set(
   /* ===============================
      HELPERS
   =============================== */
-  const initMonthCols = obj => {
-    MONTHS.forEach(m => obj[m] = 0);
-    obj["TOTAL"] = 0;
-  };
+const initMonthCols = obj => {
+  MONTHS.forEach(m => obj[m] = 0);
+  obj["TOTAL"] = 0;
+};
 
   /* ===============================
      SHEET 1 — ALL DEPOTS SUMMARY
@@ -957,32 +985,39 @@ FILTERED_DATA.forEach(r => {
   =============================== */
   const wb = XLSX.utils.book_new();
 
-  XLSX.utils.book_append_sheet(
-    wb,
-    XLSX.utils.json_to_sheet(Object.values(S1)),
-    "Summary"
-  );
+function formatSheetNumbers(arr) {
+  return arr.map(row => {
+    Object.keys(row).forEach(k => {
+      if (typeof row[k] === "number") {
+        row[k] = formatIndianNumber(row[k]);
+      }
+    });
+    return row;
+  });
+}
 
   XLSX.utils.book_append_sheet(
-    wb,
-    XLSX.utils.json_to_sheet(Object.values(S2)),
-    "Depot Summary"
-  );
+  wb,
+  XLSX.utils.json_to_sheet(formatSheetNumbers(Object.values(S2))),
+  "Depot Summary"
+);
 
 DEPOTS.forEach((d, i) => {
   XLSX.utils.book_append_sheet(
     wb,
-    XLSX.utils.json_to_sheet(Object.values(DEPOT_SHEETS[d])),
+    XLSX.utils.json_to_sheet(
+      formatSheetNumbers(Object.values(DEPOT_SHEETS[d]))
+    ),
     `Depot ${i + 1} - ${d}`
   );
 });
 
   XLSX.writeFile(
     wb,
-    `Product_Wise_Expiry_${new Date().toISOString().split("T")[0]}.xlsx`
+    `MonthWiseProductExpiry_${new Date().toISOString().split("T")[0]}.xlsx`
   );
 
-  showMessage("Product Wise Expiry report exported successfully.");
+  showMessage("Month Wise Product Expiry report exported successfully.");
 }
 switchBatch.addEventListener("click", () => {
   if (CURRENT_DATA_SOURCE !== "BATCH") {
@@ -1003,4 +1038,4 @@ window.onload = () => {
   </script>
 </body>
 
-</html>	
+</html>
