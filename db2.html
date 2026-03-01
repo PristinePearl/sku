@@ -26,6 +26,14 @@
     .report-card:hover { transform: translateY(-4px); border-color: #4f46e5; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
     .preview-scroll::-webkit-scrollbar { height: 6px; width: 6px; }
     .preview-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+
+thead th {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: #f8fafc;
+}
+
 /* ================================
    🤖 PEARL AI ANIMATIONS
 ================================ */
@@ -124,6 +132,15 @@
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.4; transform: scale(1.15); }
 }
+
+
+#zoomWrapper {
+  transform: scale(0.8);
+  transform-origin: top left;
+  width: 125%;
+  height: 125%;
+}
+
   </style>
 <script>
   window.MathJax = {
@@ -134,7 +151,8 @@
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
 </head>
 
-<body class="bg-slate-50 h-screen overflow-hidden flex flex-col md:flex-row">
+<body class="bg-slate-50 h-screen overflow-hidden">
+  <div id="zoomWrapper" class="flex flex-col md:flex-row h-full">
 
   <!-- SIDEBAR -->
   <aside class="w-full md:w-72 bg-white border-r border-slate-200 flex flex-col h-full shadow-lg z-20">
@@ -164,6 +182,10 @@
       <button class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-600 rounded-xl hover:bg-slate-50" onclick="show('po-track', this)">
         <i data-lucide="truck" class="w-4 h-4"></i> PO Pipeline
       </button>
+<button class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-600 rounded-xl hover:bg-slate-50"
+        onclick="show('planning-center', this)">
+  <i data-lucide="edit-3" class="w-4 h-4"></i> Planning Center
+</button>
 
       <p class="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 mt-6">Health Check</p>
       <button class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-sm text-red-600 rounded-xl hover:bg-red-50" onclick="show('alerts', this)">
@@ -182,25 +204,45 @@
         onclick="show('knowledge', this)">
   <i data-lucide="book-open" class="w-4 h-4"></i> Knowledge Hub
 </button>
-    </nav>
+    
+<!-- SNAPSHOT & FILTER -->
+<div class="mt-6 pt-6 border-t border-slate-200 space-y-4">
+
+  <div>
+    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
+      Snapshot Date
+    </p>
+    <p id="displayDate"
+       class="text-sm font-bold text-indigo-600">
+       Loading...
+    </p>
+  </div>
+
+  <div>
+    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
+      Filter Date
+    </p>
+
+    <div class="flex items-center gap-2">
+      <input type="date"
+             id="dateFilter"
+             class="w-full border border-slate-200 rounded-lg px-2 py-1 text-xs"
+             onchange="handleDateChange(this.value)">
+      <button onclick="fetchData()"
+              class="p-2 bg-indigo-600 text-white rounded-lg">
+        <i data-lucide="refresh-cw" class="w-3 h-3"></i>
+      </button>
+    </div>
+  </div>
+
+</div>
+</nav>
   </aside>
 
   <!-- MAIN CONTENT -->
-  <main class="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 relative">
+  <main class="flex-1 overflow-y-auto p-4 md:p-8 relative">
     
-    <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 sticky top-0 bg-slate-50/90 backdrop-blur-md z-10 py-2">
-      <div>
-        <h2 id="pageTitle" class="text-2xl font-bold text-slate-800">Stock & Requirements</h2>
-        <p class="text-slate-500 text-xs mt-1">Snapshot Date: <span id="displayDate" class="font-bold text-indigo-600">Loading...</span></p>
-      </div>
-      <div class="flex items-center gap-3 bg-white p-1.5 rounded-xl shadow-sm border border-slate-200">
-        <label class="text-[10px] font-bold text-slate-400 uppercase px-2">Filter Date</label>
-        <input type="date" id="dateFilter" class="bg-transparent text-sm font-medium text-slate-600 outline-none pr-2" onchange="handleDateChange(this.value)">
-        <button onclick="fetchData()" class="p-2 hover:bg-slate-100 rounded-lg text-indigo-600 transition-colors">
-            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-        </button>
-      </div>
-    </header>
+    
     <div id="loader" class="hidden flex items-center justify-center p-20">
         <div class="flex flex-col items-center gap-4">
             <div class="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
@@ -220,15 +262,15 @@
     </div>
 
     <section id="req" class="section active">
-        <div class="table-container shadow-sm overflow-hidden">
-            <div class="overflow-x-auto">
+        <div class="table-container shadow-sm">
+    <div class="overflow-auto max-h-[100vh]">
                 <table class="w-full text-left text-xs whitespace-nowrap">
                     <thead>
                         <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider">
                             <th class="px-6 py-4">Item Catalog</th>
                             <th class="px-6 py-4 text-center">Physical Stock</th>
                             <th class="px-6 py-4 text-center text-orange-600">Short Expiry</th>
-                            <th class="px-6 py-4 text-center bg-indigo-50 text-indigo-700">Usable (S.ED)</th>
+                            <th class="px-6 py-4 text-center bg-indigo-50 text-indigo-700">Usable</th>
                             <th class="px-6 py-4 text-center">Prog Requirement</th>
                             <th class="px-6 py-4 text-center">Prog Variance</th>
                             <th class="px-6 py-4 text-center">OSH Requirement</th>
@@ -253,7 +295,7 @@
 
   <!-- TABLE -->
   <div class="table-container shadow-sm">
-    <div class="overflow-x-auto">
+    <div class="overflow-auto max-h-[100vh]">
       <table class="w-full text-left text-xs whitespace-nowrap">
         <thead>
           <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider">
@@ -285,7 +327,31 @@
 
   <!-- TABLE -->
   <div class="table-container shadow-sm">
-    <div class="overflow-x-auto">
+    <div class="overflow-auto max-h-[100vh]">
+      <table class="w-full text-left text-xs">
+        <thead>
+          <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider">
+            <th class="px-6 py-4">Item Catalog</th>
+            <th class="px-6 py-4 text-center text-orange-600">Short Exp</th>
+            <th class="px-6 py-4 text-center">Usable Stock</th>
+            <th class="px-6 py-4 text-center text-blue-700">PO Pipeline</th>
+            <th class="px-6 py-4 text-center">Daily Avg Sales</th>
+            <th class="px-6 py-4 text-center">Coverage</th>
+            <th class="px-6 py-4 text-center bg-slate-100 text-slate-700">MOQ</th>
+            <th class="px-6 py-4 text-center bg-indigo-50 text-indigo-700 font-black w-[180px]">Suggested Order</th>
+          </tr>
+        </thead>
+        <tbody id="planBody" class="divide-y divide-slate-100 text-slate-700"></tbody>
+      </table>
+    </div>
+  </div>
+
+</section>
+
+<section id="planning-center" class="section space-y-3">
+
+  <div class="table-container shadow-sm">
+    <div class="overflow-auto max-h-[100vh]">
       <table class="w-full text-left text-xs whitespace-nowrap">
         <thead>
           <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider">
@@ -294,12 +360,15 @@
             <th class="px-6 py-4 text-center">Usable Stock</th>
             <th class="px-6 py-4 text-center text-blue-700">PO Pipeline</th>
             <th class="px-6 py-4 text-center">Daily Avg Sales</th>
-            <th class="px-6 py-4 text-center">Coverage (Stock holding)</th>
-            <th class="px-6 py-4 text-center bg-slate-100 text-slate-700">MOQ</th>
-            <th class="px-6 py-4 text-center bg-indigo-50 text-indigo-700 font-black">Suggested Order</th>
+            <th class="px-6 py-4 text-center">Coverage</th>
+            <th class="px-6 py-4 text-center">MOQ</th>
+            <th class="px-6 py-4 text-center bg-indigo-50 text-indigo-700 font-black">Suggested</th>
+            <th class="px-6 py-4 text-center bg-yellow-50 text-yellow-700">Admin Comments</th>
+<th class="px-6 py-4 text-center bg-purple-50 text-purple-700">OSH Comments</th>
+<th class="px-6 py-4 text-center bg-emerald-50 text-emerald-700">Status</th>
           </tr>
         </thead>
-        <tbody id="planBody" class="divide-y divide-slate-100 text-slate-700"></tbody>
+        <tbody id="planningCenterBody" class="divide-y divide-slate-100 text-slate-700"></tbody>
       </table>
     </div>
   </div>
@@ -337,7 +406,7 @@
   </button>
 </div>
         <div class="table-container border-red-100">
-            <div class="overflow-x-auto">
+    <div class="overflow-auto max-h-[100vh]">
                 <table class="w-full text-left text-xs whitespace-nowrap">
                     <thead>
                         <tr class="bg-red-50 text-red-700 font-bold uppercase tracking-wider border-b border-red-100">
@@ -500,7 +569,7 @@
                     <h3 class="text-xs font-black text-slate-800 uppercase">Analysis Output & Logistics Comments</h3>
                     <span class="text-[10px] text-slate-400">Deep-dive assessment per SKU</span>
                 </div>
-                <div class="overflow-x-auto">
+                <div class="overflow-auto max-h-[100vh]">
                     <table class="w-full text-left text-[11px]">
                         <thead>
                             <tr class="bg-slate-50/50 text-slate-400 font-bold border-b border-slate-100">
@@ -751,6 +820,7 @@ const MIN_COVERAGE_DAYS = 90; // 🔒 Global minimum stock holding (3 months)
     const MOQ_URL = "https://script.google.com/macros/s/AKfycbwfWL5Iu25uPYWxsRA0pLNtjSzDo86K3jXhSAw_P-RrPTlK5rLPpbLnv00X7972skCj/exec";
 const PREV_YEAR_SALES_URL = "https://script.google.com/macros/s/AKfycbwQ4NVdINtOuws1zx9YIvml75iBnWszPdrIG8TAnBwqUAJQP8W1hRkYFQWwxTGUd0k4Ug/exec";
 const BUFFER_URL = "https://script.google.com/macros/s/AKfycbxMcORHpxDOe4EnE5MhHHxVYk_NJLDs35tZCaCVeckOtmTxzOq09Ss9CHkTrUZ7ZLtL/exec";
+const COMMENTS_URL = "https://script.google.com/macros/s/AKfycbxx7Lbj123htDYll-WlxqLK3kUduJOY4_Yozecejbm9iQWYaOJ0ITT9H2iykxtK-Mk/exec";
 
     window.onload = fetchData;
 
@@ -884,7 +954,9 @@ if (bufRes.status === 'fulfilled' && Array.isArray(bufRes.value)) {
                 document.getElementById('displayDate').innerText = getLocalDateString(latestStr);
               }
           }
-          build();
+
+         await loadComments();
+build();
         } catch (e) { 
             document.getElementById('errorOverlay').classList.remove('hidden');
             document.getElementById('errorMessage').innerText = `Sync Error: ${e.message}`;
@@ -893,6 +965,47 @@ if (bufRes.status === 'fulfilled' && Array.isArray(bufRes.value)) {
             lucide.createIcons();
         }
     }
+
+let COMMENT_MAP = {};
+
+let COMMENT_HISTORY = {};
+
+async function loadComments() {
+
+  try {
+    const res = await fetch(COMMENTS_URL);
+    const data = await res.json();
+
+    COMMENT_MAP = {};
+    COMMENT_HISTORY = {};
+
+    data.forEach(r => {
+
+      const code = String(r["ITEM CODE"] || "").trim().toUpperCase();
+      if (!code) return;
+
+      COMMENT_MAP[code] = {
+        admin: r["ADMIN"] || "",
+        osh: r["OSH"] || "",
+        adminDate: r["ADMIN_DATE"] || "",
+        oshDate: r["OSH_DATE"] || "",
+        closed: r["CLOSED"] || "NO"
+      };
+
+      // 🔥 IMPORTANT FIX
+      COMMENT_HISTORY[code] = (r["HISTORY"] || []).map(h => ({
+        date: new Date(h.date),   // convert string to Date
+        admin: h.admin || "",
+        osh: h.osh || "",
+        closed: h.closed || "NO"
+      }));
+
+    });
+
+  } catch (e) {
+    console.error("Comment fetch failed", e);
+  }
+}
 
     function build() {
       const selectedDate = document.getElementById('dateFilter').value;
@@ -1015,7 +1128,7 @@ FINAL.forEach(r => {
       renderAll();
     }
 
-    function renderAll() { renderReq(); renderBufferStock(); renderPlan(); renderPOTrack(); renderAlerts(); lucide.createIcons(); }
+    function renderAll() { renderReq(); renderBufferStock(); renderPlan(); renderPlanningCenter(); renderPOTrack(); renderAlerts(); lucide.createIcons(); }
 
     function renderReq() {
       document.getElementById('reqBody').innerHTML = FINAL.map(r => `
@@ -1180,6 +1293,191 @@ function exportBufferStock() {
             </tr>`;
         }).join('');
     }
+
+function renderPlanningCenter() {
+
+  
+
+  document.getElementById('planningCenterBody').innerHTML = FINAL.map(r => {
+
+    let base = Math.max(0, (r.reqDays * r.dailySales) - r.usableStock - r.openPo);
+    let suggested = r.moq > 0
+      ? Math.ceil(base / r.moq) * r.moq
+      : Math.round(base);
+
+    const adminComment = COMMENT_MAP[r.code]?.admin || "";
+const oshComment = COMMENT_MAP[r.code]?.osh || "";
+
+    return `
+      <tr class="hover:bg-slate-50">
+        <td class="px-6 py-4">
+          <div class="font-semibold">${r.name}</div>
+          <div class="text-[10px] text-slate-400 font-bold uppercase">${r.code}</div>
+        </td>
+        <td class="px-6 py-4 text-center font-bold text-orange-600">${Math.round(r.shortQty) || '-'}</td>
+        <td class="px-6 py-4 text-center font-bold">${Math.round(r.usableStock)}</td>
+        <td class="px-6 py-4 text-center font-bold text-blue-700">
+  ${
+    r.openPo > 0
+      ? `<button 
+           onclick="showPODetails('${r.code}')"
+           class="text-blue-700 underline hover:text-indigo-600 font-black">
+           ${Math.round(r.openPo)}
+         </button>`
+      : '-'
+  }
+</td>
+        <td class="px-6 py-4 text-center">${r.dailySales}</td>
+        <td class="px-6 py-4 text-center font-bold 
+  ${r.holdDays < MIN_COVERAGE_DAYS ? 'text-red-500' : 'text-emerald-600'}">
+  ${formatDaysToYMD(r.holdDays)}
+</td>
+        <td class="px-6 py-4 text-center">${r.moq || '-'}</td>
+        <td class="px-6 py-4 text-center font-black text-indigo-600">${suggested || '-'}</td>
+
+        <td class="px-4 py-2">
+  <textarea
+    class="w-40 border rounded-lg p-2 text-xs"
+    onchange="saveCommentToSheet('${r.code}','admin', this.value)"
+  >${adminComment}</textarea>
+
+  <div class="text-[10px] text-slate-400 mt-1">
+    ${COMMENT_MAP[r.code]?.adminDate 
+      ? new Date(COMMENT_MAP[r.code].adminDate).toLocaleDateString()
+      : ''}
+  </div>
+</td>
+
+<td class="px-4 py-2">
+  <textarea
+    class="w-40 border rounded-lg p-2 text-xs"
+    onchange="saveCommentToSheet('${r.code}','osh', this.value)"
+  >${oshComment}</textarea>
+
+  <div class="text-[10px] text-slate-400 mt-1">
+    ${COMMENT_MAP[r.code]?.oshDate 
+      ? new Date(COMMENT_MAP[r.code].oshDate).toLocaleDateString()
+      : ''}
+  </div>
+</td>
+
+<td class="px-4 py-2 text-center">
+  <button
+    onclick="toggleClosed('${r.code}')"
+    class="px-2 py-1 text-[10px] rounded-lg font-bold
+    ${COMMENT_MAP[r.code]?.closed === 'YES'
+      ? 'bg-green-100 text-green-700'
+      : 'bg-red-100 text-red-700'}">
+    ${COMMENT_MAP[r.code]?.closed === 'YES' ? 'CLOSED' : 'OPEN'}
+  </button>
+
+  <div class="mt-2">
+    <button onclick="showHistory('${r.code}')"
+      class="text-[10px] text-indigo-600 underline">
+      History
+    </button>
+  </div>
+</td>
+
+      </tr>
+    `;
+  }).join('');
+}
+
+async function saveCommentToSheet(itemCode, type, value) {
+
+  const existing = COMMENT_MAP[itemCode] || {
+    admin: "",
+    osh: "",
+    closed: "NO"
+  };
+
+  const payload = {
+    itemCode: itemCode,
+    admin: type === "admin" ? value : existing.admin,
+    osh: type === "osh" ? value : existing.osh,
+    closed: existing.closed
+  };
+
+  await fetch(COMMENTS_URL, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+
+  await loadComments();
+  renderPlanningCenter();
+}
+
+async function toggleClosed(code) {
+
+  const existing = COMMENT_MAP[code] || {};
+
+  const payload = {
+    itemCode: code,
+    admin: existing.admin || "",
+    osh: existing.osh || "",
+    closed: existing.closed === "YES" ? "NO" : "YES"
+  };
+
+  await fetch(COMMENTS_URL, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+
+  await loadComments();
+  renderPlanningCenter();
+}
+
+function showPODetails(code) {
+
+  const item = FINAL.find(x => x.code === code);
+  if (!item) return;
+
+  let base = Math.max(0, (item.reqDays * item.dailySales) - item.usableStock - item.openPo);
+  let suggested = item.moq > 0
+      ? Math.ceil(base / item.moq) * item.moq
+      : Math.round(base);
+
+  const uniquePOs = [...new Set(item.poNumbers)];
+
+  document.getElementById("poModalContent").innerHTML = `
+    <div>
+      <div class="font-bold text-slate-800">${item.name}</div>
+      <div class="text-[10px] text-slate-400 font-bold uppercase">${item.code}</div>
+    </div>
+
+    <div class="border-t pt-3 space-y-2">
+
+      <div>
+        <span class="font-semibold text-slate-600">Open PO Qty:</span>
+        <span class="font-black text-blue-700">${Math.round(item.openPo)}</span>
+      </div>
+
+      <div>
+        <span class="font-semibold text-slate-600">PO Numbers:</span>
+        <div class="text-slate-500">
+          ${uniquePOs.length ? uniquePOs.join(", ") : "N/A"}
+        </div>
+      </div>
+
+      <div>
+        <span class="font-semibold text-slate-600">Suggested Qty:</span>
+        <span class="font-black text-indigo-600">
+          ${suggested > 0 ? suggested : "-"}
+        </span>
+      </div>
+
+    </div>
+  `;
+
+  document.getElementById("poModal").classList.remove("hidden");
+  document.getElementById("poModal").classList.add("flex");
+}
+
+function closePOModal() {
+  document.getElementById("poModal").classList.add("hidden");
+  document.getElementById("poModal").classList.remove("flex");
+}
 
     function renderAlerts() {
         const alerts = FINAL.filter(r => r.holdDays < MIN_COVERAGE_DAYS && r.dailySales > 0).sort((a,b) => a.holdDays - b.holdDays);
@@ -1406,7 +1704,7 @@ function exportReorderPlan() {
                 <td class="px-6 py-4 text-center font-bold text-blue-600">${getLocalDateString(getValueByKeys(i, ["expectedDelivery", "ETA"]))}</td>
                 <td class="px-6 py-4 text-center font-black text-indigo-600 bg-indigo-50">${Math.round(getValueByKeys(i, ["Pending Qty", "pendingQty"]) || 0)}</td>
             </tr>`).join('');
-        document.getElementById('poTrackContent').innerHTML = `<div class="overflow-x-auto"><table class="w-full text-left text-xs whitespace-nowrap">
+        document.getElementById('poTrackContent').innerHTML = `<div class="overflow-auto max-h-[100vh]"><table class="w-full text-left text-xs whitespace-nowrap">
             <thead><tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider">
                 <th class="px-6 py-4">PO Ref</th><th class="px-6 py-4">Date</th><th class="px-6 py-4">SKU</th><th class="px-6 py-4 text-center">PO Age</th>
                 <th class="px-6 py-4 text-center">Order Qty</th><th class="px-6 py-4 text-center">ETA</th><th class="px-6 py-4 text-center">Balance</th>
@@ -1784,6 +2082,8 @@ ${r["Health Status"] === 'STOCK-OUT' || r["Health Status"] === 'CRITICAL LOW'
         XLSX.utils.book_append_sheet(wb, ws, "Pearl Detailed Analysis");
         XLSX.writeFile(wb, `Pearl_Strategic_Analysis_${new Date().toISOString().split('T')[0]}.xlsx`);
     }
+
+
     function show(id, btn) {
       document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
       document.getElementById(id).classList.add('active');
@@ -1801,11 +2101,172 @@ function hideRobot() {
 }
     
     function handleDateChange(v) { document.getElementById('displayDate').innerText = getLocalDateString(v); build(); }
+
+
+function showHistory(code) {
+
+  const history = COMMENT_HISTORY[code];
+
+  if (!history || history.length === 0) {
+    alert("No history available.");
+    return;
+  }
+
+  const sorted = history.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  let text = `History for ${code}\n\n`;
+
+  sorted.forEach(h => {
+    text += `
+Date: ${new Date(h.date).toLocaleString()}
+Admin: ${h.admin || "-"}
+OSH: ${h.osh || "-"}
+Status: ${h.closed}
+-------------------------
+`;
+  });
+
+  alert(text);
+}
+
+function closeHistory() {
+  document.getElementById("historyModal").classList.add("hidden");
+}
+
+async function toggleClosed(code) {
+
+  const currentStatus = COMMENT_MAP[code]?.closed === "YES" ? "YES" : "NO";
+  const newStatus = currentStatus === "YES" ? "NO" : "YES";
+
+  const payload = {
+    itemCode: code,
+    admin: "",
+    osh: "",
+    closed: newStatus
+  };
+
+  await fetch(COMMENTS_URL, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+
+  await loadComments();
+  renderPlanningCenter();
+}
+
+function showHistory(code) {
+
+  const history = COMMENT_HISTORY[code];
+
+  if (!history || history.length === 0) {
+    alert("No history available for this item.");
+    return;
+  }
+
+  let html = `
+    <div id="historyModal"
+      style="
+        position:fixed;
+        inset:0;
+        background:rgba(0,0,0,0.6);
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        z-index:9999;">
+      <div style="
+        background:white;
+        width:500px;
+        max-height:80vh;
+        overflow:auto;
+        padding:20px;
+        border-radius:12px;">
+        
+        <h3 style="font-weight:700;margin-bottom:15px;">
+          Comment History – ${code}
+        </h3>
+  `;
+
+  history
+    .sort((a,b) => new Date(b.date) - new Date(a.date))
+    .forEach(h => {
+
+      html += `
+        <div style="border-bottom:1px solid #eee;padding:8px 0;">
+          <div style="font-size:11px;color:#666;">
+            ${new Date(h.date).toLocaleString()}
+          </div>
+          <div style="font-size:12px;margin-top:4px;">
+            <b>Admin:</b> ${h.admin || '-'}
+          </div>
+          <div style="font-size:12px;">
+            <b>OSH:</b> ${h.osh || '-'}
+          </div>
+          <div style="font-size:11px;color:${h.closed === 'YES' ? 'green' : 'red'};">
+            Status: ${h.closed}
+          </div>
+        </div>
+      `;
+    });
+
+  html += `
+        <div style="text-align:right;margin-top:10px;">
+          <button onclick="closeHistoryModal()"
+            style="padding:6px 12px;background:#4f46e5;color:white;border:none;border-radius:6px;">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML("beforeend", html);
+}
+
+function closeHistoryModal() {
+  const modal = document.getElementById("historyModal");
+  if (modal) modal.remove();
+}
+
   </script>
+
+
 <!-- 🤖 Pearl AI Dancing Robot -->
 <div id="aiRobotOverlay">
   <div class="robot-face robot-dance"></div>
   <div class="robot-text">PEARL AI IS THINKING…</div>
 </div>
+</div>
+
+
+<!-- PO DETAILS MODAL -->
+<div id="poModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+  <div class="bg-white rounded-2xl shadow-2xl w-[420px] max-w-[90%] p-6 relative">
+
+    <button onclick="closePOModal()" 
+      class="absolute top-3 right-3 text-slate-400 hover:text-slate-700 font-bold">
+      ✕
+    </button>
+
+    <h3 class="text-sm font-black text-slate-700 uppercase mb-4">
+      Open PO Details
+    </h3>
+
+    <div id="poModalContent" class="text-xs space-y-2"></div>
+
+  </div>
+</div>
+
+
+<div id="historyModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+  <div class="bg-white w-[500px] max-h-[500px] overflow-auto rounded-2xl p-6">
+    <h3 class="font-bold mb-4">Comment History</h3>
+    <div id="historyContent" class="space-y-3 text-xs"></div>
+    <div class="text-right mt-4">
+      <button onclick="closeHistory()" class="px-4 py-2 bg-slate-200 rounded-lg">Close</button>
+    </div>
+  </div>
+</div>
+
+
 </body>
-</html>
+</html>	
