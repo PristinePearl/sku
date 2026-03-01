@@ -992,14 +992,6 @@ async function loadComments() {
         closed: r["CLOSED"] || "NO"
       };
 
-      // 🔥 IMPORTANT FIX
-      COMMENT_HISTORY[code] = (r["HISTORY"] || []).map(h => ({
-        date: new Date(h.date),   // convert string to Date
-        admin: h.admin || "",
-        osh: h.osh || "",
-        closed: h.closed || "NO"
-      }));
-
     });
 
   } catch (e) {
@@ -1408,20 +1400,20 @@ async function saveCommentToSheet(itemCode, type, value) {
   renderPlanningCenter();
 }
 
+
+
+
 async function toggleClosed(code) {
 
-  const existing = COMMENT_MAP[code] || {};
-
-  const payload = {
-    itemCode: code,
-    admin: existing.admin || "",
-    osh: existing.osh || "",
-    closed: existing.closed === "YES" ? "NO" : "YES"
-  };
+  const current = COMMENT_MAP[code]?.closed || "NO";
+  const newStatus = current === "YES" ? "NO" : "YES";
 
   await fetch(COMMENTS_URL, {
     method: "POST",
-    body: JSON.stringify(payload)
+    body: JSON.stringify({
+      itemCode: code,
+      closed: newStatus
+    })
   });
 
   await loadComments();
@@ -2103,32 +2095,37 @@ function hideRobot() {
     function handleDateChange(v) { document.getElementById('displayDate').innerText = getLocalDateString(v); build(); }
 
 
-function showHistory(code) {
+async function showHistory(code) {
 
-  const history = COMMENT_HISTORY[code];
+  try {
 
-  if (!history || history.length === 0) {
-    alert("No history available.");
-    return;
-  }
+    const res = await fetch(`${COMMENTS_URL}?code=${code}`);
+    const history = await res.json();
 
-  const sorted = history.sort((a, b) => new Date(b.date) - new Date(a.date));
+    if (!history || history.length === 0) {
+      alert("No history available.");
+      return;
+    }
 
-  let text = `History for ${code}\n\n`;
+    let text = `History for ${code}\n\n`;
 
-  sorted.forEach(h => {
-    text += `
+    history.forEach(h => {
+      text += `
 Date: ${new Date(h.date).toLocaleString()}
 Admin: ${h.admin || "-"}
 OSH: ${h.osh || "-"}
-Status: ${h.closed}
+Status: ${h.closed || "NO"}
 -------------------------
 `;
-  });
+    });
 
-  alert(text);
+    alert(text);
+
+  } catch (err) {
+    alert("Failed to load history.");
+    console.error(err);
+  }
 }
-
 function closeHistory() {
   document.getElementById("historyModal").classList.add("hidden");
 }
@@ -2154,72 +2151,24 @@ async function toggleClosed(code) {
   renderPlanningCenter();
 }
 
-function showHistory(code) {
+async function toggleClosed(code) {
 
-  const history = COMMENT_HISTORY[code];
+  const currentStatus = COMMENT_MAP[code]?.closed === "YES" ? "YES" : "NO";
+  const newStatus = currentStatus === "YES" ? "NO" : "YES";
 
-  if (!history || history.length === 0) {
-    alert("No history available for this item.");
-    return;
-  }
+  const payload = {
+    itemCode: code,
+    admin: "",
+    osh: "",
+    closed: newStatus
+  };
 
-  let html = `
-    <div id="historyModal"
-      style="
-        position:fixed;
-        inset:0;
-        background:rgba(0,0,0,0.6);
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        z-index:9999;">
-      <div style="
-        background:white;
-        width:500px;
-        max-height:80vh;
-        overflow:auto;
-        padding:20px;
-        border-radius:12px;">
-        
-        <h3 style="font-weight:700;margin-bottom:15px;">
-          Comment History – ${code}
-        </h3>
-  `;
+  await fetch(COMMENTS_URL, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
 
-  history
-    .sort((a,b) => new Date(b.date) - new Date(a.date))
-    .forEach(h => {
-
-      html += `
-        <div style="border-bottom:1px solid #eee;padding:8px 0;">
-          <div style="font-size:11px;color:#666;">
-            ${new Date(h.date).toLocaleString()}
-          </div>
-          <div style="font-size:12px;margin-top:4px;">
-            <b>Admin:</b> ${h.admin || '-'}
-          </div>
-          <div style="font-size:12px;">
-            <b>OSH:</b> ${h.osh || '-'}
-          </div>
-          <div style="font-size:11px;color:${h.closed === 'YES' ? 'green' : 'red'};">
-            Status: ${h.closed}
-          </div>
-        </div>
-      `;
-    });
-
-  html += `
-        <div style="text-align:right;margin-top:10px;">
-          <button onclick="closeHistoryModal()"
-            style="padding:6px 12px;background:#4f46e5;color:white;border:none;border-radius:6px;">
-            Close
-          </button>
-        </div>
-      </div>
-    </div>
-  `;
-
-  document.body.insertAdjacentHTML("beforeend", html);
+  await fetchData(); // full reload to sync correctly
 }
 
 function closeHistoryModal() {
