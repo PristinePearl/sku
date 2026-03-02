@@ -141,6 +141,88 @@ thead th {
   height: 125%;
 }
 
+/* ================================
+   📜 HISTORY POPUP STYLE
+================================ */
+
+#historyModal {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.history-card {
+  width: 600px;
+  max-width: 95%;
+  background: white;
+  border-radius: 24px;
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+  overflow: hidden;
+  animation: fadeUp 0.25s ease-out;
+}
+
+.history-header {
+  background: linear-gradient(to right, #4f46e5, #6366f1);
+  color: white;
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.history-header h3 {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.history-body {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.history-body table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.history-body th {
+  background: #f8fafc;
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  padding: 12px;
+  color: #64748b;
+  position: sticky;
+  top: 0;
+}
+
+.history-body td {
+  padding: 12px;
+  text-align: center;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.history-body tr:hover {
+  background: #f9fafb;
+}
+
+.close-btn {
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+.close-btn:hover {
+  opacity: 1;
+}
+
   </style>
 <script>
   window.MathJax = {
@@ -246,7 +328,7 @@ thead th {
     <div id="loader" class="hidden flex items-center justify-center p-20">
         <div class="flex flex-col items-center gap-4">
             <div class="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-            <p class="text-slate-400 text-sm font-medium">Synchronizing enterprise data...</p>
+            <p class="text-slate-400 text-sm font-medium">Fetching stock data...</p>
         </div>
     </div>
 
@@ -349,7 +431,12 @@ thead th {
 </section>
 
 <section id="planning-center" class="section space-y-3">
-
+<div class="flex justify-end">
+  <button onclick="exportPlanningCenter()"
+    class="px-5 py-2 bg-purple-600 text-white rounded-xl text-xs font-black flex items-center gap-2 hover:bg-purple-700 transition-all shadow">
+    <i data-lucide="download"></i> EXPORT PLANNING CENTER (XLS)
+  </button>
+</div>
   <div class="table-container shadow-sm">
     <div class="overflow-auto max-h-[100vh]">
       <table class="w-full text-left text-xs whitespace-nowrap">
@@ -364,8 +451,8 @@ thead th {
             <th class="px-6 py-4 text-center">MOQ</th>
             <th class="px-6 py-4 text-center bg-indigo-50 text-indigo-700 font-black">Suggested</th>
             <th class="px-6 py-4 text-center bg-yellow-50 text-yellow-700">Admin Comments</th>
-<th class="px-6 py-4 text-center bg-purple-50 text-purple-700">OSH Comments</th>
-<th class="px-6 py-4 text-center bg-emerald-50 text-emerald-700">Status</th>
+<th class="px-6 py-4 text-center bg-purple-50 text-purple-700">OSH Action</th>
+<th class="px-6 py-4 text-center bg-emerald-50 text-emerald-700">History</th>
           </tr>
         </thead>
         <tbody id="planningCenterBody" class="divide-y divide-slate-100 text-slate-700"></tbody>
@@ -407,16 +494,16 @@ thead th {
 </div>
         <div class="table-container border-red-100">
     <div class="overflow-auto max-h-[100vh]">
-                <table class="w-full text-left text-xs whitespace-nowrap">
+                <table class="w-full text-left text-xs">
                     <thead>
                         <tr class="bg-red-50 text-red-700 font-bold uppercase tracking-wider border-b border-red-100">
                             <th class="px-6 py-4">Priority SKU</th>
                             <th class="px-6 py-4 text-center">Usable Qty</th>
                             <th class="px-6 py-4 text-center">Short Expiry</th>
                             <th class="px-6 py-4 text-center">Daily Avg Sales</th>
-<th class="px-6 py-4 text-center bg-indigo-100 text-indigo-700">
-      Requirement (3 Months)
-    </th>
+<th class="px-6 py-4 text-center bg-indigo-100 text-indigo-700 whitespace-normal break-words w-[200px]">
+  Requirement (3 Months)
+</th>
                             <th class="px-6 py-4 text-center">Days Remaining</th>
                         </tr>
                     </thead>
@@ -491,22 +578,8 @@ thead th {
                 <p class="text-slate-500 text-[10px] mt-1">Item-wise MFR & MOQ mapping.</p>
             </div>
         </div>
-        <div id="reportPreviewArea" class="hidden">
-            <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden mb-12">
-                <div class="px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                    <div>
-                        <h3 id="previewTitle" class="font-black text-slate-800 tracking-tight uppercase text-sm">Report Preview</h3>
-                    </div>
-                    <div class="flex gap-2">
-                        <button id="downloadSpecificBtn" class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-[10px] font-black hover:bg-indigo-700 transition-all flex items-center gap-2">
-                            <i data-lucide="download" class="w-3 h-3"></i> DOWNLOAD XLS (Summary + Detail)
-                        </button>
-                        <button onclick="closePreview()" class="text-slate-400 hover:text-slate-600 p-2"><i data-lucide="x" class="w-5 h-5"></i></button>
-                    </div>
-                </div>
-                <div id="previewContent" class="overflow-auto max-h-[600px] preview-scroll p-0"></div>
-            </div>
-        </div>
+        
+            
     </section>
 
 <section id="po-track" class="section space-y-3">
@@ -797,7 +870,43 @@ thead th {
 
   </div>
 </div>
-</section>  </main>
+</section> 
+
+<!-- REPORT PREVIEW MODAL -->
+<div id="reportModal"
+     class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-[9999]">
+
+  <div class="bg-white w-[95%] max-w-6xl rounded-3xl shadow-2xl flex flex-col">
+
+    <!-- Header -->
+    <div class="px-8 py-4 border-b flex items-center justify-between bg-slate-50 rounded-t-3xl">
+      <h3 id="previewTitle"
+          class="font-black text-slate-800 uppercase text-sm">
+        Report Preview
+      </h3>
+
+      <div class="flex gap-3 items-center">
+        <button id="downloadSpecificBtn"
+          class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-[10px] font-black hover:bg-indigo-700 flex items-center gap-2">
+          <i data-lucide="download" class="w-3 h-3"></i>
+          DOWNLOAD XLS
+        </button>
+
+        <button onclick="closeReportModal()"
+          class="text-slate-400 hover:text-slate-600 p-2">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Scrollable content -->
+    <div id="previewContent"
+         class="overflow-auto max-h-[75vh] preview-scroll p-4">
+    </div>
+
+  </div>
+</div>
+ </main>
 
   <script>
     const apiKey = ""; 
@@ -823,6 +932,38 @@ const BUFFER_URL = "https://script.google.com/macros/s/AKfycbxMcORHpxDOe4EnE5MhH
 const COMMENTS_URL = "https://script.google.com/macros/s/AKfycbxx7Lbj123htDYll-WlxqLK3kUduJOY4_Yozecejbm9iQWYaOJ0ITT9H2iykxtK-Mk/exec";
 
     window.onload = fetchData;
+let COMMENT_MAP = {};
+
+async function loadComments() {
+
+  try {
+    const res = await fetch(COMMENTS_URL);
+    const data = await res.json();
+
+    COMMENT_MAP = {};
+
+    data.forEach(row => {
+
+      const code = String(row["ITEM CODE"] || "")
+        .trim()
+        .toLowerCase();   // ✅ FORCE LOWERCASE
+
+      if (!code) return;
+
+      COMMENT_MAP[code] = {
+        admin: row["ADMIN"] || "",
+        adminDate: row["ADMIN_DATE"] || "",
+        osh: row["OSH"] || "",
+        oshDate: row["OSH_DATE"] || "",
+        closed: row["CLOSED"] || "NO"
+      };
+
+    });
+
+  } catch (err) {
+    console.error("Failed to load comments", err);
+  }
+}
 
     function getValueByKeys(obj, keys) {
       if (!obj) return null;
@@ -834,20 +975,40 @@ const COMMENTS_URL = "https://script.google.com/macros/s/AKfycbxx7Lbj123htDYll-W
       return null;
     }
 
-    function getISOStringFromMixed(raw) {
-      if (!raw) return null;
-      let d;
-      if (!isNaN(raw) && typeof raw !== 'boolean' && raw > 40000) {
-        d = new Date((parseFloat(raw) - 25569) * 86400 * 1000);
-      } else {
-        d = new Date(raw);
-        if (isNaN(d.getTime())) {
-            const parts = String(raw).split('/');
-            if (parts.length === 3) d = new Date(parts[2], parts[1] - 1, parts[0]);
-        }
-      }
-      return isNaN(d.getTime()) ? null : d.toISOString().split('T')[0];
-    }
+function getISOStringFromMixed(raw) {
+  if (!raw) return null;
+
+  // ✅ Already ISO
+  if (typeof raw === "string" && raw.includes("T")) {
+    const d = new Date(raw);
+    return isNaN(d) ? null : d.toISOString().split("T")[0];
+  }
+
+  // ✅ Excel serial
+  if (!isNaN(raw) && raw > 40000) {
+    const d = new Date((parseFloat(raw) - 25569) * 86400 * 1000);
+    return d.toISOString().split("T")[0];
+  }
+
+  const str = String(raw).trim();
+
+  // ✅ DD/MM/YYYY HH:MM:SS
+  const match = str.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:\s(\d{2}):(\d{2}):(\d{2}))?/);
+  if (match) {
+    const d = new Date(
+      match[3],
+      match[2] - 1,
+      match[1],
+      match[4] || 0,
+      match[5] || 0,
+      match[6] || 0
+    );
+    return d.toISOString().split("T")[0];
+  }
+
+  const d = new Date(str);
+  return isNaN(d) ? null : d.toISOString().split("T")[0];
+}
 
     function getLocalDateString(dateInput) {
       const iso = getISOStringFromMixed(dateInput);
@@ -955,7 +1116,7 @@ if (bufRes.status === 'fulfilled' && Array.isArray(bufRes.value)) {
               }
           }
 
-         await loadComments();
+await loadComments();
 build();
         } catch (e) { 
             document.getElementById('errorOverlay').classList.remove('hidden');
@@ -966,38 +1127,7 @@ build();
         }
     }
 
-let COMMENT_MAP = {};
 
-let COMMENT_HISTORY = {};
-
-async function loadComments() {
-
-  try {
-    const res = await fetch(COMMENTS_URL);
-    const data = await res.json();
-
-    COMMENT_MAP = {};
-    COMMENT_HISTORY = {};
-
-    data.forEach(r => {
-
-      const code = String(r["ITEM CODE"] || "").trim().toUpperCase();
-      if (!code) return;
-
-      COMMENT_MAP[code] = {
-        admin: r["ADMIN"] || "",
-        osh: r["OSH"] || "",
-        adminDate: r["ADMIN_DATE"] || "",
-        oshDate: r["OSH_DATE"] || "",
-        closed: r["CLOSED"] || "NO"
-      };
-
-    });
-
-  } catch (e) {
-    console.error("Comment fetch failed", e);
-  }
-}
 
     function build() {
       const selectedDate = document.getElementById('dateFilter').value;
@@ -1071,17 +1201,37 @@ if (Array.isArray(RAW_PO_DATA)) {
       getValueByKeys(x, ["Closed", "closed"]) || "NO"
     ).toUpperCase();
 
-    // ✅ ONLY REAL OPEN POs
-if (
-  dataMap[code] &&
-  pendingQty > 0 &&
-  closedStatus !== "YES"
-) {
-  dataMap[code].openPo += pendingQty;
+    if (
+      dataMap[code] &&
+      pendingQty > 0 &&
+      closedStatus !== "YES"
+    ) {
 
-  const poNo = getValueByKeys(x, ["PO Number", "poNumber"]);
-  if (poNo) dataMap[code].poNumbers.push(poNo);
-}
+      dataMap[code].openPo += pendingQty;
+
+      const poNo = getValueByKeys(x, ["PO Number", "poNumber"]);
+      const etaDate = getValueByKeys(x, [
+  "ETA",
+  "ETA Date",
+  "Expected Date",
+  "Expected date",
+  "Delivery Date",
+  "Delivery date",
+  "ETD"
+]);
+
+      if (!dataMap[code].poDetails) {
+        dataMap[code].poDetails = [];
+      }
+
+      dataMap[code].poDetails.push({
+        poNumber: poNo,
+        qty: pendingQty,
+        eta: etaDate
+      });
+
+      if (poNo) dataMap[code].poNumbers.push(poNo);
+    }
 
   });
 }
@@ -1297,8 +1447,8 @@ function renderPlanningCenter() {
       ? Math.ceil(base / r.moq) * r.moq
       : Math.round(base);
 
-    const adminComment = COMMENT_MAP[r.code]?.admin || "";
-const oshComment = COMMENT_MAP[r.code]?.osh || "";
+    const adminComment = COMMENT_MAP[r.code.toLowerCase()]?.admin || "";
+const oshComment = COMMENT_MAP[r.code.toLowerCase()]?.osh || "";
 
     return `
       <tr class="hover:bg-slate-50">
@@ -1334,9 +1484,9 @@ const oshComment = COMMENT_MAP[r.code]?.osh || "";
   >${adminComment}</textarea>
 
   <div class="text-[10px] text-slate-400 mt-1">
-    ${COMMENT_MAP[r.code]?.adminDate 
-      ? new Date(COMMENT_MAP[r.code].adminDate).toLocaleDateString()
-      : ''}
+    ${COMMENT_MAP[r.code.toLowerCase()]?.adminDate
+  ? getLocalDateString(COMMENT_MAP[r.code.toLowerCase()].adminDate)
+  : ''}
   </div>
 </td>
 
@@ -1347,33 +1497,67 @@ const oshComment = COMMENT_MAP[r.code]?.osh || "";
   >${oshComment}</textarea>
 
   <div class="text-[10px] text-slate-400 mt-1">
-    ${COMMENT_MAP[r.code]?.oshDate 
-      ? new Date(COMMENT_MAP[r.code].oshDate).toLocaleDateString()
-      : ''}
+   ${COMMENT_MAP[r.code.toLowerCase()]?.oshDate
+  ? getLocalDateString(COMMENT_MAP[r.code.toLowerCase()].oshDate)
+  : ''}
   </div>
 </td>
 
-<td class="px-4 py-2 text-center">
-  <button
-    onclick="toggleClosed('${r.code}')"
-    class="px-2 py-1 text-[10px] rounded-lg font-bold
-    ${COMMENT_MAP[r.code]?.closed === 'YES'
-      ? 'bg-green-100 text-green-700'
-      : 'bg-red-100 text-red-700'}">
-    ${COMMENT_MAP[r.code]?.closed === 'YES' ? 'CLOSED' : 'OPEN'}
-  </button>
+<td class="px-6 py-4 text-center">
 
-  <div class="mt-2">
+    <!-- History Button -->
     <button onclick="showHistory('${r.code}')"
       class="text-[10px] text-indigo-600 underline">
-      History
+      View
     </button>
+
   </div>
+
 </td>
 
       </tr>
     `;
   }).join('');
+}
+
+
+function updateClosed(code, isChecked) {
+
+  fetch(COMMENTS_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      itemCode: code,
+      closed: isChecked ? "YES" : "NO"
+    })
+  })
+  .then(res => res.json())
+  .then(() => {
+    loadComments().then(() => build());
+  })
+  .catch(err => {
+    console.error("Closed update failed", err);
+  });
+}
+
+function toggleStatus(code, isClosed) {
+
+  fetch(COMMENTS_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      itemCode: code,
+      closed: isClosed ? "YES" : "NO"
+    })
+  })
+  .then(res => res.json())
+  .then(() => {
+    loadComments().then(() => renderPlanningCenter());
+  })
+  .catch(err => {
+    console.error(err);
+    alert("Status update failed");
+  });
 }
 
 async function saveCommentToSheet(itemCode, type, value) {
@@ -1422,49 +1606,104 @@ async function toggleClosed(code) {
 
 function showPODetails(code) {
 
-  const item = FINAL.find(x => x.code === code);
-  if (!item) return;
+  const itemCode = code.toLowerCase();
 
-  let base = Math.max(0, (item.reqDays * item.dailySales) - item.usableStock - item.openPo);
-  let suggested = item.moq > 0
-      ? Math.ceil(base / item.moq) * item.moq
-      : Math.round(base);
+  // ✅ Filter exactly like PO Pipeline
+  const pos = RAW_PO_DATA.filter(x => {
 
-  const uniquePOs = [...new Set(item.poNumbers)];
+    const rowCode = String(
+      getValueByKeys(x, ["Item Code", "itemCode"]) || ""
+    ).trim().toLowerCase();
 
-  document.getElementById("poModalContent").innerHTML = `
-    <div>
-      <div class="font-bold text-slate-800">${item.name}</div>
-      <div class="text-[10px] text-slate-400 font-bold uppercase">${item.code}</div>
-    </div>
+    const pendingQty = parseFloat(
+      getValueByKeys(x, ["Pending Qty", "pendingQty"]) || 0
+    );
 
-    <div class="border-t pt-3 space-y-2">
+    const closedStatus = String(
+      getValueByKeys(x, ["Closed", "closed"]) || "NO"
+    ).toUpperCase();
 
-      <div>
-        <span class="font-semibold text-slate-600">Open PO Qty:</span>
-        <span class="font-black text-blue-700">${Math.round(item.openPo)}</span>
-      </div>
+    return rowCode === itemCode && pendingQty > 0 && closedStatus !== "YES";
+  });
 
-      <div>
-        <span class="font-semibold text-slate-600">PO Numbers:</span>
-        <div class="text-slate-500">
-          ${uniquePOs.length ? uniquePOs.join(", ") : "N/A"}
-        </div>
-      </div>
+  if (!pos.length) return;
 
-      <div>
-        <span class="font-semibold text-slate-600">Suggested Qty:</span>
-        <span class="font-black text-indigo-600">
-          ${suggested > 0 ? suggested : "-"}
-        </span>
-      </div>
+  const modal = document.getElementById("poModal");
+  const content = document.getElementById("poModalContent");
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
 
+  let html = `
+    <div class="overflow-x-auto mt-2">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-slate-50 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
+            <th class="p-2 border-b">PO Ref</th>
+            <th class="p-2 border-b">Date</th>
+            <th class="p-2 border-b text-center">Age</th>
+            <th class="p-2 border-b text-center">Order Qty</th>
+            <th class="p-2 border-b text-center">ETA</th>
+            <th class="p-2 border-b text-center">Balance</th>
+          </tr>
+        </thead>
+        <tbody class="text-[11px]">
+  `;
+
+  pos.forEach(i => {
+
+    const poNo = getValueByKeys(i, ["PO Number", "poNumber"]) || "N/A";
+
+    const poDateRaw = getValueByKeys(i, ["PO Date", "poDate"]);
+    const poDateStr = getLocalDateString(poDateRaw);
+    const ageDays = getDaysBetween(poDateRaw);
+
+
+    const orderQty = Math.round(
+      getValueByKeys(i, ["Order Qty", "orderQty"]) || 0
+    );
+
+    const etaRaw = i.expectedDelivery;
+const etaStr = etaRaw ? getLocalDateString(etaRaw) : "NA";
+
+    const pendingQty = Math.round(
+      getValueByKeys(i, ["Pending Qty", "pendingQty"]) || 0
+    );
+
+    const ageClass =
+      ageDays > 60
+        ? "text-red-600 font-black"
+        : "text-emerald-600 font-bold";
+
+    html += `
+      <tr class="border-b hover:bg-slate-50">
+        <td class="p-2">${poNo}</td>
+        <td class="p-2">${poDateStr}</td>
+        <td class="p-2 text-center ${ageClass}">
+          ${formatDaysToYMD(ageDays)}
+        </td>
+        <td class="p-2 text-center font-bold text-slate-600">
+          ${orderQty}
+        </td>
+        <td class="p-2 text-center font-bold text-blue-600">
+          ${etaStr}
+        </td>
+        <td class="p-2 text-center font-black text-indigo-600 bg-indigo-50/50">
+          ${pendingQty}
+        </td>
+      </tr>
+    `;
+  });
+
+  html += `
+        </tbody>
+      </table>
     </div>
   `;
 
-  document.getElementById("poModal").classList.remove("hidden");
-  document.getElementById("poModal").classList.add("flex");
+  content.innerHTML = html;
 }
+
+
 
 function closePOModal() {
   document.getElementById("poModal").classList.add("hidden");
@@ -1508,7 +1747,7 @@ document.getElementById('alertBody').innerHTML = alerts.map(r => {
       </td>
 
       <!-- ✅ NEW COLUMN -->
-<td class="px-6 py-4 text-center font-black text-indigo-700 bg-indigo-50">
+<td class="px-6 py-4 text-center bg-indigo-50 font-bold whitespace-normal break-words">
   <div>${req3Months}</div>
 
   ${
@@ -1866,43 +2105,67 @@ case 'prev_year_sales':
 
     }
 
-    async function previewReport(type) {
-if (type === 'prev_year_sales') {
-  await loadPrevYearSales();
+async function previewReport(type) {
+
+  if (type === 'prev_year_sales') {
+    await loadPrevYearSales();
+  }
+
+  const content = document.getElementById('previewContent');
+  const title = document.getElementById('previewTitle');
+
+  const { summary, detailed } = getReportContents(type);
+
+  title.innerText = type.replace(/_/g, ' ') + " - SUMMARY PREVIEW";
+
+  if (!summary.length) {
+    content.innerHTML = `
+      <div class="p-20 text-center text-slate-400">
+        No records found.
+      </div>`;
+  } else {
+
+    let html = `
+      <table class="w-full text-left text-[11px] whitespace-nowrap">
+        <thead>
+          <tr class="bg-slate-100 border-b border-slate-200 text-slate-600 font-black uppercase">
+    `;
+
+    Object.keys(summary[0]).forEach(k => {
+      html += `<th class="px-6 py-4">${k}</th>`;
+    });
+
+    html += `</tr></thead><tbody class="divide-y divide-slate-100 text-slate-700 font-medium">`;
+
+    summary.forEach(row => {
+      html += `<tr>`;
+      Object.values(row).forEach(v => {
+        let cls = "px-6 py-4";
+        if (v === "CRITICAL" || v === "GAP DETECTED")
+          cls += " text-red-600 font-black";
+        html += `<td class="${cls}">${v}</td>`;
+      });
+      html += `</tr>`;
+    });
+
+    html += `</tbody></table>`;
+
+    content.innerHTML = html;
+  }
+
+  document.getElementById('downloadSpecificBtn').onclick = () => {
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summary), "Summary");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(detailed), "Detailed Data");
+    XLSX.writeFile(wb, `Pearl_${type}_Report.xlsx`);
+  };
+
+  // ✅ OPEN MODAL
+  document.getElementById("reportModal").classList.remove("hidden");
+  document.getElementById("reportModal").classList.add("flex");
+
+  lucide.createIcons();
 }
-        const area = document.getElementById('reportPreviewArea');
-        const content = document.getElementById('previewContent');
-        const title = document.getElementById('previewTitle');
-        area.classList.remove('hidden');
-        const { summary, detailed } = getReportContents(type);
-        title.innerText = type.replace(/_/g, ' ') + " - SUMMARY PREVIEW";
-
-        if (!summary.length) { content.innerHTML = `<div class="p-20 text-center text-slate-400">No records found.</div>`; return; }
-
-        let html = '<table class="w-full text-left text-[11px] whitespace-nowrap"><thead><tr class="bg-slate-100 border-b border-slate-200 text-slate-600 font-black uppercase">';
-        Object.keys(summary[0]).forEach(k => html += `<th class="px-6 py-4">${k}</th>`);
-        html += '</tr></thead><tbody class="divide-y divide-slate-100 text-slate-700 font-medium">';
-        summary.forEach(row => {
-            html += `<tr>`;
-            Object.values(row).forEach(v => {
-                let cls = "px-6 py-4";
-                if (v === "CRITICAL" || v === "GAP DETECTED") cls += " text-red-600 font-black";
-                html += `<td class="${cls}">${v}</td>`;
-            });
-            html += `</tr>`;
-        });
-        html += '</tbody></table>';
-        content.innerHTML = html;
-        
-        document.getElementById('downloadSpecificBtn').onclick = () => {
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summary), "Summary");
-            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(detailed), "Detailed Data");
-            XLSX.writeFile(wb, `Pearl_${type}_Report.xlsx`);
-        };
-        area.scrollIntoView({ behavior: 'smooth' });
-        lucide.createIcons();
-    }
 
     function closePreview() { document.getElementById('reportPreviewArea').classList.add('hidden'); }
 
@@ -2082,7 +2345,7 @@ ${r["Health Status"] === 'STOCK-OUT' || r["Health Status"] === 'CRITICAL LOW'
       document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('nav-active'));
       if(btn) btn.classList.add('nav-active');
       document.getElementById('pageTitle').innerText = btn.innerText.replace(/[0-9]/g, '').trim();
-      closePreview();
+      
     }
 function showRobot() {
   document.getElementById("aiRobotOverlay").style.display = "flex";
@@ -2094,38 +2357,50 @@ function hideRobot() {
     
     function handleDateChange(v) { document.getElementById('displayDate').innerText = getLocalDateString(v); build(); }
 
-
 async function showHistory(code) {
 
   try {
 
-    const res = await fetch(`${COMMENTS_URL}?code=${code}`);
-    const history = await res.json();
+    const res = await fetch(COMMENTS_URL + "?code=" + encodeURIComponent(code));
+    const data = await res.json();
 
-    if (!history || history.length === 0) {
-      alert("No history available.");
+    if (!data || data.length === 0) {
+      alert("No history available");
       return;
     }
 
-    let text = `History for ${code}\n\n`;
+    let html = `
+      <div style="padding:20px; max-height:400px; overflow:auto;">
+        <h3 style="font-weight:bold; margin-bottom:10px;">History - ${code}</h3>
+        <table border="1" cellpadding="6" style="width:100%; border-collapse:collapse; font-size:12px;">
+          <tr style="background:#f1f5f9;">
+            <th>Date</th>
+            <th>Admin</th>
+            <th>OSH</th>
+          </tr>
+    `;
 
-    history.forEach(h => {
-      text += `
-Date: ${new Date(h.date).toLocaleString()}
-Admin: ${h.admin || "-"}
-OSH: ${h.osh || "-"}
-Status: ${h.closed || "NO"}
--------------------------
-`;
+    data.forEach(row => {
+      html += `
+        <tr>
+          <td>${getLocalDateString(row.date)}</td>
+          <td>${row.admin || ""}</td>
+          <td>${row.osh || ""}</td>
+        </tr>
+      `;
     });
 
-    alert(text);
+    html += `</table></div>`;
+
+    const popup = window.open("", "History", "width=700,height=500");
+    popup.document.write(html);
 
   } catch (err) {
-    alert("Failed to load history.");
     console.error(err);
+    alert("Failed to load history");
   }
 }
+
 function closeHistory() {
   document.getElementById("historyModal").classList.add("hidden");
 }
@@ -2176,6 +2451,159 @@ function closeHistoryModal() {
   if (modal) modal.remove();
 }
 
+async function showHistory(code) {
+
+  const res = await fetch(COMMENTS_URL + "?code=" + code);
+  const history = await res.json();
+
+  let html = "";
+
+  if (!history.length) {
+    html = `
+      <div class="p-6 text-center text-slate-400 font-bold">
+        No History Available
+      </div>`;
+  } else {
+    html = history.map(h => `
+      <div class="bg-slate-100 p-4 rounded-xl mb-4">
+        <div><b>Date :</b> ${h.date || '-'}</div>
+        <div><b>Admin :</b> ${h.admin || '-'}</div>
+        <div><b>OSH :</b> ${h.osh || '-'}</div>
+        <div><b>Closed :</b> ${h.closed || 'NO'}</div>
+      </div>
+    `).join('');
+  }
+
+  document.getElementById("historyModalTitle").innerText = "Comment History - " + code;
+  document.getElementById("historyModalBody").innerHTML = html;
+  document.getElementById("historyModal").classList.remove("hidden");
+}
+
+function closeHistory() {
+  document.getElementById("historyPopup")?.remove();
+}
+
+
+
+function closePOModal() {
+  document.getElementById("poModal").classList.add("hidden");
+  document.getElementById("poModal").classList.remove("flex");
+}
+
+function showHistory(code) {
+
+  const existing = document.getElementById("historyModal");
+  if (existing) existing.remove();
+
+  fetch(COMMENTS_URL + "?code=" + encodeURIComponent(code))
+    .then(res => res.json())
+    .then(data => {
+
+      if (!data || data.length === 0) {
+        alert("No History Available");
+        return;
+      }
+
+      const rows = data.map(row => `
+        <tr>
+          <td>${getLocalDateString(row.date)}</td>
+          <td>${row.admin || ''}</td>
+          <td>${row.osh || ''}</td>
+        </tr>
+      `).join("");
+
+      const html = `
+        <div id="historyModal">
+          <div class="history-card">
+
+            <div class="history-header">
+              <h3>History - ${code}</h3>
+              <span class="close-btn" onclick="closeHistory()">
+                <i data-lucide="x" class="w-4 h-4"></i>
+              </span>
+            </div>
+
+            <div class="history-body">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Admin</th>
+                    <th>OSH</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${rows}
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+      `;
+
+      document.body.insertAdjacentHTML("beforeend", html);
+
+      document.getElementById("historyModal").style.display = "flex";
+
+      lucide.createIcons();
+    })
+    .catch(err => {
+      console.error(err);
+      alert("History load failed");
+    });
+}
+
+function closeHistory() {
+  document.getElementById("historyModal").style.display = "none";
+}
+
+
+function exportPlanningCenter() {
+
+  if (!FINAL || !FINAL.length) {
+    alert("No data available to export.");
+    return;
+  }
+
+  const exportData = FINAL.map(r => {
+
+    let base = Math.max(0, (r.reqDays * r.dailySales) - r.usableStock - r.openPo);
+    let suggested = r.moq > 0
+      ? Math.ceil(base / r.moq) * r.moq
+      : Math.round(base);
+
+    return {
+      "Item Code": r.code,
+      "Item Name": r.name,
+      "Short Expiry": Math.round(r.shortQty),
+      "Usable Stock": Math.round(r.usableStock),
+      "Open PO": Math.round(r.openPo),
+      "Daily Avg Sales": r.dailySales,
+      "Coverage (Days)": r.holdDays,
+      "MOQ": r.moq,
+      "Suggested Qty": suggested,
+      "Admin Comment": COMMENT_MAP[r.code.toLowerCase()]?.admin || "",
+      "OSH Action": COMMENT_MAP[r.code.toLowerCase()]?.osh || ""
+    };
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(exportData);
+
+  XLSX.utils.book_append_sheet(wb, ws, "Planning Center");
+
+  XLSX.writeFile(
+    wb,
+    `Planning_Center_${new Date().toISOString().split("T")[0]}.xlsx`
+  );
+}
+
+
+function closeReportModal() {
+  document.getElementById("reportModal").classList.add("hidden");
+}
+
   </script>
 
 
@@ -2206,16 +2634,74 @@ function closeHistoryModal() {
 </div>
 
 
-<div id="historyModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
-  <div class="bg-white w-[500px] max-h-[500px] overflow-auto rounded-2xl p-6">
-    <h3 class="font-bold mb-4">Comment History</h3>
-    <div id="historyContent" class="space-y-3 text-xs"></div>
-    <div class="text-right mt-4">
-      <button onclick="closeHistory()" class="px-4 py-2 bg-slate-200 rounded-lg">Close</button>
+<!-- HISTORY POPUP -->
+<div id="historyModal"
+     class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-50">
+
+  <div class="bg-white w-[600px] max-h-[80vh] rounded-2xl shadow-2xl overflow-hidden">
+
+    <div class="flex justify-between items-center px-6 py-4 border-b">
+      <h3 class="font-bold text-slate-700">Comment History</h3>
+      <button onclick="closeHistory()" class="text-slate-400 hover:text-red-600">✕</button>
     </div>
+
+    <div id="historyContent" class="p-6 overflow-auto max-h-[60vh] text-xs space-y-3">
+    </div>
+
   </div>
 </div>
 
+<!-- PO MODAL -->
+<div id="poModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+  <div class="bg-white rounded-2xl shadow-xl w-[800px] max-h-[80vh] overflow-auto relative">
+    
+    <!-- Close Button -->
+    <button onclick="closePOModal()"
+      class="absolute top-3 right-3 text-slate-500 hover:text-red-600">
+      ✕
+    </button>
+
+    <div id="poModalContent" class="p-6"></div>
+
+  </div>
+</div>
+
+<!-- ===============================
+   📊 REPORT PREVIEW MODAL
+================================ -->
+<div id="reportModal"
+     class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-[9999]">
+
+  <div class="bg-white w-[95%] max-w-6xl rounded-3xl shadow-2xl flex flex-col">
+
+    <!-- Header -->
+    <div class="px-8 py-4 border-b flex items-center justify-between bg-slate-50 rounded-t-3xl">
+      <h3 id="previewTitle"
+          class="font-black text-slate-800 uppercase text-sm">
+        Report Preview
+      </h3>
+
+      <div class="flex gap-3 items-center">
+        <button id="downloadSpecificBtn"
+          class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-[10px] font-black hover:bg-indigo-700 flex items-center gap-2">
+          <i data-lucide="download" class="w-3 h-3"></i>
+          DOWNLOAD XLS
+        </button>
+
+        <button onclick="closeReportModal()"
+          class="text-slate-400 hover:text-slate-600">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Scrollable Content -->
+    <div id="previewContent"
+         class="overflow-auto max-h-[75vh] p-4 preview-scroll">
+    </div>
+
+  </div>
+</div>
 
 </body>
-</html>	
+</html>
