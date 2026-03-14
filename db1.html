@@ -86,6 +86,31 @@
   animation: textPulse 1.5s ease-in-out infinite;
 }
 
+/* ===== Product Auto-Suggest ===== */
+#productSuggestList li {
+  padding: 8px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid #f3f4f6;
+  transition: background 0.1s;
+}
+#productSuggestList li:last-child { border-bottom: none; }
+#productSuggestList li:hover,
+#productSuggestList li.active {
+  background-color: #e0e7ff;
+  color: #3730a3;
+}
+#productSuggestList li mark {
+  background: transparent;
+  color: #4f46e5;
+  font-weight: 700;
+}
+#productSuggestList li.no-match {
+  color: #9ca3af;
+  font-style: italic;
+  cursor: default;
+}
+#productSuggestList li.no-match:hover { background: white; color: #9ca3af; }
+
   </style>
 </head>
 
@@ -161,11 +186,19 @@
         </div>
         
         <!-- 5. Product -->
-        <div>
+        <div class="relative" id="productFilterWrapper">
           <label class="block text-sm font-semibold text-gray-700 mb-1">Product:</label>
-          <select id="productFilter" class="w-full p-3 border border-gray-300 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 transition duration-150">
-            <option value="">All Products</option>
-          </select>
+          <div class="relative">
+            <input type="text" id="productFilterInput" autocomplete="off" placeholder="Search product..."
+              class="w-full p-3 pr-8 border border-gray-300 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 transition duration-150 bg-white" />
+            <button id="productFilterClear" onclick="clearProductFilter()" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-lg leading-none">&#x2715;</button>
+          </div>
+          <!-- Hidden real value holder -->
+          <input type="hidden" id="productFilter" value="" />
+          <!-- Dropdown -->
+          <ul id="productSuggestList"
+            class="hidden absolute z-50 w-full bg-white border border-gray-200 rounded-lg shadow-xl mt-1 max-h-56 overflow-y-auto text-sm">
+          </ul>
         </div>
         
         <!-- 6. Expiry Type (CHECKBOXES) -->
@@ -822,6 +855,9 @@ if (fd || td) {
       toDateInput.value = "";
       document.getElementById("depotFilter").value = "";
       document.getElementById("productFilter").value = "";
+      document.getElementById("productFilterInput").value = "";
+      document.getElementById("productFilterClear").classList.add("hidden");
+      document.getElementById("productSuggestList").classList.add("hidden");
       document.getElementById("viewModeFilter").value = "Consolidated"; // Reset to default
       
       // --- Reset Division Code Checkboxes (Select 'All' and all others) ---
@@ -949,9 +985,13 @@ document.getElementById("exportProductExpiry").onclick = () => {
         
         // Get unique product names and SORT them
         const products = [...new Set(data.map(i => i["Item Name"]).filter(n => n))].sort((a, b) => a.localeCompare(b));
-        const productFilter = document.getElementById("productFilter");
-        productFilter.innerHTML = '<option value="">All Products</option>'; // Reset
-        products.forEach(p => productFilter.innerHTML += `<option value="${p}">${p}</option>`);
+        // Store globally for the autosuggest
+        window._allProducts = products;
+        // Reset UI
+        document.getElementById("productFilterInput").value = "";
+        document.getElementById("productFilter").value = "";
+        document.getElementById("productFilterClear").classList.add("hidden");
+        document.getElementById("productSuggestList").classList.add("hidden");
 
         // --- Expiry Type Filter (Checkboxes) ---
         const expiryTypes = ["Long", "Short", "Expired"];
@@ -1287,6 +1327,109 @@ function exportProductWiseExpiryReport() {
   XLSX.writeFile(wb, `MonthWiseProductExpiry_${new Date().toISOString().split("T")[0]}.xlsx`);
   showMessage("Month Wise Product Expiry report exported successfully.");
 }
+/* ============================================================
+   PRODUCT AUTO-SUGGEST LOGIC
+============================================================ */
+(function() {
+  let activeIdx = -1;
+
+  const input    = document.getElementById("productFilterInput");
+  const hidden   = document.getElementById("productFilter");
+  const list     = document.getElementById("productSuggestList");
+  const clearBtn = document.getElementById("productFilterClear");
+
+  function highlight(text, query) {
+    if (!query) return text;
+    const re = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    return text.replace(re, '<mark>$1</mark>');
+  }
+
+  function renderList(matches, query) {
+    list.innerHTML = '';
+    activeIdx = -1;
+    if (matches.length === 0) {
+      list.innerHTML = '<li class="no-match">No products found</li>';
+    } else {
+      matches.forEach((p) => {
+        const li = document.createElement('li');
+        li.innerHTML = highlight(p, query);
+        li.dataset.value = p;
+        li.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          selectProduct(p);
+        });
+        list.appendChild(li);
+      });
+    }
+    list.classList.remove('hidden');
+  }
+
+  function selectProduct(name) {
+    input.value  = name;
+    hidden.value = name;
+    clearBtn.classList.remove('hidden');
+    list.classList.add('hidden');
+    activeIdx = -1;
+  }
+
+  window.clearProductFilter = function() {
+    input.value  = '';
+    hidden.value = '';
+    clearBtn.classList.add('hidden');
+    list.classList.add('hidden');
+    activeIdx = -1;
+    input.focus();
+  };
+
+  input.addEventListener('input', function() {
+    const q = this.value.trim();
+    hidden.value = '';
+    clearBtn.classList.toggle('hidden', q === '');
+    const all = window._allProducts || [];
+    if (!q) { list.classList.add('hidden'); return; }
+    const matches = all.filter(p => p.toLowerCase().includes(q.toLowerCase()));
+    renderList(matches, q);
+  });
+
+  input.addEventListener('focus', function() {
+    const q = this.value.trim();
+    if (q && (window._allProducts || []).length) {
+      const matches = (window._allProducts || []).filter(p => p.toLowerCase().includes(q.toLowerCase()));
+      renderList(matches, q);
+    }
+  });
+
+  input.addEventListener('keydown', function(e) {
+    const items = list.querySelectorAll('li:not(.no-match)');
+    if (!items.length) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      activeIdx = Math.min(activeIdx + 1, items.length - 1);
+      items.forEach((li, i) => li.classList.toggle('active', i === activeIdx));
+      items[activeIdx]?.scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      activeIdx = Math.max(activeIdx - 1, 0);
+      items.forEach((li, i) => li.classList.toggle('active', i === activeIdx));
+      items[activeIdx]?.scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (activeIdx >= 0 && items[activeIdx]) {
+        selectProduct(items[activeIdx].dataset.value);
+      }
+    } else if (e.key === 'Escape') {
+      list.classList.add('hidden');
+      activeIdx = -1;
+    }
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!document.getElementById("productFilterWrapper").contains(e.target)) {
+      list.classList.add('hidden');
+    }
+  });
+})();
+
 switchBatch.addEventListener("click", () => {
   if (CURRENT_DATA_SOURCE !== "BATCH") {
     CURRENT_DATA_SOURCE = "BATCH";
