@@ -1178,8 +1178,8 @@ build();
           BATCH_STOCK.forEach(b => {
               if (getISOStringFromMixed(getValueByKeys(b, ["Date", "date"])) === targetBatchDate) {
                   const code = String(getValueByKeys(b, ["Item Code", "itemCode"]) || "").trim().toLowerCase();
-                  const expType = String(getValueByKeys(b, ["Expiry Type"]) || "").trim();
-                  if (dataMap[code] && expType.toLowerCase() === "short") {
+                  const expType = String(getValueByKeys(b, ["Expiry Type","Expiry","Type"]) || "").trim();
+                  if (dataMap[code] && expType.toLowerCase().includes("short")) {
                       dataMap[code].shortQty += parseFloat(getValueByKeys(b, ["Total Quantity"]) || 0);
                   }
               }
@@ -2702,6 +2702,6 @@ function closeReportModal() {
 
   </div>
 </div>
-
+                      
 </body>
 </html>
