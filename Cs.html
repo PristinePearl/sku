@@ -349,7 +349,7 @@
           MFR: r.MFR,
           "Item Group": r["Item Group"]
         };
-        const staticDepots = ["Kerala", "Palepu", "Coimbatore", "Bangalore"];
+        const staticDepots = ["Direct Billing", "Depot CBE", "HO", "Bangalore"];
         staticDepots.forEach(d => row[d] = r.depots[d] || 0);
         DEPOTS.forEach(d => { if(!staticDepots.includes(d)) row[d] = r.depots[d] || 0; });
         row["Total Quantity"] = r["Total Quantity"];
@@ -382,7 +382,7 @@
         
         // Fill sample data
         sampleRow["Date"] = moment().format('DD-MM-YYYY');
-        sampleRow["Depot Name"] = "Coimbatore";
+        sampleRow["Depot Name"] = "HO";
         sampleRow["Item Name"] = "PRLFAC P";
         sampleRow["Total Quantity"] = 0;
 
@@ -408,11 +408,11 @@
         MFR: r.MFR,
         "Item Group": r["Item Group"],
         depots: {
-            Kerala: r.depots["Kerala"] || 0,
-            Palepu: r.depots["Palepu"] || 0,
-            Coimbatore: r.depots["Coimbatore"] || 0,
-            Bangalore: r.depots["Bangalore"] || 0,
-        },
+    Kerala: r.depots["Direct Billing"] || 0,
+    Palepu: r.depots["Depot CBE"] || 0,
+    Coimbatore: r.depots["HO"] || 0,
+    Bangalore: r.depots["Bangalore"] || 0,
+},
         "Total Quantity": r["Total Quantity"]
       }));
 
