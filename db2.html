@@ -1801,9 +1801,9 @@ function exportCriticalAlerts() {
   const detailed = critical.map(r => ({
     "Item Code": r.code,
     "Item Name": r.name,
-    "Kerala": Math.round(r.kerala),
-    "Palepu": Math.round(r.palepu),
-    "Coimbatore": Math.round(r.coimbatore),
+    "Direct Billing": Math.round(r.kerala),
+    "Depot CBE": Math.round(r.palepu),
+    "HO": Math.round(r.coimbatore),
     "Bangalore": Math.round(r.bangalore),
     "Physical Stock": Math.round(r.stock),
     "Short Expiry": Math.round(r.shortQty),
@@ -1950,9 +1950,9 @@ function generateInterDepotTransfers() {
     if (daily <= 0) return;
 
     const depots = [
-      { name: "Kerala", qty: item.kerala },
-      { name: "Palepu", qty: item.palepu },
-      { name: "Coimbatore", qty: item.coimbatore },
+      { name: "Direct Billing", qty: item.kerala },
+      { name: "Depot CBE", qty: item.palepu },
+      { name: "HO", qty: item.coimbatore },
       { name: "Bangalore", qty: item.bangalore }
     ];
 
@@ -2064,8 +2064,8 @@ detailed = FINAL.filter(r => r.holdDays < MIN_COVERAGE_DAYS);
             case 'depot_dist':
                 summary = FINAL.map(r => ({ 
                     "Item Name": r.name, "Code": r.code,
-                    "Kerala": Math.round(r.kerala), "Palepu": Math.round(r.palepu), 
-                    "Coimbatore": Math.round(r.coimbatore), "Bangalore": Math.round(r.bangalore),
+                    "Direct Billing": Math.round(r.kerala), "Depot CBE": Math.round(r.palepu), 
+                    "HO": Math.round(r.coimbatore), "Bangalore": Math.round(r.bangalore),
                     "Total Physical": Math.round(r.stock),
                     "Short Expiry": Math.round(r.shortQty),
                     "Usable Stock": Math.round(r.usableStock)
