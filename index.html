@@ -6,23 +6,17 @@
   <link rel="icon" type="image/png" href="https://www.pristinepearlpharma.in/images/alt-logo.png">
   <title>Pearl SKU</title>
   <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <script>
     tailwind.config = {
       theme: {
         extend: {
-          fontFamily: {
-            sans: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
-          },
+          fontFamily: { sans: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'] },
           colors: {
             primary: {
-              DEFAULT: '#0ea5a4',
-              50: '#f0fdfa',
-              100: '#ccfbf1',
-              500: '#0ea5a4',
-              600: '#0d9488',
-              700: '#0f766e',
+              DEFAULT: '#0ea5a4', 50: '#f0fdfa', 100: '#ccfbf1',
+              500: '#0ea5a4', 600: '#0d9488', 700: '#0f766e',
             }
           }
         }
@@ -30,157 +24,139 @@
     }
   </script>
   <style>
-    :root {
-      --primary-glow: rgba(14, 165, 164, 0.2);
-    }
-    body { 
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      scroll-behavior: smooth;
-      overflow-x: hidden;
-    }
+    :root { --primary-glow: rgba(14,165,164,0.2); }
+    body { font-family:'Plus Jakarta Sans',sans-serif; scroll-behavior:smooth; overflow-x:hidden; }
 
-    /* Background Animations */
     .blob {
-      position: absolute;
-      width: 500px;
-      height: 500px;
-      background: radial-gradient(circle, var(--primary-glow) 0%, rgba(255,255,255,0) 70%);
-      filter: blur(60px);
-      z-index: -1;
-      animation: float 20s infinite alternate;
+      position:absolute; width:500px; height:500px;
+      background:radial-gradient(circle,var(--primary-glow) 0%,rgba(255,255,255,0) 70%);
+      filter:blur(60px); z-index:-1; animation:float 20s infinite alternate;
     }
-
     @keyframes float {
-      0% { transform: translate(0, 0) scale(1); }
-      50% { transform: translate(100px, 50px) scale(1.1); }
-      100% { transform: translate(-50px, 100px) scale(0.9); }
+      0%{transform:translate(0,0) scale(1);}
+      50%{transform:translate(100px,50px) scale(1.1);}
+      100%{transform:translate(-50px,100px) scale(0.9);}
+    }
+    @keyframes fadeInUp { from{opacity:0;transform:translateY(30px);} to{opacity:1;transform:translateY(0);} }
+    @keyframes scaleIn { from{opacity:0;transform:scale(0.9);} to{opacity:1;transform:scale(1);} }
+    @keyframes shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+    @keyframes shimmer { 100%{transform:translateX(100%);} }
+    @keyframes pulseRing {
+      0%{transform:scale(0.95);box-shadow:0 0 0 0 rgba(14,165,164,0.4);}
+      70%{transform:scale(1);box-shadow:0 0 0 8px rgba(14,165,164,0);}
+      100%{transform:scale(0.95);box-shadow:0 0 0 0 rgba(14,165,164,0);}
     }
 
-    @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(30px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    @keyframes scaleIn {
-      from { opacity: 0; transform: scale(0.9); }
-      to { opacity: 1; transform: scale(1); }
-    }
-
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      25% { transform: translateX(-8px); }
-      75% { transform: translateX(8px); }
-    }
-
-    .animate-fade-up { animation: fadeInUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
-    .animate-scale-in { animation: scaleIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
-    .animate-shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
-
-    .stagger-1 { animation-delay: 0.1s; opacity: 0; }
-    .stagger-2 { animation-delay: 0.2s; opacity: 0; }
-    .stagger-3 { animation-delay: 0.3s; opacity: 0; }
-    .stagger-4 { animation-delay: 0.4s; opacity: 0; }
+    .animate-fade-up { animation:fadeInUp 0.8s cubic-bezier(0.22,1,0.36,1) forwards; }
+    .animate-scale-in { animation:scaleIn 0.6s cubic-bezier(0.22,1,0.36,1) forwards; }
+    .animate-shake { animation:shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+    .stagger-1{animation-delay:0.1s;opacity:0;} .stagger-2{animation-delay:0.2s;opacity:0;}
+    .stagger-3{animation-delay:0.3s;opacity:0;} .stagger-4{animation-delay:0.4s;opacity:0;}
 
     .glass-card {
-      background: rgba(255, 255, 255, 0.7);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.5);
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
+      background:rgba(255,255,255,0.7); backdrop-filter:blur(20px);
+      border:1px solid rgba(255,255,255,0.5); box-shadow:0 25px 50px -12px rgba(0,0,0,0.08);
+    }
+    .card-interaction { transition:all 0.5s cubic-bezier(0.175,0.885,0.32,1.275); }
+    .card-interaction:hover { transform:translateY(-12px) scale(1.02); box-shadow:0 30px 60px -15px var(--primary-glow); }
+
+    .db-grid-card { background:white; border:1px solid #f1f5f9; transition:all 0.3s ease; }
+    .db-grid-card:hover { border-color:#0ea5a4; background:#fafcfc; }
+
+    .summary-card {
+      background:white; border-radius:1.5rem; padding:1.5rem;
+      border:1px solid #f1f5f9; transition:all 0.3s cubic-bezier(0.175,0.885,0.32,1.275);
+      position:relative; overflow:hidden;
+    }
+    .summary-card::before {
+      content:''; position:absolute; inset:0; opacity:0; transition:opacity 0.3s ease;
+    }
+    .summary-card:hover { transform:translateY(-4px); box-shadow:0 20px 40px -12px rgba(0,0,0,0.12); }
+    .summary-card.clickable { cursor:pointer; }
+    .summary-card.card-teal::before { background:linear-gradient(135deg,rgba(14,165,164,0.06),transparent); }
+    .summary-card.card-orange::before { background:linear-gradient(135deg,rgba(251,146,60,0.08),transparent); }
+    .summary-card.card-red::before { background:linear-gradient(135deg,rgba(239,68,68,0.08),transparent); }
+    .summary-card:hover::before { opacity:1; }
+
+    .skeleton { position:relative; overflow:hidden; background:#e5e7eb; border-radius:0.5rem; }
+    .skeleton::after {
+      content:''; position:absolute; inset:0; transform:translateX(-100%);
+      background:linear-gradient(90deg,transparent,rgba(255,255,255,.6),transparent);
+      animation:shimmer 1.4s infinite;
     }
 
-    .card-interaction {
-      transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    .timestamp-dot { width:7px; height:7px; background:#0ea5a4; border-radius:50%; animation:pulseRing 2s infinite; flex-shrink:0; }
+
+    .popup-overlay { background:rgba(0,0,0,0.5); backdrop-filter:blur(8px); }
+    .popup-inner {
+      background:white; border-radius:2rem;
+      box-shadow:0 40px 80px -20px rgba(0,0,0,0.2);
+      border:1px solid rgba(255,255,255,0.8);
+      max-height:90vh; display:flex; flex-direction:column;
     }
+    .popup-header { padding:1.75rem 2rem 1.25rem; border-bottom:1px solid #f1f5f9; flex-shrink:0; }
+    .popup-body { overflow:auto; flex:1; }
+    .popup-footer { padding:1rem 2rem; border-top:1px solid #f1f5f9; flex-shrink:0; }
 
-    .card-interaction:hover {
-      transform: translateY(-12px) scale(1.02);
-      box-shadow: 0 30px 60px -15px var(--primary-glow);
+    table thead th { font-size:11px; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; }
+    table tbody tr { transition:background 0.15s ease; }
+
+    ::-webkit-scrollbar{width:6px;height:6px;}
+    ::-webkit-scrollbar-track{background:#f8fafc;}
+    ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:10px;}
+    ::-webkit-scrollbar-thumb:hover{background:#0ea5a4;}
+
+    .nav-user-badge {
+      display:flex; align-items:center; gap:10px;
+      background:#f8fafc; border:1px solid #f1f5f9;
+      border-radius:999px; padding:6px 16px 6px 8px;
     }
-
-    .db-grid-card {
-      background: white;
-      border: 1px solid #f1f5f9;
-      transition: all 0.3s ease;
+    .nav-avatar {
+      width:32px; height:32px; border-radius:50%;
+      background:linear-gradient(135deg,#0ea5a4,#10b981);
+      display:flex; align-items:center; justify-content:center;
+      color:white; font-weight:800; font-size:13px;
     }
-
-    .db-grid-card:hover {
-      border-color: #0ea5a4;
-      background: #fafcfc;
-    }
-
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: #f1f5f9; }
-    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-    ::-webkit-scrollbar-thumb:hover { background: #0ea5a4; }
-/* Skeleton shimmer animation */
-.skeleton {
-  position: relative;
-  overflow: hidden;
-  background: #e5e7eb;
-}
-.skeleton::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  transform: translateX(-100%);
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255,255,255,.6),
-    transparent
-  );
-  animation: shimmer 1.4s infinite;
-}
-
-@keyframes shimmer {
-  100% { transform: translateX(100%); }
-}
   </style>
 </head>
-<body class="bg-[#fcfdfe] text-slate-900 min-h-screen">
+<body class="bg-[#f8fafc] text-slate-900 min-h-screen">
 
-  <!-- Background Blobs -->
   <div class="blob top-0 -left-20"></div>
-  <div class="blob bottom-0 -right-20" style="animation-delay: -5s;"></div>
+  <div class="blob bottom-0 -right-20" style="animation-delay:-5s;"></div>
 
-  <!-- Login Screen -->
+  <!-- LOGIN SCREEN -->
   <div id="login-screen" class="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-white/40 backdrop-blur-md transition-all duration-700">
     <div class="w-full max-w-md animate-scale-in">
       <div id="login-container" class="glass-card rounded-[3rem] p-10 relative overflow-hidden">
         <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary via-teal-400 to-primary-700"></div>
-        
         <div class="text-center mb-10">
           <div class="inline-flex p-5 bg-white rounded-[2rem] shadow-xl shadow-primary/5 mb-8">
-            <img src="https://www.pristinepearlpharma.in/images/alt-logo.png" alt="Logo" class="h-14 w-auto" />
+            <img src="https://www.pristinepearlpharma.in/images/alt-logo.png" alt="Logo" class="h-14 w-auto"/>
           </div>
           <h2 class="text-4xl font-black text-slate-900 tracking-tighter mb-2">PEARL<span class="text-primary"> SKU</span></h2>
-         <p class="text-slate-500 font-medium">STOCK KEEPING UNIT</p>
-          <p1 class="text-slate-500 font-medium">Smart inventory planning starts here.</p1>
+          <p class="text-slate-500 font-medium text-sm">STOCK KEEPING UNIT</p>
+          <p class="text-slate-400 font-medium text-xs mt-1">Smart inventory planning starts here.</p>
         </div>
-
-        <form id="login-form" class="space-y-6">
+        <form id="login-form" class="space-y-5">
           <div class="space-y-2">
             <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">System Username</label>
-            <input type="text" id="username" required spellcheck="false" autocomplete="off" 
-                   class="w-full px-6 py-4 rounded-2xl bg-white/80 border border-slate-100 outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-slate-700 font-semibold" 
-                   placeholder="Enter username">
+            <input type="text" id="username" required spellcheck="false" autocomplete="off"
+              class="w-full px-6 py-4 rounded-2xl bg-white/80 border border-slate-100 outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-slate-700 font-semibold"
+              placeholder="Enter username">
           </div>
           <div class="space-y-2">
             <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Secure Password</label>
-            <input type="password" id="password" required 
-                   class="w-full px-6 py-4 rounded-2xl bg-white/80 border border-slate-100 outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-slate-700 font-semibold" 
-                   placeholder="••••••••">
+            <input type="password" id="password" required
+              class="w-full px-6 py-4 rounded-2xl bg-white/80 border border-slate-100 outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-slate-700 font-semibold"
+              placeholder="••••••••">
           </div>
-          
           <div id="login-error" class="hidden bg-red-50 text-red-500 text-xs font-bold p-4 rounded-xl border border-red-100 animate-fade-up">
             Authentication failed. Verify credentials.
           </div>
-
           <button type="submit" id="login-btn" class="group relative w-full bg-slate-900 hover:bg-primary text-white font-bold py-5 rounded-2xl shadow-2xl transition-all active:scale-95 overflow-hidden">
             <span class="relative z-10 flex items-center justify-center gap-2">
               Sign Into Portal
-              <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
+              <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
             </span>
           </button>
         </form>
@@ -188,574 +164,527 @@
     </div>
   </div>
 
-  <!-- Main Content -->
+  <!-- MAIN CONTENT -->
   <div id="portal-content" class="hidden flex flex-col min-h-screen">
-    <nav class="sticky top-0 z-40 bg-white/60 backdrop-blur-xl border-b border-slate-100">
-      <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-        <div class="flex items-center gap-4 group cursor-default">
-          <div class="p-2 bg-primary/5 rounded-xl group-hover:scale-110 transition-transform">
-            <img src="https://www.pristinepearlpharma.in/images/alt-logo.png" alt="Logo" class="h-8" />
+
+    <!-- NAV -->
+    <nav class="sticky top-0 z-40 bg-white/70 backdrop-blur-xl border-b border-slate-100/80">
+      <div class="max-w-7xl mx-auto px-6 h-18 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3 cursor-default">
+          <div class="p-2 bg-primary/5 rounded-xl">
+            <img src="https://www.pristinepearlpharma.in/images/alt-logo.png" alt="Logo" class="h-8"/>
           </div>
-          <h1 class="text-xl font-black tracking-tighter text-slate-800">PEARL<span class="text-primary"> SKU</span></h1>
+          <div>
+            <h1 class="text-lg font-black tracking-tighter text-slate-800 leading-none">PEARL<span class="text-primary"> SKU</span></h1>
+            <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Stock Keeping Unit</p>
+          </div>
         </div>
-        
-        <div class="flex items-center gap-6">
-          <div class="hidden sm:flex flex-col items-end">
-            <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">USER</span>
-            <span id="display-user" class="text-sm font-extrabold text-slate-900">User</span>
+
+        <div class="flex items-center gap-4">
+          <div class="nav-user-badge hidden sm:flex">
+            <div class="nav-avatar" id="nav-avatar-letter">U</div>
+            <div class="flex flex-col">
+              <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">Signed in</span>
+              <span id="display-user" class="text-sm font-extrabold text-slate-800 leading-tight">User</span>
+            </div>
           </div>
           <button onclick="logout()" class="group flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 text-slate-500 hover:bg-red-50 hover:text-red-500 transition-all font-bold text-xs uppercase tracking-widest">
             Logout
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
           </button>
         </div>
       </div>
     </nav>
 
-    <main class="flex-grow container mx-auto px-6 py-16 max-w-7xl">
-      <header class="mb-20 animate-fade-up">
-        <div class="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase tracking-[0.2em] mb-6 stagger-1 animate-fade-up">
+    <main class="flex-grow container mx-auto px-6 py-14 max-w-7xl">
+
+      <!-- HEADER -->
+      <header class="mb-14 animate-fade-up">
+        <div class="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase tracking-[0.2em] mb-5 stagger-1 animate-fade-up">
           Active Dashboard
         </div>
         <h2 class="text-5xl md:text-6xl font-black text-slate-900 tracking-tight leading-none">
           Greetings, <span id="welcome-name" class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-emerald-500">User</span>
         </h2>
-        <p class="text-slate-500 mt-6 text-xl font-medium max-w-xl leading-relaxed stagger-2 animate-fade-up">
+        <p class="text-slate-500 mt-5 text-lg font-medium max-w-xl leading-relaxed stagger-2 animate-fade-up">
           Access your inventory tools and real-time stock insights for Pristine Pearl Pharma.
         </p>
       </header>
 
-<!-- SMART SUMMARY CARDS -->
-<div id="summaryCards" class="grid grid-cols-2 md:grid-cols-5 gap-6 mb-16">
+      <!-- SUMMARY CARDS -->
+      <div id="summaryCards" class="grid grid-cols-2 md:grid-cols-5 gap-5 mb-14">
 
-<div onclick="openProductsPopup()" class="bg-white rounded-3xl p-6 shadow border border-slate-100 text-center cursor-pointer hover:scale-105 transition">
-    <p class="text-xs font-bold text-slate-400">TOTAL PRODUCTS</p>
-    <h2 id="sumProducts" class="text-3xl font-black mt-2 h-8 flex items-center justify-center"><div class="h-8 w-20 mx-auto rounded-lg skeleton"></div></h2>
-  </div>
+        <div onclick="openProductsPopup()" class="summary-card card-teal clickable stagger-1 animate-fade-up">
+          <div class="flex items-center justify-between mb-3">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Products</p>
+            <div class="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/></svg>
+            </div>
+          </div>
+          <h2 id="sumProducts" class="text-3xl font-black text-slate-900 mt-1 h-9 flex items-center">
+            <div class="h-8 w-16 rounded-lg skeleton"></div>
+          </h2>
+          <p class="text-[10px] text-primary font-bold mt-2 flex items-center gap-1">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+            View all
+          </p>
+        </div>
 
-  <div class="bg-white rounded-3xl p-6 shadow border border-slate-100 text-center">
-    <p class="text-xs font-bold text-slate-400">TOTAL QTY</p>
-<h2 id="sumQty" class="text-3xl font-black mt-2 h-8 flex items-center justify-center"><div class="h-8 w-24 mx-auto rounded-lg skeleton"></div></h2>
-  </div>
+        <div class="summary-card stagger-2 animate-fade-up">
+          <div class="flex items-center justify-between mb-3">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Qty</p>
+            <div class="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
+              <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg>
+            </div>
+          </div>
+          <h2 id="sumQty" class="text-3xl font-black text-slate-900 mt-1 h-9 flex items-center">
+            <div class="h-8 w-20 rounded-lg skeleton"></div>
+          </h2>
+          <p class="text-[10px] text-slate-400 font-bold mt-2">Units in stock</p>
+        </div>
 
+        <div class="summary-card stagger-3 animate-fade-up">
+          <div class="flex items-center justify-between mb-3">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Today</p>
+            <div class="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
+              <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            </div>
+          </div>
+          <h2 id="todayDate" class="text-xl font-black text-primary mt-1 leading-tight">
+            <span class="text-slate-400 text-sm animate-pulse">Loading...</span>
+          </h2>
+          <p class="text-[10px] text-slate-400 font-bold mt-2">Current date</p>
+        </div>
 
-  <div class="bg-white rounded-3xl p-6 shadow border border-slate-100 text-center">
-    <p class="text-xs font-bold text-slate-400">TODAY</p>
-<h2 id="todayDate" class="text-3xl font-black text-primary mt-2">
-  <span class="animate-pulse">Loading...</span>
-</h2>
-  </div>
+        <div onclick="openExpiryPopup('short')" class="summary-card card-orange clickable stagger-4 animate-fade-up">
+          <div class="flex items-center justify-between mb-3">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Short Expiry</p>
+            <div class="w-8 h-8 rounded-xl bg-orange-50 flex items-center justify-center flex-shrink-0">
+              <svg class="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            </div>
+          </div>
+          <h2 id="sumNear" class="text-3xl font-black text-orange-500 mt-1 h-9 flex items-center">
+            <div class="h-8 w-14 rounded-lg skeleton" style="background:#fed7aa"></div>
+          </h2>
+          <p class="text-[10px] text-orange-400 font-bold mt-2 flex items-center gap-1">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+            View batches
+          </p>
+        </div>
 
-  <div onclick="openExpiryPopup('short')" class="bg-white rounded-3xl p-6 shadow border border-slate-100 text-center cursor-pointer hover:scale-105 transition">
-    <p class="text-xs font-bold text-slate-400">SHORT EXPIRY QTY</p>
-<h2 id="sumNear" class="text-3xl font-black mt-2 h-8 flex items-center justify-center"><div class="h-8 w-16 mx-auto rounded-lg skeleton" style="background:#fed7aa"></div></h2>
-  </div>
+        <div onclick="openExpiryPopup('expired')" class="summary-card card-red clickable stagger-4 animate-fade-up">
+          <div class="flex items-center justify-between mb-3">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Expired</p>
+            <div class="w-8 h-8 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0">
+              <svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+          </div>
+          <h2 id="sumExpired" class="text-3xl font-black text-red-500 mt-1 h-9 flex items-center">
+            <div class="h-8 w-14 rounded-lg skeleton" style="background:#fecaca"></div>
+          </h2>
+          <p class="text-[10px] text-red-400 font-bold mt-2 flex items-center gap-1">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+            View batches
+          </p>
+        </div>
 
-  <div onclick="openExpiryPopup('expired')" class="bg-white rounded-3xl p-6 shadow border border-slate-100 text-center cursor-pointer hover:scale-105 transition">
-    <p class="text-xs font-bold text-slate-400">EXPIRED QTY</p>
-<h2 id="sumExpired" class="text-3xl font-black mt-2 h-8 flex items-center justify-center"><div class="h-8 w-16 mx-auto rounded-lg skeleton" style="background:#fecaca"></div></h2>
-  </div>
+      </div>
 
-</div>
-
+      <!-- MAIN GRID -->
       <div class="grid lg:grid-cols-12 gap-12">
-        <!-- Operations Section -->
+
+        <!-- OPERATIONS -->
         <section id="data-ops-section" class="lg:col-span-5 space-y-10 animate-fade-up stagger-2">
           <div class="flex items-center gap-4">
             <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] whitespace-nowrap">Core Operations</h3>
             <div class="h-px w-full bg-slate-100"></div>
           </div>
-          <div class="space-y-8">
+          <div class="space-y-6">
             <a href="Bs.html" class="block group card-interaction">
-              <div class="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm relative overflow-hidden">
+              <div class="bg-white rounded-[2.5rem] p-9 border border-slate-100 shadow-sm relative overflow-hidden">
                 <div class="absolute -right-4 -top-4 w-32 h-32 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-colors"></div>
-                <div class="w-16 h-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mb-8">
-                  <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                <div class="w-14 h-14 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mb-7">
+                  <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
                 </div>
-                <h4 class="text-2xl font-black text-slate-900 tracking-tight">Batch-wise Stock Upload</h4>
-                <p class="text-slate-500 mt-3 text-sm font-medium leading-relaxed">Upload depot wise "Batch-wise" stock (Should be exported from Interact).</p>
+                <h4 class="text-xl font-black text-slate-900 tracking-tight">Batch-wise Stock Upload</h4>
+                <p class="text-slate-500 mt-2 text-sm font-medium leading-relaxed">Upload depot wise "Batch-wise" stock (Should be exported from Interact).</p>
               </div>
             </a>
             <a href="Cs.html" class="block group card-interaction">
-              <div class="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm relative overflow-hidden">
+              <div class="bg-white rounded-[2.5rem] p-9 border border-slate-100 shadow-sm relative overflow-hidden">
                 <div class="absolute -right-4 -top-4 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl group-hover:bg-emerald-500/10 transition-colors"></div>
-                <div class="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-8">
-                  <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
+                <div class="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-7">
+                  <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/></svg>
                 </div>
-                <h4 class="text-2xl font-black text-slate-900 tracking-tight">Current Stock Upload</h4>
-                <p class="text-slate-500 mt-3 text-sm font-medium leading-relaxed">Upload Depot wise "Current Stock" (Should be exported from Interact)</p>
+                <h4 class="text-xl font-black text-slate-900 tracking-tight">Current Stock Upload</h4>
+                <p class="text-slate-500 mt-2 text-sm font-medium leading-relaxed">Upload Depot wise "Current Stock" (Should be exported from Interact)</p>
               </div>
             </a>
           </div>
         </section>
 
-        <!-- Insights Section -->
+        <!-- ANALYTICS -->
         <section id="analytics-section" class="lg:col-span-7 space-y-10 animate-fade-up stagger-3">
           <div class="flex items-center gap-4">
             <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] whitespace-nowrap">Intelligence & Insights</h3>
             <div class="h-px w-full bg-slate-100"></div>
           </div>
-          <div class="grid sm:grid-cols-2 gap-8">
-            <!-- Planning Hub (MAIN OPTION - Themed to Primary Palette) -->
+          <div class="grid sm:grid-cols-2 gap-6">
             <a href="db2.html" class="block group card-interaction h-full">
-              <div class="bg-gradient-to-br from-primary-600 to-primary-700 rounded-[2.5rem] p-10 shadow-2xl shadow-primary/30 relative h-full flex flex-col justify-end min-h-[320px] overflow-hidden">
+              <div class="bg-gradient-to-br from-primary-600 to-primary-700 rounded-[2.5rem] p-9 shadow-2xl shadow-primary/30 relative h-full flex flex-col justify-end min-h-[300px] overflow-hidden">
                 <div class="absolute -right-10 -top-10 w-48 h-48 bg-white/10 rounded-full blur-3xl"></div>
-                <div class="absolute top-10 left-10 w-16 h-16 bg-white/20 text-white rounded-2xl flex items-center justify-center backdrop-blur-md">
-                  <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                <div class="absolute inset-0 bg-gradient-to-br from-transparent to-black/10"></div>
+                <div class="absolute top-9 left-9 w-14 h-14 bg-white/20 text-white rounded-2xl flex items-center justify-center backdrop-blur-md">
+                  <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                 </div>
-                <div>
-                  <div class="inline-flex px-3 py-1 bg-white/20 rounded-full text-[9px] text-white font-black uppercase tracking-widest mb-4 backdrop-blur-sm">Primary Module</div>
+                <div class="relative">
+                  <div class="inline-flex px-3 py-1 bg-white/20 rounded-full text-[9px] text-white font-black uppercase tracking-widest mb-3 backdrop-blur-sm">Primary Module</div>
                   <h4 class="text-2xl font-black text-white tracking-tight">Planning Hub</h4>
-                  <p class="text-primary-50 mt-3 text-sm font-medium leading-relaxed">Stock Planning & Pearl AI integrated reports.</p>
+                  <p class="text-white/70 mt-2 text-sm font-medium leading-relaxed">Stock Planning & Pearl AI integrated reports.</p>
                 </div>
               </div>
             </a>
-            
+
             <a href="db1.html" class="block group card-interaction h-full">
-              <div class="bg-slate-900 rounded-[2.5rem] p-10 border border-slate-800 shadow-2xl relative h-full flex flex-col justify-end min-h-[320px] overflow-hidden">
-                <div class="absolute top-10 left-10 w-16 h-16 bg-white/5 text-primary-400 rounded-2xl flex items-center justify-center">
-                  <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+              <div class="bg-slate-900 rounded-[2.5rem] p-9 border border-slate-800 shadow-2xl relative h-full flex flex-col justify-end min-h-[300px] overflow-hidden">
+                <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(14,165,164,0.08),transparent)]"></div>
+                <div class="absolute top-9 left-9 w-14 h-14 bg-white/5 text-primary rounded-2xl flex items-center justify-center border border-white/10">
+                  <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                 </div>
-                <div>
+                <div class="relative">
                   <h4 class="text-2xl font-black text-white tracking-tight">Stock Explorer</h4>
-                  <p class="text-slate-400 mt-3 text-sm font-medium leading-relaxed">Simple view of Batch wise & Current stock</p>
+                  <p class="text-slate-400 mt-2 text-sm font-medium leading-relaxed">Simple view of Batch wise & Current stock</p>
                 </div>
               </div>
             </a>
-<!-- Purchase Orders -->
+
             <a href="Po.html" class="block group card-interaction">
-              <div class="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-xl relative min-h-[280px] flex flex-col justify-end overflow-hidden">
-                <div class="absolute -right-10 -top-10 w-32 h-32 bg-slate-50 rounded-full blur-3xl"></div>
-                <div class="absolute top-10 left-10 w-14 h-14 bg-slate-100 text-slate-800 rounded-2xl flex items-center justify-center">
-                  <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+              <div class="bg-white rounded-[2.5rem] p-9 border border-slate-100 shadow-xl relative min-h-[220px] flex flex-col justify-end overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-br from-slate-50/50 to-transparent"></div>
+                <div class="absolute top-9 left-9 w-12 h-12 bg-slate-100 text-slate-700 rounded-2xl flex items-center justify-center">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
                 </div>
-                <h4 class="text-xl font-black text-slate-900 tracking-tight">Purchase Orders</h4>
-                <p class="text-slate-500 mt-2 text-xs font-medium leading-relaxed">View procurement details and PO status.</p>
+                <div class="relative">
+                  <h4 class="text-xl font-black text-slate-900 tracking-tight">Purchase Orders</h4>
+                  <p class="text-slate-500 mt-1.5 text-xs font-medium leading-relaxed">View procurement details and PO status.</p>
+                </div>
               </div>
             </a>
-          </div>
           </div>
         </section>
 
-        <!-- Database Section -->
-        <section id="database-section" class="lg:col-span-12 space-y-10 animate-fade-up stagger-4 mt-8">
+        <!-- DATABASE -->
+        <section id="database-section" class="lg:col-span-12 space-y-8 animate-fade-up stagger-4 mt-4">
           <div class="flex items-center gap-4">
-            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] whitespace-nowrap">MASTER DATABASE</h3>
+            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] whitespace-nowrap">Master Database</h3>
             <div class="h-px w-full bg-slate-100"></div>
           </div>
-          <div id="db-grid" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
-            <a id="db-batch" href="https://docs.google.com/spreadsheets/d/1EXPegfFVJbBzb_MPvaYJluXjmYRfjmgWh6Yw7y4oGzM/edit?usp=sharing" target="_blank" class="db-grid-card group p-8 rounded-3xl flex flex-col gap-8 transition-all hover:shadow-xl">
-              <div class="icon-container w-12 h-12 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+          <div id="db-grid" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-5">
+            <a id="db-batch" href="https://docs.google.com/spreadsheets/d/1EXPegfFVJbBzb_MPvaYJluXjmYRfjmgWh6Yw7y4oGzM/edit?usp=sharing" target="_blank" class="db-grid-card group p-7 rounded-3xl flex flex-col gap-6 transition-all hover:shadow-xl">
+              <div class="w-11 h-11 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
               </div>
               <h5 class="text-sm font-black text-slate-800 group-hover:text-primary">Stock - Batch Wise</h5>
             </a>
-            <a id="db-current" href="https://docs.google.com/spreadsheets/d/14N7-50jXXjP9dTbMIKrBfEwTHvoIrtzn17xLa1Spij4/edit?usp=sharing" target="_blank" class="db-grid-card group p-8 rounded-3xl flex flex-col gap-8 transition-all hover:shadow-xl">
-              <div class="icon-container w-12 h-12 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <a id="db-current" href="https://docs.google.com/spreadsheets/d/14N7-50jXXjP9dTbMIKrBfEwTHvoIrtzn17xLa1Spij4/edit?usp=sharing" target="_blank" class="db-grid-card group p-7 rounded-3xl flex flex-col gap-6 transition-all hover:shadow-xl">
+              <div class="w-11 h-11 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
               </div>
               <h5 class="text-sm font-black text-slate-800 group-hover:text-primary">Stock - Current</h5>
             </a>
-            <a id="db-req" href="https://docs.google.com/spreadsheets/d/1_Zb-YOxwLJNVHeZ9l9giJROD6TST0fd68zJxZbJEYLs/edit?gid=0#gid=0" target="_blank" class="db-grid-card group p-8 rounded-3xl flex flex-col gap-8 transition-all hover:shadow-xl">
-              <div class="icon-container w-12 h-12 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4"></path></svg>
+            <a id="db-req" href="https://docs.google.com/spreadsheets/d/1_Zb-YOxwLJNVHeZ9l9giJROD6TST0fd68zJxZbJEYLs/edit?gid=0#gid=0" target="_blank" class="db-grid-card group p-7 rounded-3xl flex flex-col gap-6 transition-all hover:shadow-xl">
+              <div class="w-11 h-11 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4"/></svg>
               </div>
               <h5 class="text-sm font-black text-slate-800 group-hover:text-primary">Requirement & MFR</h5>
             </a>
-            <a id="db-sales" href="https://docs.google.com/spreadsheets/d/1OlMhxZaF0y4xavLSYgdzjc5FdT1GLFdARByj8UJH7EE/edit?gid=0#gid=0" target="_blank" class="db-grid-card group p-8 rounded-3xl flex flex-col gap-8 transition-all hover:shadow-xl">
-              <div class="icon-container w-12 h-12 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+            <a id="db-sales" href="https://docs.google.com/spreadsheets/d/1OlMhxZaF0y4xavLSYgdzjc5FdT1GLFdARByj8UJH7EE/edit?gid=0#gid=0" target="_blank" class="db-grid-card group p-7 rounded-3xl flex flex-col gap-6 transition-all hover:shadow-xl">
+              <div class="w-11 h-11 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
               </div>
               <h5 class="text-sm font-black text-slate-800 group-hover:text-primary">Sales History</h5>
             </a>
-
           </div>
         </section>
+
       </div>
     </main>
 
-    <footer class="py-16 px-6 border-t border-slate-100 text-center bg-slate-50/50">
-      <img src="https://www.pristinepearlpharma.in/images/alt-logo.png" alt="Logo" class="h-8 mx-auto grayscale opacity-20 mb-6" />
-      <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">PRISTINE PEARL PHARMA PVT LTD</p>
+    <footer class="py-12 px-6 border-t border-slate-100 bg-slate-50/50">
+      <div class="max-w-7xl mx-auto flex items-center justify-center gap-3">
+        <img src="https://www.pristinepearlpharma.in/images/alt-logo.png" alt="Logo" class="h-7 grayscale opacity-30"/>
+        <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Pristine Pearl Pharma Pvt Ltd</p>
+      </div>
     </footer>
   </div>
-<!-- Expiry Popup -->
-<div id="expiryPopup" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center">
-  <div class="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl w-[92%] max-w-5xl p-8 relative animate-scale-in border border-white/40">
 
-    <button onclick="closeExpiryPopup()" class="absolute top-3 right-4 text-xl font-bold">✕</button>
-
-    <h3 id="popupTitle" class="text-2xl font-black mb-6 text-transparent bg-clip-text bg-gradient-to-r from-primary to-emerald-500"></h3>
-
-    <div class="flex justify-end mb-3">
-      <button id="popupDownload"
-        class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold">
-        Download Excel
-      </button>
+  <!-- EXPIRY POPUP -->
+  <div id="expiryPopup" class="hidden fixed inset-0 popup-overlay z-50 flex items-center justify-center p-4">
+    <div class="popup-inner w-full max-w-5xl animate-scale-in">
+      <div class="popup-header">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h3 id="popupTitle" class="text-2xl font-black text-slate-900"></h3>
+            <p id="popupSubtitle" class="text-xs font-semibold text-slate-400 mt-1"></p>
+          </div>
+          <button onclick="closeExpiryPopup()" class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-red-50 hover:text-red-500 flex items-center justify-center text-slate-500 transition font-black text-lg flex-shrink-0">✕</button>
+        </div>
+      </div>
+      <div class="popup-body">
+        <table class="min-w-full text-sm">
+          <thead class="bg-slate-50 sticky top-0 z-10">
+            <tr>
+              <th class="p-3 text-left text-slate-500">Code</th>
+              <th class="p-3 text-left text-slate-500">Item</th>
+              <th class="p-3 text-center text-slate-500">Batch</th>
+              <th class="p-3 text-center text-slate-500">Expiry</th>
+              <th class="p-3 text-center text-slate-500">HO</th>
+              <th class="p-3 text-center text-slate-500">BLR</th>
+              <th class="p-3 text-center text-slate-500">Direct Billing</th>
+              <th class="p-3 text-center text-slate-500">Depot CBE</th>
+              <th class="p-3 text-right text-slate-500">Total</th>
+            </tr>
+          </thead>
+          <tbody id="popupBody"></tbody>
+        </table>
+      </div>
+      <div class="popup-footer flex items-center justify-between">
+        <span id="popupCount" class="text-xs font-bold text-slate-400"></span>
+        <button id="popupDownload" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition active:scale-95">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          Download Excel
+        </button>
+      </div>
     </div>
-
-    <div class="max-h-[400px] overflow-auto border rounded-lg">
-      <table class="min-w-full text-sm rounded-xl overflow-hidden border-separate border-spacing-0">
-
-
-        <thead class="bg-gradient-to-r from-primary/10 to-emerald-100 text-slate-700 sticky top-0 z-20">
-          <tr>
-            <th class="p-2 text-left">Code</th>
-            <th class="p-2 text-left">Item</th>
-            <th class="p-2">Batch</th>
-            <th class="p-2">Expiry</th>
-            <th class="p-2">HO</th>
-            <th class="p-2">BLR</th>
-            <th class="p-2">Direct Billing</th>
-            <th class="p-2">Depot CBE</th>
-            <th class="p-2 text-right">Total</th>
-          </tr>
-        </thead>
-        <tbody id="popupBody"></tbody>
-      </table>
-    </div>
-
   </div>
-</div>
-<!-- Products Popup -->
-<div id="productsPopup" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center">
-  <div class="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl w-[92%] max-w-6xl p-8 relative animate-scale-in">
 
-    <button onclick="closeProductsPopup()" class="absolute top-3 right-4 text-xl font-bold">✕</button>
-
-    <h3 class="text-2xl font-black mb-6 text-transparent bg-clip-text bg-gradient-to-r from-primary to-emerald-500">
-      Product Availability
-    </h3>
-
-    <div class="max-h-[500px] overflow-auto border rounded-xl">
-      <table class="min-w-full text-sm">
-
-        <thead class="bg-slate-100 font-bold sticky top-0 z-10">
-          <tr>
-            <th class="p-2 text-left">Item Code</th>
-            <th class="p-2 text-left">Item Name</th>
-            <th class="p-2">HO</th>
-            <th class="p-2">BLR</th>
-            <th class="p-2">Direct Billing</th>
-            <th class="p-2">Depot CBE</th>
-          </tr>
-        </thead>
-
-        <tbody id="productsBody"></tbody>
-
-      </table>
+  <!-- PRODUCTS POPUP -->
+  <div id="productsPopup" class="hidden fixed inset-0 popup-overlay z-50 flex items-center justify-center p-4">
+    <div class="popup-inner w-full max-w-5xl animate-scale-in">
+      <div class="popup-header">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h3 class="text-2xl font-black text-slate-900">Product Availability</h3>
+            <p id="productsSubtitle" class="text-xs font-semibold text-slate-400 mt-1"></p>
+          </div>
+          <button onclick="closeProductsPopup()" class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-red-50 hover:text-red-500 flex items-center justify-center text-slate-500 transition font-black text-lg flex-shrink-0">✕</button>
+        </div>
+      </div>
+      <div class="popup-body">
+        <table class="min-w-full text-sm">
+          <thead class="bg-slate-50 sticky top-0 z-10">
+            <tr>
+              <th class="p-3 text-left text-slate-500">Item Code</th>
+              <th class="p-3 text-left text-slate-500">Item Name</th>
+              <th class="p-3 text-center text-slate-500">HO</th>
+              <th class="p-3 text-center text-slate-500">BLR</th>
+              <th class="p-3 text-center text-slate-500">Direct Billing</th>
+              <th class="p-3 text-center text-slate-500">Depot CBE</th>
+            </tr>
+          </thead>
+          <tbody id="productsBody"></tbody>
+        </table>
+      </div>
+      <div class="popup-footer flex items-center justify-end">
+        <span id="productsCount" class="text-xs font-bold text-slate-400"></span>
+      </div>
     </div>
-
   </div>
-</div>
 
   <script>
-function animateValue(id, end, duration = 2500) {
-  const el = document.getElementById(id);
-  if (!el) return;
-
-  let start = 0;
-  const startTime = performance.now();
-
-  function frame(now) {
-    const progress = Math.min((now - startTime) / duration, 1);
-    const eased = 1 - Math.pow(1 - progress, 3); // smooth ease-out
-    const value = Math.floor(eased * end);
-
-    el.innerHTML = `<span style="display:inline-block;min-width:60px;text-align:center">${value.toLocaleString()}</span>`;
-
-    if (progress < 1) requestAnimationFrame(frame);
-  }
-
-  requestAnimationFrame(frame);
-}
-function formatIndianCurrency(num){
-  if(num >= 10000000) return "₹" + (num/10000000).toFixed(1) + " Cr";
-  if(num >= 100000) return "₹" + (num/100000).toFixed(2) + " L";
-  if(num >= 1000) return "₹" + (num/1000).toFixed(1) + " K";
-  return "₹" + num;
-}
-
-async function loadSummaryCards() {
-  try {
-    const url = "https://script.google.com/macros/s/AKfycbx4hqFN0DhMDm22q0_EkS_E4EAApVavgZz8FEZEdUV0Jg0uMVaUUg3S8FyL9vy3H5KM/exec";
-    const res = await fetch(url);
-    const raw = await res.json();
-
-// 1) get list of unique dates
-const dates = Array.from(
-  new Set(raw.map(r => r["Date"]))
-).sort((a,b)=>
-  new Date(b) - new Date(a)
-);
-
-// 2) pick current date if exists
-const todayStr = new Date().toISOString().slice(0,10);
-
-let chosenDate = dates.find(d=> d === todayStr);
-
-// 3) if today not available, pick closest previous
-if (!chosenDate){
-  const prevDates = dates.filter(d =>
-    new Date(d) < new Date(todayStr)
-  );
-  chosenDate = prevDates.length ? prevDates[0] : dates[0];
-}
-
-const data = raw.filter(r =>
-  r["Date"] === chosenDate
-);
-window.latestSummaryData = data;
-    if (!data || !data.length) return;
-
-    const products = new Set();
-    let qty = 0;
-    let value = 0;
-    let near = 0;
-    let expired = 0;
-// remove loading placeholders before animation
-document.getElementById("sumProducts").className="text-3xl font-black mt-2 text-slate-900";
-document.getElementById("sumQty").className="text-3xl font-black mt-2 text-slate-900";
-document.getElementById("sumNear").className="text-3xl font-black mt-2 text-orange-500";
-document.getElementById("sumExpired").className="text-3xl font-black mt-2 text-red-600";
-
-["sumProducts","sumQty","sumNear","sumExpired"].forEach(id=>{
-  document.getElementById(id).innerHTML="0";
-});
-
-    const today = new Date();
-
-    data.forEach(r => {
-      products.add(r["Item Code"]);
-
-      const q = Number(r["Total Quantity"] || 0);
-      const mrp = Number(r["MRP"] || 0);
-      qty += q;
-      value += q * mrp;
-
-const type = (r["Expiry Type"] || "").toLowerCase();
-
-if (type === "expired") expired += q;
-else if (type === "short") near += q;
-    });
-
-animateValue("sumProducts", products.size, 2500);
-animateValue("sumQty", qty, 2800);
-animateValue("sumNear", near, 2200);
-animateValue("sumExpired", expired, 2200);
-
-
-
-  } catch(err) {
-    console.error("Summary load error", err);
-  }
-}
-let POPUP_ROWS = [];
-
-function openExpiryPopup(type){
-
-  const filtered = window.latestSummaryData.filter(r =>
-    (r["Expiry Type"]||"").toLowerCase() === type
-  );
-
-  POPUP_ROWS = filtered;
-
-  document.getElementById("popupTitle").innerText =
-    type==="expired" ? "Expired Stock" : "Near Expiry Stock";
-
-  const body = document.getElementById("popupBody");
-  body.innerHTML="";
-
-  filtered.forEach(r=>{
-    body.innerHTML += `
-      <tr class="border-t hover:bg-primary/5 transition">
-        <td class="p-2">${r["Item Code"]}</td>
-        <td class="p-2">${r["Item Name"]}</td>
-        <td class="p-2 text-center">${r["Batch No"]||""}</td>
-        <td class="p-2 text-center">${r["Expiry (MM-YYYY)"]||""}</td>
-        <td class="p-2 text-center">${r["Coimbatore"]||""}</td>
-        <td class="p-2 text-center">${r["Bangalore"]||""}</td>
-        <td class="p-2 text-center">${r["Kerala"]||""}</td>
-        <td class="p-2 text-center">${r["Palepu"]||""}</td>
-        <td class="p-2 text-right font-bold">${r["Total Quantity"]||0}</td>
-      </tr>
-    `;
-  });
-
-  document.getElementById("expiryPopup").classList.remove("hidden");
-}
-
-function closeExpiryPopup(){
-  document.getElementById("expiryPopup").classList.add("hidden");
-}
-
-  document.getElementById("popupDownload").onclick = ()=>{
-  if(!POPUP_ROWS.length) return;
-
-  const rows = POPUP_ROWS.map(r=>({
-    Code: r["Item Code"],    
-    Item: r["Item Name"],
-    Batch: r["Batch No"],
-    Expiry: r["Expiry (MM-YYYY)"],
-    HO: r["Coimbatore"] || 0,
-    BLR: r["Bangalore"] || 0,
-    "Direct Billing": r["Kerala"] || 0,
-    "Depot CBE": r["Palepu"] || 0,
-    Total: r["Total Quantity"]
-  }));
-
-  const ws = XLSX.utils.json_to_sheet(rows);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Report");
-
-  XLSX.writeFile(wb,"PearlSKU_BatchReport.xlsx");
-};
-function openProductsPopup(){
-
-  const body = document.getElementById("productsBody");
-  body.innerHTML="";
-
-  const map = {};
-
-  window.latestSummaryData.forEach(r=>{
-    const code = r["Item Code"];
-
-    if(!map[code]){
-      map[code] = {
-        code,
-        name: r["Item Name"],
-        HO:0, BLR:0, DirectBilling:0, DepotCBE:0
-      };
+    function animateValue(id, end, duration = 2500) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const startTime = performance.now();
+      function frame(now) {
+        const progress = Math.min((now - startTime) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        el.innerHTML = `<span>${Math.floor(eased * end).toLocaleString()}</span>`;
+        if (progress < 1) requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
     }
 
-    map[code].HO += Number(r["Coimbatore"]||0);
-    map[code].BLR += Number(r["Bangalore"]||0);
-    map[code].DirectBilling += Number(r["Kerala"]||0);
-    map[code].DepotCBE += Number(r["Palepu"]||0);
-  });
+    async function loadSummaryCards() {
+      try {
+        const url = "https://script.google.com/macros/s/AKfycbx4hqFN0DhMDm22q0_EkS_E4EAApVavgZz8FEZEdUV0Jg0uMVaUUg3S8FyL9vy3H5KM/exec";
+        const res = await fetch(url);
+        const raw = await res.json();
 
-  Object.values(map).forEach(p=>{
-    body.innerHTML += `
-      <tr class="border-t hover:bg-slate-50">
-        <td class="p-2 font-semibold">${p.code}</td>
-        <td class="p-2">${p.name}</td>
-        <td class="p-2 text-center font-semibold ${p.HO > 0 ? 'text-emerald-600' : 'text-slate-400'}">
-          ${p.HO}
-        </td>
-        <td class="p-2 text-center font-semibold ${p.BLR > 0 ? 'text-emerald-600' : 'text-slate-400'}">
-          ${p.BLR}
-        </td>
-        <td class="p-2 text-center font-semibold ${p.DirectBilling > 0 ? 'text-emerald-600' : 'text-slate-400'}">
-          ${p.DirectBilling}
-        </td>
-        <td class="p-2 text-center font-semibold ${p.DepotCBE > 0 ? 'text-emerald-600' : 'text-slate-400'}">
-          ${p.DepotCBE}
-        </td>
-      </tr>
-    `;
-  });
+        const dates = Array.from(new Set(raw.map(r => r["Date"]))).sort((a, b) => new Date(b) - new Date(a));
+        const todayStr = new Date().toISOString().slice(0, 10);
+        let chosenDate = dates.find(d => d === todayStr);
+        if (!chosenDate) {
+          const prev = dates.filter(d => new Date(d) < new Date(todayStr));
+          chosenDate = prev.length ? prev[0] : dates[0];
+        }
 
-  document.getElementById("productsPopup").classList.remove("hidden");
-}
+        const data = raw.filter(r => r["Date"] === chosenDate);
+        window.latestSummaryData = data;
+        if (!data || !data.length) return;
 
-function closeProductsPopup(){
-  document.getElementById("productsPopup").classList.add("hidden");
-}
+        const products = new Set();
+        let qty = 0, near = 0, expired = 0;
 
-    const users = {
-      "adminpro": "surya2282",
-      "admin": "admin123",
-      "osh": "osh123"
+        document.getElementById("sumProducts").className = "text-3xl font-black text-slate-900 mt-1";
+        document.getElementById("sumQty").className = "text-3xl font-black text-slate-900 mt-1";
+        document.getElementById("sumNear").className = "text-3xl font-black text-orange-500 mt-1";
+        document.getElementById("sumExpired").className = "text-3xl font-black text-red-500 mt-1";
+        ["sumProducts","sumQty","sumNear","sumExpired"].forEach(id => document.getElementById(id).innerHTML = "0");
 
+        data.forEach(r => {
+          products.add(r["Item Code"]);
+          const q = Number(r["Total Quantity"] || 0);
+          qty += q;
+          const type = (r["Expiry Type"] || "").toLowerCase();
+          if (type === "expired") expired += q;
+          else if (type === "short") near += q;
+        });
+
+        animateValue("sumProducts", products.size, 2500);
+        animateValue("sumQty", qty, 2800);
+        animateValue("sumNear", near, 2200);
+        animateValue("sumExpired", expired, 2200);
+
+      } catch (err) {
+        console.error("Summary load error", err);
+      }
+    }
+
+    let POPUP_ROWS = [];
+
+    function openExpiryPopup(type) {
+      const filtered = window.latestSummaryData.filter(r => (r["Expiry Type"] || "").toLowerCase() === type);
+      POPUP_ROWS = filtered;
+      const isExpired = type === "expired";
+      document.getElementById("popupTitle").innerText = isExpired ? "Expired Stock" : "Near Expiry Stock";
+      document.getElementById("popupSubtitle").innerText = `${filtered.length} batch${filtered.length !== 1 ? 'es' : ''} found`;
+      document.getElementById("popupCount").innerText = `${filtered.length} records`;
+      const body = document.getElementById("popupBody");
+      body.innerHTML = "";
+      filtered.forEach((r, i) => {
+        const bg = i % 2 === 0 ? "" : "bg-slate-50/50";
+        body.innerHTML += `
+          <tr class="${bg} hover:bg-primary/5 transition border-t border-slate-100">
+            <td class="p-3 font-semibold text-slate-700 text-xs">${r["Item Code"] || ""}</td>
+            <td class="p-3 text-slate-800 font-medium">${r["Item Name"] || ""}</td>
+            <td class="p-3 text-center text-slate-600 text-xs font-mono">${r["Batch No"] || ""}</td>
+            <td class="p-3 text-center">
+              <span class="px-2 py-0.5 rounded-lg text-xs font-bold ${isExpired ? 'bg-red-50 text-red-500' : 'bg-orange-50 text-orange-500'}">
+                ${r["Expiry (MM-YYYY)"] || ""}
+              </span>
+            </td>
+            <td class="p-3 text-center font-semibold text-slate-700 text-sm">${r["Coimbatore"] || "—"}</td>
+            <td class="p-3 text-center font-semibold text-slate-700 text-sm">${r["Bangalore"] || "—"}</td>
+            <td class="p-3 text-center font-semibold text-slate-700 text-sm">${r["Kerala"] || "—"}</td>
+            <td class="p-3 text-center font-semibold text-slate-700 text-sm">${r["Palepu"] || "—"}</td>
+            <td class="p-3 text-right font-black text-slate-900">${r["Total Quantity"] || 0}</td>
+          </tr>`;
+      });
+      document.getElementById("expiryPopup").classList.remove("hidden");
+    }
+
+    function closeExpiryPopup() { document.getElementById("expiryPopup").classList.add("hidden"); }
+
+    document.getElementById("popupDownload").onclick = () => {
+      if (!POPUP_ROWS.length) return;
+      const rows = POPUP_ROWS.map(r => ({
+        Code: r["Item Code"], Item: r["Item Name"], Batch: r["Batch No"],
+        Expiry: r["Expiry (MM-YYYY)"],
+        HO: r["Coimbatore"] || 0, BLR: r["Bangalore"] || 0,
+        "Direct Billing": r["Kerala"] || 0, "Depot CBE": r["Palepu"] || 0,
+        Total: r["Total Quantity"]
+      }));
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Report");
+      XLSX.writeFile(wb, "PearlSKU_BatchReport.xlsx");
     };
 
-    const loginScreen = document.getElementById('login-screen');
-    const portalContent = document.getElementById('portal-content');
-    const loginForm = document.getElementById('login-form');
-    const loginError = document.getElementById('login-error');
-    const loginContainer = document.getElementById('login-container');
-    const loginBtn = document.getElementById('login-btn');
+    function openProductsPopup() {
+      const body = document.getElementById("productsBody");
+      body.innerHTML = "";
+      const map = {};
+      window.latestSummaryData.forEach(r => {
+        const code = r["Item Code"];
+        if (!map[code]) map[code] = { code, name: r["Item Name"], HO: 0, BLR: 0, DirectBilling: 0, DepotCBE: 0 };
+        map[code].HO += Number(r["Coimbatore"] || 0);
+        map[code].BLR += Number(r["Bangalore"] || 0);
+        map[code].DirectBilling += Number(r["Kerala"] || 0);
+        map[code].DepotCBE += Number(r["Palepu"] || 0);
+      });
+      const items = Object.values(map);
+      document.getElementById("productsCount").textContent = `${items.length} products`;
+      document.getElementById("productsSubtitle").textContent = `${items.length} unique SKUs in inventory`;
+      items.forEach((p, i) => {
+        const bg = i % 2 === 0 ? "" : "bg-slate-50/50";
+        const cell = (val) => `<td class="p-3 text-center font-bold text-sm ${val > 0 ? 'text-emerald-600' : 'text-slate-300'}">${val > 0 ? val : '—'}</td>`;
+        body.innerHTML += `
+          <tr class="${bg} hover:bg-slate-50 border-t border-slate-100 transition">
+            <td class="p-3 font-black text-xs text-slate-500 font-mono">${p.code}</td>
+            <td class="p-3 font-semibold text-slate-800">${p.name}</td>
+            ${cell(p.HO)}${cell(p.BLR)}${cell(p.DirectBilling)}${cell(p.DepotCBE)}
+          </tr>`;
+      });
+      document.getElementById("productsPopup").classList.remove("hidden");
+    }
+
+    function closeProductsPopup() { document.getElementById("productsPopup").classList.add("hidden"); }
+
+    const users = { "adminpro": "surya2282", "admin": "admin123", "osh": "osh123" };
 
     function showPortal(username) {
       const key = username.toLowerCase();
-      
-      let formattedName;
-      if (key === 'osh') {
-        formattedName = "Aashik";
-      } else {
-        formattedName = key.charAt(0).toUpperCase() + key.slice(1);
-      }
+      const formattedName = key === 'osh' ? "Aashik" : key.charAt(0).toUpperCase() + key.slice(1);
 
-      loginScreen.classList.add('opacity-0', 'pointer-events-none');
+      document.getElementById('login-screen').classList.add('opacity-0', 'pointer-events-none');
       setTimeout(() => {
-        loginScreen.classList.add('hidden');
-        portalContent.classList.remove('hidden');
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('portal-content').classList.remove('hidden');
       }, 500);
 
       document.getElementById('display-user').innerText = formattedName;
       document.getElementById('welcome-name').innerText = formattedName;
+      document.getElementById('nav-avatar-letter').innerText = formattedName.charAt(0).toUpperCase();
 
       const ops = document.getElementById('data-ops-section');
       const dbSec = document.getElementById('database-section');
       const analyticsSec = document.getElementById('analytics-section');
+      [document.getElementById('db-batch'), document.getElementById('db-current'),
+       document.getElementById('db-req'), document.getElementById('db-sales')]
+        .forEach(el => el && el.classList.remove('hidden'));
 
-      const dbBatch = document.getElementById('db-batch');
-      const dbCurrent = document.getElementById('db-current');
-      const dbReq = document.getElementById('db-req');
-      const dbSales = document.getElementById('db-sales');
-      const dbPO = document.getElementById('db-po');
+      ops.classList.remove('hidden'); dbSec.classList.remove('hidden'); analyticsSec.classList.remove('hidden');
 
-      const allDbs = [dbBatch, dbCurrent, dbReq, dbSales];
-      allDbs.forEach(el => el.classList.remove('hidden'));
+      if (key === "adminpro") {
+        analyticsSec.classList.replace('lg:col-span-12', 'lg:col-span-7');
+      } else if (key === "admin") {
+        dbSec.classList.add('hidden');
+        analyticsSec.classList.replace('lg:col-span-12', 'lg:col-span-7');
+      } else if (key === "osh") {
+        ops.classList.add('hidden'); dbSec.classList.add('hidden');
+        analyticsSec.classList.replace('lg:col-span-7', 'lg:col-span-12');
+      }
 
-// RESET VISIBILITY (important)
-ops.classList.remove('hidden');
-dbSec.classList.remove('hidden');
-analyticsSec.classList.remove('hidden');
+      loadSummaryCards();
 
-// ROLE BASED ACCESS
-if (key === "adminpro") {
-  // Adminpro → Everything visible
-  ops.classList.remove('hidden');
-  dbSec.classList.remove('hidden');
-  analyticsSec.classList.replace('lg:col-span-12', 'lg:col-span-7');
-}
+      setTimeout(() => {
+        const d = new Date();
+        document.getElementById("todayDate").innerHTML =
+          `<span class="leading-tight">${d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</span>`;
+      }, 600);
+    }
 
-/* ADMIN */
-else if (key === "admin") {
-  // Core Ops ✅ | Master DB ❌ | Analytics ✅
-  ops.classList.remove('hidden');
-  dbSec.classList.add('hidden');   // 🔴 Hide Master Database
-  analyticsSec.classList.replace('lg:col-span-12', 'lg:col-span-7');
-}
-
-/* OSH */
-else if (key === "osh") {
-  // Only Planning / Analytics
-  ops.classList.add('hidden');     // 🔴 Hide Core Operations
-  dbSec.classList.add('hidden');   // 🔴 Hide Master Database
-  analyticsSec.classList.replace('lg:col-span-7', 'lg:col-span-12');
-}
-loadSummaryCards();
-setTimeout(()=>{
-  const d = new Date();
-  const formatted =
-    d.toLocaleDateString("en-IN",{
-      day:"numeric",
-      month:"short",
-      year:"numeric"
-    });
-  document.getElementById("todayDate").innerText = formatted;
-},600);
-}
-
-    loginForm.onsubmit = async (e) => {
+    document.getElementById('login-form').onsubmit = async (e) => {
       e.preventDefault();
       const userInput = document.getElementById('username').value.trim().toLowerCase();
       const passInput = document.getElementById('password').value.trim();
+      const loginBtn = document.getElementById('login-btn');
+      const loginError = document.getElementById('login-error');
+      const loginContainer = document.getElementById('login-container');
 
       loginBtn.disabled = true;
-      loginBtn.innerHTML = '<span class="flex items-center gap-2"><svg class="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Authenticating...</span>';
+      loginBtn.innerHTML = '<span class="flex items-center gap-2"><svg class="animate-spin h-5 w-5" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Authenticating...</span>';
 
       setTimeout(() => {
         if (users[userInput] && users[userInput].toLowerCase() === passInput.toLowerCase()) {
@@ -764,7 +693,7 @@ setTimeout(()=>{
           showPortal(userInput);
         } else {
           loginBtn.disabled = false;
-          loginBtn.innerHTML = '<span class="relative z-10 flex items-center justify-center gap-2">Sign Into Portal <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg></span>';
+          loginBtn.innerHTML = '<span class="relative z-10 flex items-center justify-center gap-2">Sign Into Portal <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg></span>';
           loginError.classList.remove('hidden');
           loginContainer.classList.add('animate-shake');
           setTimeout(() => loginContainer.classList.remove('animate-shake'), 400);
@@ -772,10 +701,7 @@ setTimeout(()=>{
       }, 800);
     };
 
-    function logout() {
-      sessionStorage.removeItem('ppp_user');
-      window.location.reload();
-    }
+    function logout() { sessionStorage.removeItem('ppp_user'); window.location.reload(); }
 
     const savedUser = sessionStorage.getItem('ppp_user');
     if (savedUser) showPortal(savedUser);
