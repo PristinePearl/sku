@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>SalesMonitor · FY Quantity Dashboard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config={theme:{extend:{fontFamily:{sans:['Plus Jakarta Sans','sans-serif'],mono:['JetBrains Mono','monospace']},colors:{
+  brand:{50:'#f0fdf4',100:'#dcfce7',200:'#bbf7d0',300:'#86efac',400:'#4ade80',500:'#22c55e',600:'#16a34a',700:'#15803d',800:'#166534',900:'#14532d'},
+  hi:{50:'#f0fdf4',100:'#dcfce7',200:'#bbf7d0',400:'#4ade80',500:'#22c55e',600:'#16a34a'},
+  med:{50:'#fffbeb',100:'#fef3c7',200:'#fde68a',400:'#fbbf24',500:'#f59e0b',600:'#d97706'},
+  lo:{50:'#fff1f2',100:'#ffe4e6',200:'#fecdd3',400:'#fb7185',500:'#f43f5e',600:'#e11d48'},
+  sl:{25:'#f9fafb'}
+}}}}
+</script>
+<style>
+*{box-sizing:border-box}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:#f1f5f9;min-height:100vh;}
+.mono{font-family:'JetBrains Mono',monospace;}
+
+/* ─ Sticky cols ─ */
+.s1{position:sticky;left:0;z-index:4;background:inherit;}
+.s2{position:sticky;left:44px;z-index:4;background:inherit;}
+.s3{position:sticky;left:120px;z-index:4;background:inherit;}
+thead .s1,thead .s2,thead .s3{z-index:6;}
+
+/* ─ Scroll ─ */
+.ts::-webkit-scrollbar{width:5px;height:5px;}
+.ts::-webkit-scrollbar-track{background:#f1f5f9;}
+.ts::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:99px;}
+.ts::-webkit-scrollbar-thumb:hover{background:#94a3b8;}
+
+/* ─ Heat: HIGH=Green MED=Amber LOW=Red ─ */
+.hZ{background:#f8fafc;color:#cbd5e1;}
+.hH{background:#dcfce7;color:#15803d;font-weight:600;}   /* HIGH */
+.hM{background:#fef3c7;color:#b45309;font-weight:500;}   /* MED  */
+.hL{background:#fee2e2;color:#dc2626;font-weight:500;}   /* LOW  */
+
+/* ─ Movement badges ─ */
+.mv-up{color:#16a34a;font-weight:700;}
+.mv-dn{color:#dc2626;font-weight:700;}
+.mv-eq{color:#94a3b8;}
+.mv-new{color:#7c3aed;font-weight:700;}
+.mv-dead{color:#9ca3af;text-decoration:line-through;}
+
+/* ─ Animations ─ */
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.fu{animation:fadeUp .3s ease both;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{animation:spin .9s linear infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.pulse{animation:pulse 2s infinite;}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:none;opacity:1}}
+.slide-in{animation:slideIn .25s ease both;}
+
+/* ─ Tab active ─ */
+.tab-btn.active{border-bottom:2.5px solid #16a34a;color:#16a34a;font-weight:600;}
+
+/* ─ Month pill active ─ */
+.mpill.on{background:#15803d;color:#fff;border-color:#15803d;}
+
+/* ─ Sort arrows ─ */
+th.asc::after{content:' ↑';color:#16a34a;font-size:9px;}
+th.desc::after{content:' ↓';color:#16a34a;font-size:9px;}
+
+/* ─ Compare row ─ */
+tr.cmp{outline:2px solid #86efac;outline-offset:-1px;}
+
+/* ─ Qty mini bar ─ */
+.qbar{display:inline-block;height:3px;border-radius:2px;vertical-align:middle;margin-left:4px;}
+
+/* ─ Modal ─ */
+.modal-bg{background:rgba(2,6,23,.5);backdrop-filter:blur(6px);}
+
+/* ─ Movement cell ─ */
+.mov-chip{display:inline-flex;align-items:center;gap:2px;font-size:9px;font-weight:700;padding:1px 5px;border-radius:99px;font-family:'JetBrains Mono',monospace;}
+.mov-up-chip{background:#dcfce7;color:#15803d;}
+.mov-dn-chip{background:#fee2e2;color:#dc2626;}
+.mov-eq-chip{background:#f1f5f9;color:#64748b;}
+.mov-new-chip{background:#ede9fe;color:#6d28d9;}
+
+/* ─ Print ─ */
+@media print{.no-print{display:none!important}.print-area{page-break-inside:avoid}}
+
+/* ─ Tooltip ─ */
+.tip-wrap{position:relative;}
+.tip-wrap:hover .tip{display:block;}
+.tip{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#0f172a;color:#f8fafc;font-size:10px;white-space:nowrap;padding:3px 8px;border-radius:5px;pointer-events:none;z-index:200;font-family:'JetBrains Mono',monospace;}
+
+/* ─ Notification toast ─ */
+#toast{transition:all .3s;pointer-events:none;}
+
+/* ─ Month spotlight overlay ─ */
+#monthSpotlight{transition:all .25s;}
+
+/* ─ Rank medal ─ */
+.medal-1{background:linear-gradient(135deg,#fde68a,#f59e0b);color:#78350f;}
+.medal-2{background:linear-gradient(135deg,#e2e8f0,#94a3b8);color:#1e293b;}
+.medal-3{background:linear-gradient(135deg,#fecdd3,#fb7185);color:#881337;}
+
+/* ─ Active filters bar ─ */
+.filter-chip{display:inline-flex;align-items:center;gap:4px;background:#dcfce7;color:#15803d;font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;font-family:'JetBrains Mono',monospace;}
+</style>
+</head>
+<body class="text-slate-800">
+
+<!-- ══════════════ TOAST ══════════════ -->
+<div id="toast" class="fixed top-4 right-4 z-[300] bg-slate-800 text-white text-xs mono px-4 py-2.5 rounded-xl shadow-2xl opacity-0 translate-y-2">–</div>
+
+<!-- ══════════════ HEADER ══════════════ -->
+<header class="no-print bg-white border-b border-slate-200 px-4 flex items-center gap-3 h-13 sticky top-0 z-50 shadow-sm" style="height:52px">
+  <div class="flex items-center gap-2 shrink-0">
+    <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center shadow">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-2.3 2.3c-.6.6-.18 1.7.7 1.7H17m0 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-8 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/></svg>
+    </div>
+    <div class="leading-tight">
+      <div class="text-sm font-bold text-slate-900 tracking-tight">SalesMonitor</div>
+      <div class="text-[9px] mono text-slate-400">FY Qty Dashboard</div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <nav class="flex items-center gap-0.5 ml-3 h-full">
+    <button onclick="setTab('table')"   id="tab-table"   class="tab-btn active text-[11px] px-3 h-full text-slate-500 hover:text-brand-600 transition-colors border-b-[2.5px] border-transparent">📋 Table</button>
+    <button onclick="setTab('month')"   id="tab-month"   class="tab-btn text-[11px] px-3 h-full text-slate-500 hover:text-brand-600 transition-colors border-b-[2.5px] border-transparent">📅 Month View</button>
+    <button onclick="setTab('chart')"   id="tab-chart"   class="tab-btn text-[11px] px-3 h-full text-slate-500 hover:text-brand-600 transition-colors border-b-[2.5px] border-transparent">📊 Charts</button>
+    <button onclick="setTab('compare')" id="tab-compare" class="tab-btn text-[11px] px-3 h-full text-slate-500 hover:text-brand-600 transition-colors border-b-[2.5px] border-transparent">⚖ Compare <span id="cmpBadge" class="hidden bg-brand-500 text-white text-[9px] rounded-full px-1.5 ml-0.5">0</span></button>
+    <button onclick="setTab('ranking')" id="tab-ranking" class="tab-btn text-[11px] px-3 h-full text-slate-500 hover:text-brand-600 transition-colors border-b-[2.5px] border-transparent">🏆 Ranking</button>
+    <button onclick="setTab('matrix')"  id="tab-matrix"  class="tab-btn text-[11px] px-3 h-full text-slate-500 hover:text-brand-600 transition-colors border-b-[2.5px] border-transparent">🌡 Heat Matrix</button>
+    <button onclick="setTab('movement')" id="tab-movement" class="tab-btn text-[11px] px-3 h-full text-slate-500 hover:text-brand-600 transition-colors border-b-[2.5px] border-transparent">📈 Movement</button>
+  </nav>
+
+  <div class="ml-auto flex items-center gap-1.5">
+    <div class="flex items-center gap-1.5 text-[10px] mono text-slate-400">
+      <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse inline-block"></span>
+      <span id="lastUpdated">–</span>
+    </div>
+    <button onclick="loadData()" id="refreshBtn" class="flex items-center gap-1 text-[11px] text-slate-500 border border-slate-200 px-2.5 py-1.5 rounded-lg hover:border-brand-400 hover:text-brand-600 transition-all">
+      <svg id="refreshIcon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+      Refresh
+    </button>
+    <button onclick="exportCSV()" class="flex items-center gap-1 text-[11px] bg-brand-600 text-white px-2.5 py-1.5 rounded-lg hover:bg-brand-700 transition-all">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export
+    </button>
+    <button onclick="window.print()" class="no-print flex items-center gap-1 text-[11px] border border-slate-200 text-slate-500 px-2.5 py-1.5 rounded-lg hover:border-brand-400 hover:text-brand-600 transition-all">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      Print
+    </button>
+  </div>
+</header>
+
+<!-- ══════════════ MAIN ══════════════ -->
+<div class="px-4 py-3 max-w-[1800px] mx-auto">
+
+  <!-- KPI STRIP -->
+  <div id="kpiStrip" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 mb-3"></div>
+
+  <!-- ACTIVE FILTERS BAR -->
+  <div id="activeFiltersBar" class="hidden flex flex-wrap gap-1.5 mb-3 items-center">
+    <span class="text-[10px] mono text-slate-400">Active filters:</span>
+    <div id="filterChips" class="flex flex-wrap gap-1.5"></div>
+    <button onclick="clearAllFilters()" class="text-[10px] mono text-rose-500 hover:underline ml-1">Clear all</button>
+  </div>
+
+  <!-- MONTH PILLS -->
+  <div id="monthPills" class="flex flex-wrap gap-1 mb-3"></div>
+
+  <!-- ══════ TABLE TAB ══════ -->
+  <div id="view-table" class="fu">
+
+    <!-- Toolbar -->
+    <div class="bg-white border border-slate-200 rounded-xl px-3 py-2.5 flex flex-wrap items-center gap-2 mb-2.5 shadow-sm">
+
+      <!-- Search -->
+      <div class="relative">
+        <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-300" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input id="searchInput" type="text" placeholder="Search code / name…" oninput="filterAndRender()"
+          class="pl-8 pr-8 py-1.5 text-[11px] border border-slate-200 rounded-lg outline-none focus:border-brand-400 w-48 mono bg-slate-50 transition-all focus:w-56"/>
+        <button onclick="document.getElementById('searchInput').value='';filterAndRender()" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500 text-xs leading-none">✕</button>
+      </div>
+
+      <!-- Sort -->
+      <select id="sortSelect" onchange="onSortChange()" class="text-[11px] border border-slate-200 rounded-lg px-2 py-1.5 bg-slate-50 outline-none focus:border-brand-400 mono">
+        <option value="">Sort by…</option>
+        <option value="total-desc">Total ↓ High→Low</option>
+        <option value="total-asc">Total ↑ Low→High</option>
+        <option value="name-asc">Name A→Z</option>
+        <option value="name-desc">Name Z→A</option>
+        <option value="code-asc">Code A→Z</option>
+        <option value="peak-desc">Peak Month ↓</option>
+        <option value="cv-asc">Most Consistent</option>
+        <option value="cv-desc">Most Volatile</option>
+        <option value="active-desc">Most Active Months</option>
+        <option value="growth-desc">Best Growth ↓</option>
+      </select>
+
+      <!-- Month filter -->
+      <select id="monthFilter" onchange="filterAndRender()" class="text-[11px] border border-slate-200 rounded-lg px-2 py-1.5 bg-slate-50 outline-none focus:border-brand-400 mono">
+        <option value="">All Months</option>
+      </select>
+
+      <!-- Qty range -->
+      <select id="rangeFilter" onchange="filterAndRender()" class="text-[11px] border border-slate-200 rounded-lg px-2 py-1.5 bg-slate-50 outline-none focus:border-brand-400 mono">
+        <option value="">All Quantities</option>
+        <option value="0-0">Zero Sales Only</option>
+        <option value="1-100">1 – 100</option>
+        <option value="100-500">100 – 500</option>
+        <option value="500-1000">500 – 1,000</option>
+        <option value="1000-5000">1,000 – 5,000</option>
+        <option value="5000-10000">5,000 – 10,000</option>
+        <option value="10000-">10,000+</option>
+      </select>
+
+      <!-- Performance filter -->
+      <select id="perfFilter" onchange="filterAndRender()" class="text-[11px] border border-slate-200 rounded-lg px-2 py-1.5 bg-slate-50 outline-none focus:border-brand-400 mono">
+        <option value="">All Performance</option>
+        <option value="high">🟢 High Performers (top 33%)</option>
+        <option value="med">🟡 Medium (mid 33%)</option>
+        <option value="low">🔴 Low Performers (bottom 33%)</option>
+        <option value="zero">⚫ Zero Sales</option>
+        <option value="active12">✅ All 12 Months Active</option>
+        <option value="inconsistent">⚡ Highly Volatile</option>
+        <option value="growing">📈 Growing Trend</option>
+        <option value="declining">📉 Declining Trend</option>
+      </select>
+
+      <!-- Peak month filter -->
+      <select id="peakFilter" onchange="filterAndRender()" class="text-[11px] border border-slate-200 rounded-lg px-2 py-1.5 bg-slate-50 outline-none focus:border-brand-400 mono">
+        <option value="">Peak in any month</option>
+      </select>
+
+      <!-- Divider -->
+      <div class="w-px h-5 bg-slate-200"></div>
+
+      <!-- Toggle buttons -->
+      <button onclick="toggleHeat()" id="heatBtn"  class="text-[10px] mono border border-slate-200 px-2 py-1.5 rounded-lg text-slate-500 hover:border-brand-400 hover:text-brand-600 transition-all flex items-center gap-1">🌡 Heat</button>
+      <button onclick="toggleBars()" id="barBtn"   class="text-[10px] mono border border-slate-200 px-2 py-1.5 rounded-lg text-slate-500 hover:border-brand-400 hover:text-brand-600 transition-all flex items-center gap-1">▬ Bars</button>
+      <button onclick="toggleSpark()" id="sparkBtn" class="text-[10px] mono border border-slate-200 px-2 py-1.5 rounded-lg text-slate-500 hover:border-brand-400 hover:text-brand-600 transition-all flex items-center gap-1">〜 Spark</button>
+      <button onclick="toggleMov()" id="movBtn"    class="text-[10px] mono border border-slate-200 px-2 py-1.5 rounded-lg text-slate-500 hover:border-brand-400 hover:text-brand-600 transition-all flex items-center gap-1">↕ Movement</button>
+      <button onclick="toggleZero()" id="zeroBtn"  class="text-[10px] mono border border-slate-200 px-2 py-1.5 rounded-lg text-slate-500 hover:border-brand-400 hover:text-brand-600 transition-all flex items-center gap-1">∅ Hide Zeros</button>
+      <button onclick="toggleRank()" id="rankBtn"  class="text-[10px] mono border border-slate-200 px-2 py-1.5 rounded-lg text-slate-500 hover:border-brand-400 hover:text-brand-600 transition-all flex items-center gap-1"># Rank</button>
+
+      <div class="ml-auto flex items-center gap-2">
+        <span class="text-[10px] text-slate-400 mono" id="recordCount">–</span>
+        <button onclick="clearCompare()" class="text-[10px] text-rose-500 border border-rose-200 px-2 py-1.5 rounded-lg hover:bg-rose-50 transition-all mono hidden" id="clearCmpBtn">✕ Compare</button>
+      </div>
+    </div>
+
+    <!-- Legend row -->
+    <div class="flex items-center gap-3 mb-2 text-[10px] mono text-slate-500">
+      <span class="font-semibold text-slate-600">Heat Legend:</span>
+      <span class="inline-flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-green-200 inline-block"></span>High Qty</span>
+      <span class="inline-flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-amber-200 inline-block"></span>Med Qty</span>
+      <span class="inline-flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-rose-200 inline-block"></span>Low Qty</span>
+      <span class="inline-flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-slate-100 inline-block"></span>Zero</span>
+      <div class="ml-auto flex items-center gap-3">
+        <span class="inline-flex items-center gap-1"><span class="mov-chip mov-up-chip">▲ UP</span> Growth vs prev month</span>
+        <span class="inline-flex items-center gap-1"><span class="mov-chip mov-dn-chip">▼ DN</span> Decline</span>
+        <span class="inline-flex items-center gap-1"><span class="mov-chip mov-new-chip">★ NEW</span> New entry</span>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+      <div class="overflow-auto ts" style="max-height:calc(100vh - 360px)">
+        <div id="tableContainer"><div class="flex flex-col items-center justify-center py-20 text-slate-400 mono text-xs"><div class="w-8 h-8 rounded-full border-2 border-slate-200 border-t-brand-500 spin mb-3"></div>Loading data…</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ MONTH VIEW TAB ══════ -->
+  <div id="view-month" class="hidden fu">
+    <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+      <div class="px-4 py-3 border-b border-slate-100 flex flex-wrap items-center gap-3">
+        <h3 class="font-semibold text-sm text-slate-800">Month Spotlight View</h3>
+        <select id="spotlightMonth" onchange="renderMonthSpotlight()" class="text-[11px] border border-slate-200 rounded-lg px-2.5 py-1.5 bg-slate-50 outline-none mono">
+          <option value="">Select a month…</option>
+        </select>
+        <select id="spotlightSort" onchange="renderMonthSpotlight()" class="text-[11px] border border-slate-200 rounded-lg px-2.5 py-1.5 bg-slate-50 outline-none mono">
+          <option value="qty-desc">Qty ↓</option>
+          <option value="qty-asc">Qty ↑</option>
+          <option value="name-asc">Name A→Z</option>
+          <option value="growth-desc">Growth ↓</option>
+        </select>
+        <select id="spotlightPerf" onchange="renderMonthSpotlight()" class="text-[11px] border border-slate-200 rounded-lg px-2.5 py-1.5 bg-slate-50 outline-none mono">
+          <option value="">All</option>
+          <option value="high">🟢 High only</option>
+          <option value="med">🟡 Medium only</option>
+          <option value="low">🔴 Low only</option>
+          <option value="zero">⚫ Zero only</option>
+        </select>
+        <div class="ml-auto mono text-[10px] text-slate-400" id="spotlightInfo">–</div>
+      </div>
+      <div id="monthSpotlightContent" class="p-4">
+        <div class="text-center py-20 text-slate-400 mono text-xs">Select a month above to view detailed data</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ CHARTS TAB ══════ -->
+  <div id="view-chart" class="hidden fu">
+    <div class="grid grid-cols-2 gap-3">
+      <div class="col-span-2 bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-semibold text-sm text-slate-700">Monthly Quantity Trend</h3>
+          <div class="flex items-center gap-2">
+            <select id="trendProduct" onchange="renderTrendChart()" class="text-[11px] border border-slate-200 rounded-lg px-2 py-1.5 bg-slate-50 outline-none mono">
+              <option value="__all">All Products Combined</option>
+            </select>
+            <select id="trendType" onchange="renderTrendChart()" class="text-[11px] border border-slate-200 rounded-lg px-2 py-1.5 bg-slate-50 outline-none mono">
+              <option value="line">Line</option>
+              <option value="bar">Bar</option>
+              <option value="area">Area</option>
+            </select>
+          </div>
+        </div>
+        <canvas id="trendChart" height="65"></canvas>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-semibold text-sm text-slate-700">Top Products · Total Qty</h3>
+          <select id="topN" onchange="renderTopChart()" class="text-[11px] border border-slate-200 rounded-lg px-2 py-1 bg-slate-50 outline-none mono">
+            <option value="10">Top 10</option>
+            <option value="15" selected>Top 15</option>
+            <option value="20">Top 20</option>
+          </select>
+        </div>
+        <canvas id="topChart" height="180"></canvas>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+        <h3 class="font-semibold text-sm text-slate-700 mb-3">Min / Avg / Max per Month</h3>
+        <canvas id="distChart" height="180"></canvas>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+        <h3 class="font-semibold text-sm text-slate-700 mb-3">Share of Top 10 Products</h3>
+        <canvas id="pieChart" height="180"></canvas>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+        <h3 class="font-semibold text-sm text-slate-700 mb-3">Month-over-Month Growth %</h3>
+        <canvas id="growthChart" height="180"></canvas>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+        <h3 class="font-semibold text-sm text-slate-700 mb-3">Cumulative Qty (Running Total)</h3>
+        <canvas id="cumulChart" height="180"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ COMPARE TAB ══════ -->
+  <div id="view-compare" class="hidden fu">
+    <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mb-3">
+      <div class="px-4 py-3 border-b border-slate-100 flex items-center gap-3">
+        <h3 class="font-semibold text-sm text-slate-700">Product Comparison</h3>
+        <span class="text-[10px] text-slate-400 mono">Tick checkboxes in Table tab · max 6</span>
+        <div class="ml-auto flex gap-2">
+          <select id="cmpHighlight" onchange="renderCompare()" class="text-[11px] border border-slate-200 rounded-lg px-2 py-1 bg-slate-50 outline-none mono">
+            <option value="none">No highlight</option>
+            <option value="max">Highlight Max/Month</option>
+            <option value="min">Highlight Min/Month</option>
+          </select>
+          <button onclick="clearCompare()" class="text-[11px] text-rose-500 border border-rose-200 px-2.5 py-1 rounded-lg hover:bg-rose-50 mono">✕ Clear</button>
+        </div>
+      </div>
+      <div id="compareContent" class="p-4 overflow-auto ts">
+        <div class="text-center py-16 text-slate-400 text-xs mono">← Go to Table tab and tick checkboxes to compare products</div>
+      </div>
+    </div>
+    <div class="grid grid-cols-3 gap-3">
+      <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm col-span-2">
+        <h3 class="font-semibold text-sm text-slate-700 mb-3">Monthly Trend Comparison</h3>
+        <canvas id="cmpTrendChart" height="140"></canvas>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+        <h3 class="font-semibold text-sm text-slate-700 mb-3">Total Comparison</h3>
+        <canvas id="cmpBarChart" height="140"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ RANKING TAB ══════ -->
+  <div id="view-ranking" class="hidden fu">
+    <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mb-3">
+      <div class="px-4 py-3 border-b border-slate-100 flex items-center gap-3">
+        <h3 class="font-semibold text-sm text-slate-700">Product Ranking</h3>
+        <select id="rankMonth" onchange="renderRanking()" class="text-[11px] border border-slate-200 rounded-lg px-2 py-1.5 bg-slate-50 outline-none mono">
+          <option value="__total">Full Year Total</option>
+        </select>
+        <select id="rankShow" onchange="renderRanking()" class="text-[11px] border border-slate-200 rounded-lg px-2 py-1.5 bg-slate-50 outline-none mono">
+          <option value="all">All Products</option>
+          <option value="20">Top 20</option>
+          <option value="50">Top 50</option>
+          <option value="bottom20">Bottom 20</option>
+        </select>
+        <div class="ml-auto mono text-[10px] text-slate-400" id="rankInfo">–</div>
+      </div>
+      <div id="rankingContent" class="overflow-auto ts" style="max-height:480px"></div>
+    </div>
+    <div class="grid grid-cols-4 gap-3">
+      <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+        <h3 class="font-semibold text-xs text-slate-700 mb-3">🥇 Top 5</h3>
+        <div id="top5List"></div>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+        <h3 class="font-semibold text-xs text-slate-700 mb-3">📉 Bottom 5</h3>
+        <div id="bot5List"></div>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+        <h3 class="font-semibold text-xs text-slate-700 mb-3">📊 Most Consistent</h3>
+        <div id="cons5List"></div>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+        <h3 class="font-semibold text-xs text-slate-700 mb-3">⚡ Most Volatile</h3>
+        <div id="volt5List"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ HEAT MATRIX TAB ══════ -->
+  <div id="view-matrix" class="hidden fu">
+    <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+      <div class="px-4 py-3 border-b border-slate-100 flex flex-wrap items-center gap-3">
+        <h3 class="font-semibold text-sm text-slate-700">Heat Matrix · Products × Months</h3>
+        <div class="flex items-center gap-2 text-[10px] mono text-slate-500">
+          <span>Low</span>
+          <div class="flex gap-px">
+            <div class="w-4 h-3.5 rounded-sm bg-rose-200"></div>
+            <div class="w-4 h-3.5 rounded-sm bg-rose-100"></div>
+            <div class="w-4 h-3.5 rounded-sm bg-amber-100"></div>
+            <div class="w-4 h-3.5 rounded-sm bg-green-100"></div>
+            <div class="w-4 h-3.5 rounded-sm bg-green-200"></div>
+          </div>
+          <span>High</span>
+        </div>
+        <div class="ml-auto flex items-center gap-2">
+          <select id="matrixSearch" class="text-[11px] border border-slate-200 rounded-lg px-2 py-1 bg-slate-50 outline-none mono w-36" placeholder="Filter…">
+          </select>
+          <input id="matrixFilter" type="text" placeholder="Filter name…" oninput="renderMatrix()" class="text-[11px] border border-slate-200 rounded-lg px-2 py-1 bg-slate-50 outline-none mono w-32 focus:border-brand-400"/>
+          <select id="matrixSort" onchange="renderMatrix()" class="text-[11px] border border-slate-200 rounded-lg px-2 py-1 bg-slate-50 outline-none mono">
+            <option value="total-desc">Total ↓</option>
+            <option value="total-asc">Total ↑</option>
+            <option value="name-asc">Name A→Z</option>
+            <option value="peak-month">Peak Month</option>
+            <option value="cv-asc">Consistent</option>
+          </select>
+          <select id="matrixMode" onchange="renderMatrix()" class="text-[11px] border border-slate-200 rounded-lg px-2 py-1 bg-slate-50 outline-none mono">
+            <option value="col">Heat per Column</option>
+            <option value="row">Heat per Row</option>
+            <option value="global">Heat Global</option>
+          </select>
+        </div>
+      </div>
+      <div class="overflow-auto ts" style="max-height:calc(100vh - 240px)">
+        <div id="matrixContent"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════ MOVEMENT TAB ══════ -->
+  <div id="view-movement" class="hidden fu">
+    <div class="grid grid-cols-3 gap-3 mb-3">
+      <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+        <h3 class="font-semibold text-sm text-slate-700 mb-3">📈 Biggest Gainers</h3>
+        <div class="text-[10px] mono text-slate-400 mb-2">Month-over-month growth (last 2 active months)</div>
+        <div id="gainers"></div>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+        <h3 class="font-semibold text-sm text-slate-700 mb-3">📉 Biggest Decliners</h3>
+        <div class="text-[10px] mono text-slate-400 mb-2">Largest drops between consecutive months</div>
+        <div id="decliners"></div>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+        <h3 class="font-semibold text-sm text-slate-700 mb-3">🆕 New / Dormant Products</h3>
+        <div class="text-[10px] mono text-slate-400 mb-2">Products that appeared or disappeared mid-year</div>
+        <div id="newDead"></div>
+      </div>
+    </div>
+    <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+      <div class="px-4 py-3 border-b border-slate-100 flex items-center gap-3">
+        <h3 class="font-semibold text-sm text-slate-700">Month-over-Month Movement Tracker</h3>
+        <select id="movBaseline" onchange="renderMovementTable()" class="text-[11px] border border-slate-200 rounded-lg px-2 py-1.5 bg-slate-50 outline-none mono">
+          <option value="prev">vs Previous Month</option>
+          <option value="first">vs April (First Month)</option>
+          <option value="avg">vs Monthly Average</option>
+        </select>
+        <select id="movPerf" onchange="renderMovementTable()" class="text-[11px] border border-slate-200 rounded-lg px-2 py-1.5 bg-slate-50 outline-none mono">
+          <option value="">All</option>
+          <option value="up">📈 Growing only</option>
+          <option value="down">📉 Declining only</option>
+        </select>
+        <div class="ml-auto mono text-[10px] text-slate-400" id="movInfo">–</div>
+      </div>
+      <div class="overflow-auto ts" style="max-height:500px">
+        <div id="movementTable"></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- ══════════════ DETAIL MODAL ══════════════ -->
+<div id="modalOverlay" class="fixed inset-0 modal-bg z-[200] hidden items-center justify-center p-4" onclick="closeModal(event)">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-auto ts fu" id="modalBox">
+    <div class="flex items-start justify-between px-6 py-4 border-b border-slate-100">
+      <div>
+        <div class="mono text-[10px] text-slate-400" id="mCode">–</div>
+        <div class="text-lg font-bold text-slate-900 mt-0.5" id="mName">–</div>
+      </div>
+      <button onclick="closeModal()" class="text-slate-300 hover:text-slate-600 text-xl leading-none p-1 transition-colors">✕</button>
+    </div>
+    <div class="p-5">
+      <div class="grid grid-cols-5 gap-2 mb-4">
+        <div class="bg-brand-50 rounded-xl p-3 text-center border border-brand-100">
+          <div class="text-[9px] mono text-brand-500 mb-0.5 uppercase tracking-wide">FY Total</div>
+          <div class="text-xl font-bold text-brand-700 mono" id="mTotal">–</div>
+        </div>
+        <div class="bg-amber-50 rounded-xl p-3 text-center border border-amber-100">
+          <div class="text-[9px] mono text-amber-500 mb-0.5 uppercase tracking-wide">Peak Month</div>
+          <div class="text-sm font-bold text-amber-700" id="mPeak">–</div>
+        </div>
+        <div class="bg-sky-50 rounded-xl p-3 text-center border border-sky-100">
+          <div class="text-[9px] mono text-sky-500 mb-0.5 uppercase tracking-wide">Avg/Month</div>
+          <div class="text-xl font-bold text-sky-700 mono" id="mAvg">–</div>
+        </div>
+        <div class="bg-violet-50 rounded-xl p-3 text-center border border-violet-100">
+          <div class="text-[9px] mono text-violet-500 mb-0.5 uppercase tracking-wide">Active Months</div>
+          <div class="text-xl font-bold text-violet-700 mono" id="mActive">–</div>
+        </div>
+        <div class="bg-rose-50 rounded-xl p-3 text-center border border-rose-100">
+          <div class="text-[9px] mono text-rose-500 mb-0.5 uppercase tracking-wide">Rank</div>
+          <div class="text-xl font-bold text-rose-700 mono" id="mRank">–</div>
+        </div>
+      </div>
+      <div class="grid grid-cols-4 gap-1.5 mb-4" id="mMonths"></div>
+      <div class="mb-1 text-[10px] mono text-slate-400">Monthly trend</div>
+      <canvas id="mChart" height="65"></canvas>
+      <div class="mt-4 grid grid-cols-3 gap-2 text-[10px] mono">
+        <div class="bg-slate-50 rounded-lg p-2 border border-slate-100">
+          <div class="text-slate-400 mb-0.5">Min Month</div>
+          <div class="font-semibold text-slate-700" id="mMin">–</div>
+        </div>
+        <div class="bg-slate-50 rounded-lg p-2 border border-slate-100">
+          <div class="text-slate-400 mb-0.5">Max Month</div>
+          <div class="font-semibold text-slate-700" id="mMax">–</div>
+        </div>
+        <div class="bg-slate-50 rounded-lg p-2 border border-slate-100">
+          <div class="text-slate-400 mb-0.5">Consistency (CV)</div>
+          <div class="font-semibold text-slate-700" id="mCV">–</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="no-print py-3 text-center text-[10px] mono text-slate-400">
+  <span id="footerInfo">–</span> · SalesMonitor v4.0
+</footer>
+
+<script>
+/* ════════════════ CONFIG ════════════════ */
+const API_URL = "https://script.google.com/macros/s/AKfycbwQ4NVdINtOuws1zx9YIvml75iBnWszPdrIG8TAnBwqUAJQP8W1hRkYFQWwxTGUd0k4Ug/exec";
+const MONTHS_ORDER = ['April','May','June','July','August','September','October','November','December','January','February','March'];
+const MONTH_S = ['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar'];
+const PAL = ['#22c55e','#3b82f6','#f59e0b','#ef4444','#8b5cf6','#f97316','#06b6d4','#84cc16','#ec4899','#a78bfa','#fb923c','#34d399','#60a5fa','#fb7185','#fde047'];
+
+/* ════════════════ STATE ════════════════ */
+let raw=[], monthCols=[], filtered=[], compared=new Set();
+let heatOn=false, barsOn=false, sparkOn=false, movOn=false, hideZero=false, rankOn=false;
+let sortState={col:'__total',dir:'desc'};
+let charts={};
+let modalChartInst=null;
+let p33=0,p66=0; // percentile thresholds
+
+/* ════════════════ UTILS ════════════════ */
+const fmtQ = n => (n||n===0) ? n.toLocaleString('en-IN') : '–';
+const fmtS = n => { if(!n&&n!==0) return '–'; if(n>=1e6) return (n/1e6).toFixed(1)+'M'; if(n>=1e3) return (n/1e3).toFixed(1)+'K'; return String(n); };
+const pn   = v => { if(v===''||v==null) return 0; const n=parseFloat(String(v).replace(/,/g,'')); return isNaN(n)?0:n; };
+const sM   = m => MONTH_S[MONTHS_ORDER.indexOf(m)] || m.substring(0,3);
+const esc  = s => String(s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+function heatCls(v, lo, hi, mid1, mid2) {
+  // GREEN=high, AMBER=med, RED=low
+  if(!v||v===0) return 'hZ';
+  if(v>=mid2)  return 'hH'; // HIGH → green
+  if(v>=mid1)  return 'hM'; // MED  → amber
+  return 'hL';               // LOW  → red
+}
+
+function heatClsGlobal(v, max) {
+  if(!v||v===0) return 'hZ';
+  const p = v/max;
+  if(p>=0.6) return 'hH';
+  if(p>=0.25) return 'hM';
+  return 'hL';
+}
+
+function calcBands(vals) {
+  const sorted=[...vals].sort((a,b)=>a-b);
+  const lo=sorted[Math.floor(sorted.length*0.33)]||0;
+  const hi=sorted[Math.floor(sorted.length*0.66)]||0;
+  return {lo,hi};
+}
+
+function movChip(curr, prev) {
+  if(prev===0 && curr>0)  return `<span class="mov-chip mov-new-chip">★ NEW</span>`;
+  if(curr===0 && prev===0) return '';
+  if(curr===0 && prev>0)  return `<span class="mov-chip mov-dn-chip">◼ DEAD</span>`;
+  const pct=((curr-prev)/prev*100).toFixed(0);
+  if(curr>prev) return `<span class="mov-chip mov-up-chip">▲ +${pct}%</span>`;
+  if(curr<prev) return `<span class="mov-chip mov-dn-chip">▼ ${pct}%</span>`;
+  return `<span class="mov-chip mov-eq-chip">— 0%</span>`;
+}
+
+function toast(msg,color='bg-slate-800') {
+  const t=document.getElementById('toast');
+  t.className=`fixed top-4 right-4 z-[300] ${color} text-white text-xs mono px-4 py-2.5 rounded-xl shadow-2xl transition-all`;
+  t.textContent=msg; t.style.opacity='1'; t.style.transform='translateY(0)';
+  setTimeout(()=>{t.style.opacity='0';t.style.transform='translateY(-8px)';},2500);
+}
+
+Chart.defaults.color='#94a3b8';
+Chart.defaults.borderColor='#e2e8f0';
+Chart.defaults.font.family="'JetBrains Mono',monospace";
+Chart.defaults.font.size=10;
+
+/* ════════════════ LOAD ════════════════ */
+async function loadData() {
+  const btn=document.getElementById('refreshBtn'), icon=document.getElementById('refreshIcon');
+  btn.disabled=true; icon.classList.add('spin');
+  setLoading();
+  try {
+    const res=await fetch(API_URL+'?t='+Date.now());
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json=await res.json();
+    const headers=json.headers||[];
+
+    monthCols=MONTHS_ORDER.filter(m=>headers.includes(m));
+    if(!monthCols.length) monthCols=headers.filter(h=>h!=='Item Code'&&h!=='Item Name');
+
+    raw=(json.data||[]).map(r=>{
+      const vals=monthCols.map(m=>pn(r[m]));
+      const total=vals.reduce((s,v)=>s+v,0);
+      const nonZ=vals.filter(v=>v>0);
+      const mean=nonZ.length?nonZ.reduce((a,b)=>a+b,0)/nonZ.length:0;
+      const variance=nonZ.length?nonZ.reduce((s,v)=>s+Math.pow(v-mean,2),0)/nonZ.length:0;
+      const cv=mean?Math.sqrt(variance)/mean:1;
+      const peakIdx=vals.indexOf(Math.max(...vals));
+      const peakM=monthCols[peakIdx]||monthCols[0];
+      // growth trend: linear regression slope
+      const slope=calcSlope(vals);
+      return {...r,__total:total,__cv:cv,__peakMonth:peakM,__vals:vals,__slope:slope,__mean:mean,__activeMonths:nonZ.length};
+    });
+
+    // percentile bands for perf filter
+    const tots=[...raw].map(r=>r.__total).sort((a,b)=>a-b);
+    p33=tots[Math.floor(tots.length*0.33)]||0;
+    p66=tots[Math.floor(tots.length*0.66)]||0;
+
+    // rank all
+    const ranked=[...raw].sort((a,b)=>b.__total-a.__total);
+    ranked.forEach((r,i)=>{ raw.find(x=>x['Item Code']===r['Item Code']).__rank=i+1; });
+
+    document.getElementById('lastUpdated').textContent='Updated '+new Date().toLocaleTimeString();
+    toast('Data loaded · '+raw.length+' products','bg-brand-700');
+    init();
+  } catch(e) {
+    document.getElementById('tableContainer').innerHTML=`<div class="py-20 text-center text-xs mono text-rose-400">⚠ ${esc(e.message)} <button onclick="loadData()" class="underline ml-2 text-brand-600">Retry</button></div>`;
+    toast('Load failed: '+e.message,'bg-rose-700');
+  } finally { btn.disabled=false; icon.classList.remove('spin'); }
+}
+
+function setLoading() {
+  document.getElementById('tableContainer').innerHTML=`<div class="flex flex-col items-center justify-center py-20 text-slate-400 mono text-xs"><div class="w-8 h-8 rounded-full border-2 border-slate-200 border-t-brand-500 spin mb-3"></div>Fetching…</div>`;
+}
+
+function calcSlope(vals) {
+  const n=vals.length;
+  if(n<2) return 0;
+  const meanX=(n-1)/2;
+  const meanY=vals.reduce((a,b)=>a+b,0)/n;
+  let num=0,den=0;
+  vals.forEach((v,i)=>{num+=(i-meanX)*(v-meanY);den+=(i-meanX)**2;});
+  return den?num/den:0;
+}
+
+function init() {
+  filtered=[...raw];
+  applySort();
+  renderKPIs();
+  renderMonthPills();
+  buildSelects();
+  renderTable();
+  updateFooter();
+  renderMovementCards();
+}
+
+/* ════════════════ KPIs ════════════════ */
+function renderKPIs() {
+  const grand=raw.reduce((s,r)=>s+r.__total,0);
+  const mT=monthCols.map(m=>({m,v:raw.reduce((s,r)=>s+pn(r[m]),0)}));
+  const best=mT.reduce((a,b)=>b.v>a.v?b:a,mT[0]||{m:'–',v:0});
+  const worst=mT.reduce((a,b)=>b.v<a.v?b:a,mT[0]||{m:'–',v:0});
+  const top=[...raw].sort((a,b)=>b.__total-a.__total)[0];
+  const avgProd=raw.length?Math.round(grand/raw.length):0;
+  const activeProds=raw.filter(r=>r.__total>0).length;
+  const zeroProds=raw.filter(r=>r.__total===0).length;
+  const lastM=monthCols[monthCols.length-1];
+  const prevM=monthCols[monthCols.length-2];
+  const lastV=lastM?raw.reduce((s,r)=>s+pn(r[lastM]),0):0;
+  const prevV=prevM?raw.reduce((s,r)=>s+pn(r[prevM]),0):0;
+  const mom=prevV?((lastV-prevV)/prevV*100).toFixed(1):0;
+
+  const kpis=[
+    {label:'Total Products',val:raw.length,sub:activeProds+' active',c:'bg-brand-50 border-brand-200',vc:'text-brand-700'},
+    {label:'Grand Total',val:fmtS(grand),sub:'Full FY units',c:'bg-sky-50 border-sky-200',vc:'text-sky-700'},
+    {label:'Best Month',val:sM(best.m||''),sub:fmtS(best.v)+' units',c:'bg-emerald-50 border-emerald-200',vc:'text-emerald-700'},
+    {label:'Slowest Month',val:sM(worst.m||''),sub:fmtS(worst.v)+' units',c:'bg-rose-50 border-rose-200',vc:'text-rose-700'},
+    {label:'Avg/Product',val:fmtS(avgProd),sub:'FY average',c:'bg-violet-50 border-violet-200',vc:'text-violet-700'},
+    {label:'Top Product',val:(top?.['Item Name']||'–').substring(0,11)+'…',sub:fmtS(top?.__total||0),c:'bg-amber-50 border-amber-200',vc:'text-amber-700'},
+    {label:'Zero Sales',val:zeroProds,sub:'products inactive',c:'bg-slate-50 border-slate-200',vc:'text-slate-600'},
+    {label:'MoM Growth',val:(mom>0?'+':'')+mom+'%',sub:sM(lastM||'')+' vs '+sM(prevM||''),c:(mom>=0?'bg-green-50 border-green-200':'bg-rose-50 border-rose-200'),vc:(mom>=0?'text-green-700':'text-rose-700')},
+  ];
+
+  document.getElementById('kpiStrip').innerHTML=kpis.map(k=>`
+    <div class="border rounded-xl p-3 ${k.c} fu cursor-default hover:shadow-sm transition-shadow">
+      <div class="text-[9px] mono text-slate-500 mb-0.5 uppercase tracking-wide">${k.label}</div>
+      <div class="text-xl font-bold ${k.vc} leading-tight mono">${k.val}</div>
+      <div class="text-[9px] text-slate-400 mono mt-0.5">${k.sub}</div>
+    </div>`).join('');
+}
+
+/* ════════════════ MONTH PILLS ════════════════ */
+function renderMonthPills() {
+  const mT=monthCols.map(m=>({m,v:raw.reduce((s,r)=>s+pn(r[m]),0)}));
+  const max=Math.max(...mT.map(x=>x.v),1);
+  document.getElementById('monthPills').innerHTML=mT.map(mt=>`
+    <button class="mpill text-[10px] mono border border-slate-200 rounded-full px-2.5 py-0.5 hover:border-brand-400 transition-all bg-white" onclick="pillClick('${mt.m}',this)">
+      <span class="text-slate-500">${sM(mt.m)}</span>
+      <span class="ml-1 font-bold" style="color:hsl(${142-((mt.v/max)*80)},60%,40%)">${fmtS(mt.v)}</span>
+    </button>`).join('');
+}
+
+function pillClick(m,el) {
+  const sel=document.getElementById('monthFilter');
+  document.querySelectorAll('.mpill').forEach(p=>p.classList.remove('on'));
+  if(sel.value===m){sel.value='';}else{sel.value=m;el.classList.add('on');}
+  filterAndRender(); updateFilterChips();
+}
+
+/* ════════════════ SELECTS ════════════════ */
+function buildSelects() {
+  ['monthFilter','rankMonth','spotlightMonth','peakFilter'].forEach(id=>{
+    const sel=document.getElementById(id); if(!sel) return;
+    const baseMap={
+      monthFilter:'<option value="">All Months</option>',
+      rankMonth:'<option value="__total">Full Year Total</option>',
+      spotlightMonth:'<option value="">Select month…</option>',
+      peakFilter:'<option value="">Peak in any month</option>',
+    };
+    sel.innerHTML=(baseMap[id]||'')+monthCols.map(m=>`<option value="${m}">${m}</option>`).join('');
+  });
+  const tp=document.getElementById('trendProduct');
+  tp.innerHTML='<option value="__all">All Products Combined</option>'+
+    [...raw].sort((a,b)=>(a['Item Name']||'').localeCompare(b['Item Name']||''))
+      .map(r=>`<option value="${esc(r['Item Code'])}">${esc(r['Item Name']||r['Item Code'])}</option>`).join('');
+}
+
+/* ════════════════ FILTER ════════════════ */
+function filterAndRender() {
+  const q=document.getElementById('searchInput').value.trim().toLowerCase();
+  const mf=document.getElementById('monthFilter').value;
+  const rf=document.getElementById('rangeFilter').value;
+  const pf=document.getElementById('perfFilter').value;
+  const pk=document.getElementById('peakFilter').value;
+
+  filtered=raw.filter(r=>{
+    if(q && !(r['Item Code']||'').toLowerCase().includes(q) && !(r['Item Name']||'').toLowerCase().includes(q)) return false;
+    if(mf && pn(r[mf])===0) return false;
+    if(hideZero && r.__total===0) return false;
+    if(pk && r.__peakMonth!==pk) return false;
+    if(rf) {
+      const parts=rf.split('-');
+      const lo=Number(parts[0]),hi=parts[1]===''?Infinity:Number(parts[1]);
+      if(rf==='0-0'){if(r.__total!==0) return false;}
+      else if(r.__total<lo||r.__total>hi) return false;
+    }
+    if(pf) {
+      if(pf==='high' && r.__total<p66) return false;
+      if(pf==='med'  && (r.__total<p33||r.__total>=p66)) return false;
+      if(pf==='low'  && r.__total>=p33) return false;
+      if(pf==='zero' && r.__total!==0) return false;
+      if(pf==='active12' && r.__activeMonths<12) return false;
+      if(pf==='inconsistent' && r.__cv<0.5) return false;
+      if(pf==='growing' && r.__slope<=0) return false;
+      if(pf==='declining' && r.__slope>=0) return false;
+    }
+    return true;
+  });
+  applySort();
+  renderTable();
+  updateFilterChips();
+}
+
+function updateFilterChips() {
+  const chips=[];
+  const q=document.getElementById('searchInput').value.trim();
+  const mf=document.getElementById('monthFilter').value;
+  const rf=document.getElementById('rangeFilter').value;
+  const pf=document.getElementById('perfFilter').value;
+  const pk=document.getElementById('peakFilter').value;
+  if(q)  chips.push(`Search: "${q}"`);
+  if(mf) chips.push(`Month: ${mf}`);
+  if(rf) chips.push(`Qty: ${rf}`);
+  if(pf) chips.push(`Perf: ${pf}`);
+  if(pk) chips.push(`Peak: ${sM(pk)}`);
+  if(hideZero) chips.push('Hide Zeros');
+
+  const bar=document.getElementById('activeFiltersBar');
+  bar.classList.toggle('hidden',chips.length===0);
+  document.getElementById('filterChips').innerHTML=chips.map(c=>`<span class="filter-chip">${esc(c)}</span>`).join('');
+}
+
+function clearAllFilters() {
+  document.getElementById('searchInput').value='';
+  document.getElementById('monthFilter').value='';
+  document.getElementById('rangeFilter').value='';
+  document.getElementById('perfFilter').value='';
+  document.getElementById('peakFilter').value='';
+  hideZero=false;
+  document.getElementById('zeroBtn').classList.remove('bg-brand-50','border-brand-400');
+  document.querySelectorAll('.mpill').forEach(p=>p.classList.remove('on'));
+  filterAndRender();
+}
+
+/* ════════════════ SORT ════════════════ */
+function onSortChange() {
+  const v=document.getElementById('sortSelect').value; if(!v) return;
+  const [col,dir]=v.split('-');
+  const map={total:'__total',name:'Item Name',code:'Item Code',peak:'__peakMonth',cv:'__cv',active:'__activeMonths',growth:'__slope'};
+  sortState={col:map[col]||col,dir};
+  applySort(); renderTable();
+}
+
+function thSort(col) {
+  sortState.dir=sortState.col===col?(sortState.dir==='asc'?'desc':'asc'):'desc';
+  sortState.col=col; applySort(); renderTable();
+}
+
+function applySort() {
+  filtered.sort((a,b)=>{
+    let av=a[sortState.col],bv=b[sortState.col];
+    if(typeof av==='string') {av=av.toLowerCase();bv=(bv||'').toLowerCase();}
+    else {av=pn(av);bv=pn(bv);}
+    if(av<bv) return sortState.dir==='asc'?-1:1;
+    if(av>bv) return sortState.dir==='asc'?1:-1;
+    return 0;
+  });
+}
+
+/* ════════════════ TOGGLES ════════════════ */
+function tog(id,state,varName) {
+  window[varName]=state;
+  document.getElementById(id).classList.toggle('bg-brand-50',state);
+  document.getElementById(id).classList.toggle('border-brand-400',state);
+  document.getElementById(id).classList.toggle('text-brand-700',state);
+}
+function toggleHeat()  { heatOn=!heatOn;   tog('heatBtn',heatOn,'heatOn');   renderTable(); }
+function toggleBars()  { barsOn=!barsOn;   tog('barBtn',barsOn,'barsOn');    renderTable(); }
+function toggleSpark() { sparkOn=!sparkOn; tog('sparkBtn',sparkOn,'sparkOn');renderTable(); }
+function toggleMov()   { movOn=!movOn;     tog('movBtn',movOn,'movOn');      renderTable(); }
+function toggleZero()  { hideZero=!hideZero; tog('zeroBtn',hideZero,'hideZero'); filterAndRender(); }
+function toggleRank()  { rankOn=!rankOn;   tog('rankBtn',rankOn,'rankOn');   renderTable(); }
+
+/* ════════════════ TABLE RENDER ════════════════ */
+function renderTable() {
+  if(!filtered.length) {
+    document.getElementById('tableContainer').innerHTML='<div class="py-16 text-center mono text-xs text-slate-400">No products match the current filters. <button onclick="clearAllFilters()" class="underline text-brand-600">Clear filters</button></div>';
+    document.getElementById('recordCount').textContent='0 / '+raw.length;
+    return;
+  }
+
+  // per-column heat bands
+  const colBands={};
+  monthCols.forEach(m=>{
+    const vals=filtered.map(r=>pn(r[m])).filter(v=>v>0);
+    colBands[m]=calcBands(vals);
+  });
+  const globalMax=Math.max(...filtered.map(r=>r.__total),1);
+
+  const hC=col=>sortState.col===col?(sortState.dir==='asc'?'asc':'desc'):'';
+  const thBase='px-2 py-2 text-center border-b border-slate-100 font-medium cursor-pointer hover:text-brand-600 whitespace-nowrap text-[10px]';
+  const thL='px-2 py-2 text-left border-b border-slate-100 font-medium cursor-pointer hover:text-brand-600 whitespace-nowrap text-[10px]';
+
+  let thead=`<thead class="bg-slate-50 mono text-slate-500 uppercase tracking-wide sticky top-0 z-10">
+    <tr>
+      ${rankOn?`<th class="s1 px-2 py-2 text-center border-b border-r border-slate-100 font-medium text-[10px] w-8">#</th>`:''}
+      <th class="s${rankOn?2:1} px-2 py-2 text-center border-b border-r border-slate-100 font-medium text-[10px] w-10">Cmp</th>
+      <th class="s${rankOn?3:2} ${thL} border-r ${hC('Item Code')}" onclick="thSort('Item Code')" style="min-width:70px">Code</th>
+      <th class="${thL} ${hC('Item Name')}" onclick="thSort('Item Name')" style="min-width:160px">Item Name</th>
+      ${monthCols.map(m=>`<th class="${thBase} ${hC(m)}" onclick="thSort('${m}')">${sM(m)}</th>`).join('')}
+      ${movOn?monthCols.slice(1).map((_,i)=>`<th class="${thBase} text-violet-500">Δ${sM(monthCols[i+1])}</th>`).join(''):''}
+      ${sparkOn?`<th class="${thBase}">Trend</th>`:''}
+      <th class="${thBase} bg-brand-50 text-brand-600 ${hC('__total')}" onclick="thSort('__total')" style="min-width:80px">FY Total</th>
+    </tr>
+  </thead>`;
+
+  const rows=filtered.map((row,i)=>{
+    const isCmp=compared.has(row['Item Code']);
+    const q=document.getElementById('searchInput').value.trim();
+    const hiQ=(txt)=>q?String(txt).replace(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'),'<mark class="bg-yellow-100 rounded px-0.5">$1</mark>'):esc(txt);
+
+    const cells=monthCols.map(m=>{
+      const v=pn(row[m]);
+      let cls='';
+      if(heatOn) {
+        const {lo,hi}=colBands[m];
+        cls=heatCls(v,0,0,lo,hi);
+      }
+      const bar=barsOn&&v>0&&colBands[m].hi>0?`<span class="qbar" style="width:${Math.round(v/colBands[m].hi*28)}px;background:${v>=colBands[m].hi*0.6?'#22c55e':v>=colBands[m].lo*1.2?'#f59e0b':'#f43f5e'}"></span>`:'';
+      return `<td class="px-2 py-1.5 text-right mono text-[11px] border-b border-slate-50 ${cls}" style="white-space:nowrap">${v>0?fmtQ(v):`<span class="text-slate-200">–</span>`}${bar}</td>`;
+    }).join('');
+
+    let movCells='';
+    if(movOn) {
+      movCells=monthCols.slice(1).map((_,mi)=>{
+        const curr=pn(row[monthCols[mi+1]]);
+        const prev=pn(row[monthCols[mi]]);
+        return `<td class="px-2 py-1.5 text-center border-b border-slate-50">${movChip(curr,prev)}</td>`;
+      }).join('');
+    }
+
+    const sparkCell=sparkOn?`<td class="px-2 py-1.5 border-b border-slate-50 text-center"><canvas class="spark" id="sp_${i}" width="60" height="18"></canvas></td>`:'';
+    const totalPct=row.__total/globalMax;
+    const totalBar=barsOn?`<span class="qbar" style="width:${Math.round(totalPct*36)}px;background:#16a34a;margin-left:4px;height:3px;"></span>`:'';
+    const totalCls=heatOn?heatClsGlobal(row.__total,globalMax):'';
+
+    return `<tr class="hover:bg-slate-50 transition-colors group cursor-pointer ${isCmp?'cmp':''}" onclick="showDetail(${i})">
+      ${rankOn?`<td class="s1 px-2 py-1.5 text-center border-r border-b border-slate-50 bg-white group-hover:bg-slate-50 mono text-[10px] text-slate-400 font-bold">${row.__rank||'–'}</td>`:''}
+      <td class="s${rankOn?2:1} px-2 py-1.5 text-center border-r border-b border-slate-50 bg-white group-hover:bg-slate-50" onclick="event.stopPropagation()">
+        <input type="checkbox" class="w-3.5 h-3.5 accent-green-500 cursor-pointer" ${isCmp?'checked':''} onchange="toggleCompare('${esc(row['Item Code'])}',this)"/>
+      </td>
+      <td class="s${rankOn?3:2} px-2 py-1.5 border-r border-b border-slate-50 bg-white group-hover:bg-slate-50 mono text-[10px] text-slate-400 whitespace-nowrap">${hiQ(row['Item Code']||'')}</td>
+      <td class="px-2 py-1.5 border-b border-slate-50 text-[12px] font-semibold text-slate-700" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(row['Item Name'])}">${hiQ(row['Item Name']||'–')}</td>
+      ${cells}
+      ${movCells}
+      ${sparkCell}
+      <td class="px-2 py-1.5 text-right mono text-[11px] font-bold border-b border-slate-50 text-brand-700 bg-brand-50 whitespace-nowrap ${totalCls}">${fmtQ(row.__total)}${totalBar}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('tableContainer').innerHTML=`<table class="w-full text-xs border-collapse">${thead}<tbody>${rows}</tbody></table>`;
+  document.getElementById('recordCount').textContent=`${filtered.length} / ${raw.length} products`;
+
+  // Sparklines
+  if(sparkOn) {
+    const maxAll=Math.max(...raw.flatMap(r=>r.__vals),1);
+    filtered.forEach((row,i)=>{
+      const cv=document.getElementById('sp_'+i); if(!cv) return;
+      const ctx=cv.getContext('2d');
+      const vals=row.__vals, w=60,h=18,pts=vals.length;
+      ctx.clearRect(0,0,w,h);
+      // fill
+      ctx.beginPath();
+      vals.forEach((v,j)=>{const x=j*(w/(pts-1)),y=h-(v/maxAll)*(h-2)-1;j===0?ctx.moveTo(x,h):ctx.lineTo(x,y);});
+      ctx.lineTo(w,h);ctx.closePath();
+      ctx.fillStyle='rgba(34,197,94,0.12)';ctx.fill();
+      // line
+      ctx.beginPath();
+      vals.forEach((v,j)=>{const x=j*(w/(pts-1)),y=h-(v/maxAll)*(h-2)-1;j===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+      ctx.strokeStyle='#16a34a';ctx.lineWidth=1.5;ctx.stroke();
+    });
+  }
+}
+
+/* ════════════════ MONTH SPOTLIGHT ════════════════ */
+function renderMonthSpotlight() {
+  const m=document.getElementById('spotlightMonth').value;
+  const ss=document.getElementById('spotlightSort').value;
+  const sp=document.getElementById('spotlightPerf').value;
+  if(!m) { document.getElementById('monthSpotlightContent').innerHTML='<div class="text-center py-20 text-slate-400 mono text-xs">Select a month above to view data</div>'; return; }
+
+  let prods=[...raw].map(r=>({...r,__v:pn(r[m])}));
+  const prev=monthCols[monthCols.indexOf(m)-1];
+
+  // perf bands for this month
+  const vals=prods.map(r=>r.__v).filter(v=>v>0);
+  const {lo,hi}=calcBands(vals);
+
+  if(sp==='high') prods=prods.filter(r=>r.__v>=hi&&r.__v>0);
+  else if(sp==='med') prods=prods.filter(r=>r.__v>0&&r.__v>=lo&&r.__v<hi);
+  else if(sp==='low') prods=prods.filter(r=>r.__v>0&&r.__v<lo);
+  else if(sp==='zero') prods=prods.filter(r=>r.__v===0);
+
+  if(ss==='qty-desc') prods.sort((a,b)=>b.__v-a.__v);
+  else if(ss==='qty-asc') prods.sort((a,b)=>a.__v-b.__v);
+  else if(ss==='name-asc') prods.sort((a,b)=>(a['Item Name']||'').localeCompare(b['Item Name']||''));
+  else if(ss==='growth-desc' && prev) prods.sort((a,b)=>{const ag=pn(a[prev])?((a.__v-pn(a[prev]))/pn(a[prev])):0,bg=pn(b[prev])?((b.__v-pn(b[prev]))/pn(b[prev])):0;return bg-ag;});
+
+  const total=prods.reduce((s,r)=>s+r.__v,0);
+  const activeCount=prods.filter(r=>r.__v>0).length;
+  document.getElementById('spotlightInfo').textContent=`${activeCount} active products · Total: ${fmtQ(total)} units`;
+
+  const maxV=Math.max(...prods.map(r=>r.__v),1);
+
+  const rows=prods.map((r,i)=>{
+    const v=r.__v;
+    const pct=v/maxV;
+    const cls=v===0?'hZ':(v>=hi?'hH':v>=lo?'hM':'hL');
+    const prevV=prev?pn(r[prev]):null;
+    const chip=prevV!==null?movChip(v,prevV):'';
+    return `<div class="flex items-center gap-3 px-4 py-2 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer group" onclick="showDetailByCode('${esc(r['Item Code'])}')">
+      <div class="w-7 text-right mono text-[10px] font-bold ${i<3?'text-amber-600':'text-slate-400'}">${i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1)}</div>
+      <div class="flex-1 min-w-0">
+        <div class="text-xs font-semibold text-slate-700 truncate">${esc(r['Item Name']||'–')}</div>
+        <div class="mono text-[9px] text-slate-400">${esc(r['Item Code']||'')}</div>
+      </div>
+      <div class="flex items-center gap-2">
+        ${chip}
+        <div class="w-32 h-2 rounded-full bg-slate-100 overflow-hidden"><div class="h-full rounded-full ${cls==='hH'?'bg-green-400':cls==='hM'?'bg-amber-400':cls==='hL'?'bg-rose-400':'bg-slate-200'}" style="width:${Math.round(pct*100)}%"></div></div>
+        <div class="mono text-xs font-bold text-slate-700 w-16 text-right ${cls}">${v>0?fmtQ(v):'–'}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // month summary stats
+  const nonZ=vals;
+  const avg=nonZ.length?Math.round(nonZ.reduce((a,b)=>a+b,0)/nonZ.length):0;
+  const max2=Math.max(...nonZ,0);
+  const min2=nonZ.length?Math.min(...nonZ):0;
+
+  document.getElementById('monthSpotlightContent').innerHTML=`
+    <div class="grid grid-cols-5 gap-2 mb-4">
+      <div class="bg-brand-50 border border-brand-100 rounded-xl p-3 text-center"><div class="text-[9px] mono text-brand-500 uppercase mb-0.5">Month Total</div><div class="text-lg font-bold text-brand-700 mono">${fmtQ(total)}</div></div>
+      <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-3 text-center"><div class="text-[9px] mono text-emerald-500 uppercase mb-0.5">Active Products</div><div class="text-lg font-bold text-emerald-700 mono">${activeCount}</div></div>
+      <div class="bg-sky-50 border border-sky-100 rounded-xl p-3 text-center"><div class="text-[9px] mono text-sky-500 uppercase mb-0.5">Avg/Product</div><div class="text-lg font-bold text-sky-700 mono">${fmtQ(avg)}</div></div>
+      <div class="bg-amber-50 border border-amber-100 rounded-xl p-3 text-center"><div class="text-[9px] mono text-amber-500 uppercase mb-0.5">Max Product</div><div class="text-lg font-bold text-amber-700 mono">${fmtQ(max2)}</div></div>
+      <div class="bg-rose-50 border border-rose-100 rounded-xl p-3 text-center"><div class="text-[9px] mono text-rose-500 uppercase mb-0.5">Min (active)</div><div class="text-lg font-bold text-rose-700 mono">${fmtQ(min2)}</div></div>
+    </div>
+    <div class="overflow-auto ts" style="max-height:calc(100vh - 380px)">${rows||'<div class="py-10 text-center mono text-xs text-slate-400">No data</div>'}</div>`;
+}
+
+/* ════════════════ COMPARE ════════════════ */
+function toggleCompare(code,cb) {
+  if(cb.checked){if(compared.size>=6){cb.checked=false;toast('Max 6 products','bg-rose-700');return;}compared.add(code);}
+  else compared.delete(code);
+  updateCmpBadge();renderCompare();
+}
+
+function clearCompare() {
+  compared.clear();updateCmpBadge();renderTable();renderCompare();
+  destroyChart('cmpTrend');destroyChart('cmpBar');
+}
+
+function updateCmpBadge() {
+  const b=document.getElementById('cmpBadge'),c=document.getElementById('clearCmpBtn');
+  b.textContent=compared.size;b.classList.toggle('hidden',compared.size===0);
+  c.classList.toggle('hidden',compared.size===0);
+  renderTable();
+}
+
+function renderCompare() {
+  if(compared.size===0){
+    document.getElementById('compareContent').innerHTML='<div class="text-center py-16 text-slate-400 mono text-xs">← Go to Table tab and tick checkboxes</div>';
+    return;
+  }
+  const rows=raw.filter(r=>compared.has(r['Item Code']));
+  const hl=document.getElementById('cmpHighlight')?.value||'none';
+
+  // Per-month max/min across selected products
+  const mMax={},mMin={};
+  if(hl!=='none') {
+    monthCols.forEach(m=>{
+      const vs=rows.map(r=>pn(r[m]));
+      mMax[m]=Math.max(...vs);
+      mMin[m]=Math.min(...vs.filter(v=>v>0)||[0]);
+    });
+  }
+
+  let html=`<div class="overflow-auto ts mb-4">
+    <table class="w-full text-xs border-collapse">
+      <thead class="bg-slate-50 sticky top-0 z-10"><tr class="mono text-[10px] text-slate-500 uppercase">
+        <th class="px-3 py-2 text-left font-medium border-b border-slate-200 min-w-[180px]">Product</th>
+        ${monthCols.map(m=>`<th class="px-2 py-2 text-right font-medium border-b border-slate-200 whitespace-nowrap">${sM(m)}</th>`).join('')}
+        <th class="px-2 py-2 text-right font-medium border-b border-slate-200 text-brand-600">Total</th>
+        <th class="px-2 py-2 text-right font-medium border-b border-slate-200">Avg/Mo</th>
+        <th class="px-2 py-2 text-right font-medium border-b border-slate-200">Peak</th>
+        <th class="px-2 py-2 text-right font-medium border-b border-slate-200">Rank</th>
+      </tr></thead><tbody>`;
+
+  rows.forEach((r,i)=>{
+    const nZ=r.__vals.filter(v=>v>0);
+    const avg=nZ.length?Math.round(r.__total/nZ.length):0;
+    html+=`<tr class="border-b border-slate-50 hover:bg-slate-50">
+      <td class="px-3 py-2 font-semibold text-slate-700" style="border-left:3px solid ${PAL[i]}">${esc(r['Item Name']||'–')}<div class="mono text-[9px] text-slate-400">${esc(r['Item Code']||'')}</div></td>
+      ${monthCols.map(m=>{
+        const v=pn(r[m]);
+        let extra='';
+        if(hl==='max'&&v>0&&v===mMax[m]) extra='font-bold text-green-700 bg-green-50';
+        if(hl==='min'&&v>0&&v===mMin[m]) extra='font-bold text-rose-700 bg-rose-50';
+        return `<td class="px-2 py-2 text-right mono ${extra}">${v>0?fmtQ(v):'<span class="text-slate-300">–</span>'}</td>`;
+      }).join('')}
+      <td class="px-2 py-2 text-right mono font-bold text-brand-700">${fmtQ(r.__total)}</td>
+      <td class="px-2 py-2 text-right mono">${fmtQ(avg)}</td>
+      <td class="px-2 py-2 text-right mono text-amber-600">${sM(r.__peakMonth||'')}</td>
+      <td class="px-2 py-2 text-right mono text-slate-500">#${r.__rank||'–'}</td>
+    </tr>`;
+  });
+  html+='</tbody></table></div>';
+
+  // Delta table if exactly 2
+  if(rows.length===2) {
+    const [a,b]=rows;
+    html+=`<div class="bg-slate-50 rounded-xl p-3 border border-slate-200">
+      <div class="text-xs font-bold text-slate-600 mb-2 mono">Δ Difference · <span style="color:${PAL[0]}">${esc(a['Item Name']?.substring(0,18)||'A')}</span> vs <span style="color:${PAL[1]}">${esc(b['Item Name']?.substring(0,18)||'B')}</span></div>
+      <div class="flex flex-wrap gap-1">
+        ${monthCols.map(m=>{const d=pn(a[m])-pn(b[m]);return`<div class="rounded-lg p-2 text-center text-[10px] mono ${d>0?'bg-green-100 text-green-700':d<0?'bg-rose-100 text-rose-700':'bg-slate-200 text-slate-500'}" style="min-width:52px">${sM(m)}<div class="font-bold">${d>=0?'+':''}${fmtQ(d)}</div></div>`}).join('')}
+        <div class="rounded-lg p-2 text-center text-[10px] mono font-bold ${a.__total>b.__total?'bg-green-200 text-green-800':'bg-rose-200 text-rose-800'}" style="min-width:52px">Total<div>${a.__total>b.__total?'+':''}${fmtQ(a.__total-b.__total)}</div></div>
+      </div>
+    </div>`;
+  }
+
+  document.getElementById('compareContent').innerHTML=html;
+  renderCmpCharts(rows);
+}
+
+function renderCmpCharts(rows) {
+  destroyChart('cmpTrend');destroyChart('cmpBar');
+  if(!rows||!rows.length) return;
+  const ctx1=document.getElementById('cmpTrendChart')?.getContext('2d');
+  if(ctx1) charts.cmpTrend=new Chart(ctx1,{type:'line',data:{labels:monthCols.map(sM),datasets:rows.map((r,i)=>({label:r['Item Name']||r['Item Code'],data:r.__vals,borderColor:PAL[i],backgroundColor:'transparent',borderWidth:2,pointRadius:3,tension:0.35}))},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{position:'bottom',labels:{font:{size:9},boxWidth:10}}},scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>fmtS(v)}}}}});
+  const ctx2=document.getElementById('cmpBarChart')?.getContext('2d');
+  if(ctx2) charts.cmpBar=new Chart(ctx2,{type:'bar',data:{labels:rows.map(r=>(r['Item Name']||'').substring(0,14)),datasets:[{data:rows.map(r=>r.__total),backgroundColor:PAL.slice(0,rows.length),borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>fmtS(v)}}}}});
+}
+
+/* ════════════════ CHARTS ════════════════ */
+function destroyChart(k){if(charts[k]){charts[k].destroy();delete charts[k];}}
+function renderCharts(){renderTrendChart();renderTopChart();renderDistChart();renderPie();renderGrowth();renderCumul();}
+
+function renderTrendChart() {
+  destroyChart('trend');
+  const ctx=document.getElementById('trendChart')?.getContext('2d'); if(!ctx) return;
+  const tp=document.getElementById('trendProduct').value;
+  const tt=document.getElementById('trendType').value;
+  let datasets;
+  if(tp==='__all'){
+    const vals=monthCols.map(m=>raw.reduce((s,r)=>s+pn(r[m]),0));
+    datasets=[{label:'All Products',data:vals,borderColor:'#22c55e',backgroundColor:tt==='area'?'rgba(34,197,94,0.1)':'rgba(34,197,94,0.7)',borderWidth:2.5,pointBackgroundColor:'#22c55e',pointRadius:4,tension:0.4,fill:tt==='area'}];
+  } else {
+    const row=raw.find(r=>r['Item Code']===tp);
+    datasets=row?[{label:row['Item Name'],data:row.__vals,borderColor:'#3b82f6',backgroundColor:tt==='area'?'rgba(59,130,246,0.1)':'rgba(59,130,246,0.7)',borderWidth:2.5,pointRadius:4,tension:0.4,fill:tt==='area'}]:[];
+  }
+  const type=tt==='bar'?'bar':'line';
+  charts.trend=new Chart(ctx,{type,data:{labels:monthCols.map(sM),datasets},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(0,0,0,0.03)'}},y:{ticks:{callback:v=>fmtS(v)},grid:{color:'rgba(0,0,0,0.04)'}}}}});
+}
+
+function renderTopChart() {
+  destroyChart('top');
+  const n=parseInt(document.getElementById('topN').value)||15;
+  const sorted=[...raw].sort((a,b)=>b.__total-a.__total).slice(0,n);
+  const ctx=document.getElementById('topChart')?.getContext('2d'); if(!ctx) return;
+  charts.top=new Chart(ctx,{type:'bar',data:{labels:sorted.map(r=>(r['Item Name']||'').substring(0,16)),datasets:[{data:sorted.map(r=>r.__total),backgroundColor:sorted.map(r=>r.__total>=p66?'rgba(34,197,94,0.7)':r.__total>=p33?'rgba(245,158,11,0.7)':'rgba(244,63,94,0.7)'),borderRadius:4,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>fmtS(v)},grid:{color:'rgba(0,0,0,0.04)'}},y:{grid:{display:false},ticks:{font:{size:9}}}}}});
+}
+
+function renderDistChart() {
+  destroyChart('dist');
+  const ctx=document.getElementById('distChart')?.getContext('2d'); if(!ctx) return;
+  const avgs=monthCols.map(m=>{const v=raw.map(r=>pn(r[m])).filter(v=>v>0);return v.length?Math.round(v.reduce((a,b)=>a+b,0)/v.length):0;});
+  const maxs=monthCols.map(m=>Math.max(...raw.map(r=>pn(r[m])),0));
+  const mins=monthCols.map(m=>{const v=raw.map(r=>pn(r[m])).filter(v=>v>0);return v.length?Math.min(...v):0;});
+  charts.dist=new Chart(ctx,{type:'bar',data:{labels:monthCols.map(sM),datasets:[
+    {label:'Max',data:maxs,backgroundColor:'rgba(34,197,94,0.2)',borderColor:'#22c55e',borderWidth:1.5,borderRadius:3},
+    {label:'Avg',data:avgs,backgroundColor:'#22c55e',borderRadius:3,borderSkipped:false},
+    {label:'Min',data:mins,backgroundColor:'rgba(244,63,94,0.25)',borderColor:'#f43f5e',borderWidth:1.5,borderRadius:3},
+  ]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{position:'bottom',labels:{font:{size:9},boxWidth:8}}},scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>fmtS(v)}}}}});
+}
+
+function renderPie() {
+  destroyChart('pie');
+  const ctx=document.getElementById('pieChart')?.getContext('2d'); if(!ctx) return;
+  const top8=[...raw].sort((a,b)=>b.__total-a.__total).slice(0,8);
+  const rest=raw.slice(8).reduce((s,r)=>s+r.__total,0);
+  const labels=top8.map(r=>(r['Item Name']||'').substring(0,12));
+  const data=top8.map(r=>r.__total);
+  if(rest>0){labels.push('Others');data.push(rest);}
+  charts.pie=new Chart(ctx,{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:PAL,borderWidth:0,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:true,cutout:'58%',plugins:{legend:{position:'right',labels:{font:{size:9},boxWidth:9,padding:7}}}}});
+}
+
+function renderGrowth() {
+  destroyChart('growth');
+  const ctx=document.getElementById('growthChart')?.getContext('2d'); if(!ctx) return;
+  const totals=monthCols.map(m=>raw.reduce((s,r)=>s+pn(r[m]),0));
+  const growths=totals.map((v,i)=>i===0?null:totals[i-1]?parseFloat(((v-totals[i-1])/totals[i-1]*100).toFixed(1)):null).slice(1);
+  charts.growth=new Chart(ctx,{type:'bar',data:{labels:monthCols.slice(1).map(sM),datasets:[{data:growths,backgroundColor:growths.map(v=>v>=0?'rgba(34,197,94,0.7)':'rgba(244,63,94,0.7)'),borderRadius:3,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>(v||0).toFixed(1)+'%'}}}}});
+}
+
+function renderCumul() {
+  destroyChart('cumul');
+  const ctx=document.getElementById('cumulChart')?.getContext('2d'); if(!ctx) return;
+  const totals=monthCols.map(m=>raw.reduce((s,r)=>s+pn(r[m]),0));
+  let cum=0;
+  const cumVals=totals.map(v=>{cum+=v;return cum;});
+  charts.cumul=new Chart(ctx,{type:'line',data:{labels:monthCols.map(sM),datasets:[{label:'Cumulative',data:cumVals,borderColor:'#8b5cf6',backgroundColor:'rgba(139,92,246,0.08)',borderWidth:2,pointRadius:4,tension:0.4,fill:true}]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>fmtS(v)}}}}});
+}
+
+/* ════════════════ RANKING ════════════════ */
+function renderRanking() {
+  const col=document.getElementById('rankMonth').value;
+  const show=document.getElementById('rankShow').value;
+  let sorted=[...raw].sort((a,b)=>pn(b[col])-pn(a[col]));
+  if(show==='20') sorted=sorted.slice(0,20);
+  else if(show==='50') sorted=sorted.slice(0,50);
+  else if(show==='bottom20') sorted=sorted.reverse().slice(0,20);
+
+  const max=sorted[0]?pn(sorted[0][col])||sorted[0].__total||1:1;
+  document.getElementById('rankInfo').textContent=sorted.length+' products shown';
+
+  const rows=sorted.map((r,i)=>{
+    const v=pn(r[col])||r.__total;
+    const pct=v/max;
+    const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+    const perfCls=v>=p66?'bg-green-50 text-green-700':v>=p33?'bg-amber-50 text-amber-700':'bg-rose-50 text-rose-700';
+    return `<div class="flex items-center gap-3 px-4 py-2 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer" onclick="showDetailByCode('${esc(r['Item Code'])}')">
+      <div class="w-8 text-right mono text-[10px] ${i<3?'font-bold text-amber-600':'text-slate-400'}">${medal||'#'+(i+1)}</div>
+      <div class="flex-1 min-w-0">
+        <div class="text-xs font-semibold text-slate-700 truncate">${esc(r['Item Name']||'–')}</div>
+        <div class="mono text-[9px] text-slate-400">${esc(r['Item Code']||'')}</div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-[9px] mono px-2 py-0.5 rounded-full ${perfCls}">${v>=p66?'HIGH':v>=p33?'MED':'LOW'}</span>
+        <div class="h-2 rounded-full bg-slate-100 w-24 overflow-hidden"><div class="h-full rounded-full ${pct>=0.6?'bg-green-400':pct>=0.25?'bg-amber-400':'bg-rose-400'}" style="width:${Math.round(pct*100)}%"></div></div>
+        <div class="mono text-xs font-bold text-slate-700 w-16 text-right">${fmtQ(v)}</div>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('rankingContent').innerHTML=rows||'<div class="py-10 text-center mono text-xs text-slate-400">No data</div>';
+
+  const top5=[...raw].sort((a,b)=>b.__total-a.__total).slice(0,5);
+  const bot5=[...raw].filter(r=>r.__total>0).sort((a,b)=>a.__total-b.__total).slice(0,5);
+  const cons=[...raw].filter(r=>r.__total>0).sort((a,b)=>a.__cv-b.__cv).slice(0,5);
+  const volt=[...raw].filter(r=>r.__total>0).sort((a,b)=>b.__cv-a.__cv).slice(0,5);
+
+  const mini=(arr,col)=>arr.map((r,i)=>`<div class="flex items-center justify-between py-1.5 border-b border-slate-50 cursor-pointer hover:bg-slate-50 rounded" onclick="showDetailByCode('${esc(r['Item Code'])}')">
+    <div class="flex items-center gap-1.5 min-w-0">
+      <span class="w-4 h-4 rounded-full ${col} text-white text-[9px] mono flex items-center justify-center font-bold shrink-0">${i+1}</span>
+      <span class="text-[11px] text-slate-700 truncate">${esc(r['Item Name']||'–')}</span>
+    </div>
+    <span class="mono text-[10px] font-semibold text-slate-600 ml-2 shrink-0">${fmtQ(r.__total)}</span>
+  </div>`).join('');
+
+  document.getElementById('top5List').innerHTML=mini(top5,'bg-brand-500');
+  document.getElementById('bot5List').innerHTML=mini(bot5,'bg-rose-400');
+  document.getElementById('cons5List').innerHTML=mini(cons,'bg-amber-400');
+  document.getElementById('volt5List').innerHTML=mini(volt,'bg-violet-500');
+}
+
+/* ════════════════ HEAT MATRIX ════════════════ */
+function renderMatrix() {
+  const ms=document.getElementById('matrixSort').value;
+  const mode=document.getElementById('matrixMode').value;
+  const mf=document.getElementById('matrixFilter').value.trim().toLowerCase();
+  let sorted=[...raw];
+  if(mf) sorted=sorted.filter(r=>(r['Item Name']||'').toLowerCase().includes(mf)||(r['Item Code']||'').toLowerCase().includes(mf));
+  if(ms==='total-desc') sorted.sort((a,b)=>b.__total-a.__total);
+  else if(ms==='total-asc') sorted.sort((a,b)=>a.__total-b.__total);
+  else if(ms==='name-asc') sorted.sort((a,b)=>(a['Item Name']||'').localeCompare(b['Item Name']||''));
+  else if(ms==='peak-month') sorted.sort((a,b)=>MONTHS_ORDER.indexOf(a.__peakMonth)-MONTHS_ORDER.indexOf(b.__peakMonth));
+  else if(ms==='cv-asc') sorted.sort((a,b)=>a.__cv-b.__cv);
+
+  // compute heat bands per mode
+  const getBands=()=>{
+    if(mode==='col') {
+      const cb={};
+      monthCols.forEach(m=>{const v=sorted.map(r=>pn(r[m])).filter(v=>v>0);cb[m]=calcBands(v);});
+      return (v,m,row)=>heatCls(v,0,0,cb[m]?.lo||0,cb[m]?.hi||1);
+    }
+    if(mode==='row') {
+      return (v,m,row)=>{const v2=row.__vals.filter(x=>x>0);const {lo,hi}=calcBands(v2);return heatCls(v,0,0,lo,hi);};
+    }
+    const allV=sorted.flatMap(r=>r.__vals).filter(v=>v>0);
+    const {lo,hi}=calcBands(allV);
+    return (v,m,row)=>heatCls(v,0,0,lo,hi);
+  };
+  const getHeat=getBands();
+
+  const thead=`<thead class="bg-slate-50 sticky top-0 z-10">
+    <tr class="mono text-[10px] text-slate-500 uppercase">
+      <th class="px-3 py-2 text-left font-medium border-b border-r border-slate-200 sticky left-0 bg-slate-50 z-20" style="min-width:180px">Item Name</th>
+      ${monthCols.map(m=>`<th class="px-2 py-2 text-center font-medium border-b border-slate-200 w-14">${sM(m)}</th>`).join('')}
+      <th class="px-2 py-2 text-right font-medium border-b border-l border-slate-200 text-brand-600">Total</th>
+    </tr>
+  </thead>`;
+
+  const rows=sorted.map(r=>{
+    const cells=monthCols.map(m=>{
+      const v=pn(r[m]);
+      const cls=getHeat(v,m,r);
+      return `<td class="px-1 py-1.5 text-center mono text-[10px] border border-slate-50 ${cls}" title="${m}: ${fmtQ(v)}">${v>0?fmtS(v):'·'}</td>`;
+    }).join('');
+    const totalCls=r.__total>=p66?'text-green-700 bg-green-50':r.__total>=p33?'text-amber-700 bg-amber-50':'text-rose-700 bg-rose-50';
+    return `<tr class="hover:brightness-95 transition-all cursor-pointer" onclick="showDetailByCode('${esc(r['Item Code'])}')">
+      <td class="px-3 py-1.5 text-xs font-semibold text-slate-700 border-r border-b border-slate-100 sticky left-0 bg-white" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r['Item Name'])}">${esc(r['Item Name']||'–')}</td>
+      ${cells}
+      <td class="px-2 py-1.5 text-right mono text-[10px] font-bold border-l border-slate-100 ${totalCls}">${fmtQ(r.__total)}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('matrixContent').innerHTML=`<table class="w-full text-xs border-collapse">${thead}<tbody>${rows}</tbody></table>`;
+}
+
+/* ════════════════ MOVEMENT ════════════════ */
+function renderMovementCards() {
+  // Gainers/decliners: look at last 2 active months per product
+  const gainers=[], decliners=[];
+  raw.forEach(r=>{
+    const activeM=monthCols.filter(m=>pn(r[m])>0);
+    if(activeM.length<2) return;
+    const last=activeM[activeM.length-1], prev=activeM[activeM.length-2];
+    const curr=pn(r[last]), prv=pn(r[prev]);
+    const pct=prv?((curr-prv)/prv*100):0;
+    if(curr>prv) gainers.push({...r,__gainPct:pct,__gainAbs:curr-prv,__from:prev,__to:last});
+    else if(curr<prv) decliners.push({...r,__gainPct:pct,__gainAbs:curr-prv,__from:prev,__to:last});
+  });
+  gainers.sort((a,b)=>b.__gainPct-a.__gainPct);
+  decliners.sort((a,b)=>a.__gainPct-b.__gainPct);
+
+  const mkList=(arr,isGain)=>arr.slice(0,10).map((r,i)=>`
+    <div class="flex items-center gap-2 py-1.5 border-b border-slate-50 cursor-pointer hover:bg-slate-50 rounded" onclick="showDetailByCode('${esc(r['Item Code'])}')">
+      <div class="flex-1 min-w-0"><div class="text-[11px] font-semibold text-slate-700 truncate">${esc(r['Item Name']||'–')}</div>
+        <div class="mono text-[9px] text-slate-400">${sM(r.__from)} → ${sM(r.__to)}</div></div>
+      <span class="mono text-[10px] font-bold ${isGain?'text-green-700':'text-rose-700'}">${isGain?'+':''}${r.__gainPct.toFixed(1)}%</span>
+    </div>`).join('');
+
+  document.getElementById('gainers').innerHTML=mkList(gainers,true)||'<div class="text-center py-6 mono text-xs text-slate-400">No data</div>';
+  document.getElementById('decliners').innerHTML=mkList(decliners,false)||'<div class="text-center py-6 mono text-xs text-slate-400">No data</div>';
+
+  // New/Dead
+  const newProds=raw.filter(r=>{
+    const vals=r.__vals;
+    const firstActive=vals.findIndex(v=>v>0);
+    return firstActive>0; // didn't start in April
+  });
+  const deadProds=raw.filter(r=>{
+    const vals=r.__vals;
+    const lastActive=vals.reduceRight((acc,v,i)=>acc===-1&&v>0?i:acc,-1);
+    return lastActive>=0&&lastActive<vals.length-1; // stopped before last month
+  });
+
+  let nd=newProds.slice(0,5).map(r=>`<div class="py-1.5 border-b border-slate-50"><div class="text-[11px] font-semibold text-violet-700">${esc(r['Item Name']||'–')}</div><div class="mono text-[9px] text-slate-400">★ Started: ${sM(monthCols[r.__vals.findIndex(v=>v>0)])}</div></div>`).join('');
+  nd+=deadProds.slice(0,5).map(r=>`<div class="py-1.5 border-b border-slate-50"><div class="text-[11px] font-semibold text-slate-500 line-through">${esc(r['Item Name']||'–')}</div><div class="mono text-[9px] text-slate-400">◼ Last: ${sM(monthCols[r.__vals.reduceRight((a,v,i)=>a===-1&&v>0?i:a,-1)])}</div></div>`).join('');
+  document.getElementById('newDead').innerHTML=nd||'<div class="text-center py-6 mono text-xs text-slate-400">No data</div>';
+
+  renderMovementTable();
+}
+
+function renderMovementTable() {
+  const baseline=document.getElementById('movBaseline').value;
+  const movPerf=document.getElementById('movPerf').value;
+
+  const avgVals=monthCols.map(m=>raw.length?Math.round(raw.reduce((s,r)=>s+pn(r[m]),0)/raw.length):0);
+
+  let prods=[...raw];
+  if(movPerf==='up') prods=prods.filter(r=>r.__slope>0);
+  else if(movPerf==='down') prods=prods.filter(r=>r.__slope<0);
+
+  document.getElementById('movInfo').textContent=prods.length+' products';
+
+  const thead=`<thead class="bg-slate-50 sticky top-0 z-10 mono text-[10px] text-slate-500 uppercase">
+    <tr>
+      <th class="px-3 py-2 text-left font-medium border-b border-slate-200 sticky left-0 bg-slate-50 z-20" style="min-width:160px">Product</th>
+      ${monthCols.map(m=>`<th class="px-2 py-2 text-center font-medium border-b border-slate-200 whitespace-nowrap">${sM(m)}</th>`).join('')}
+      <th class="px-2 py-2 text-center font-medium border-b border-slate-200 text-violet-600">Trend</th>
+    </tr>
+  </thead>`;
+
+  const rows=prods.sort((a,b)=>b.__total-a.__total).map(r=>{
+    const cells=monthCols.map((m,mi)=>{
+      const v=pn(r[m]);
+      let chip='';
+      if(baseline==='prev'&&mi>0) chip=movChip(v,pn(r[monthCols[mi-1]]));
+      else if(baseline==='first'&&mi>0) chip=movChip(v,pn(r[monthCols[0]]));
+      else if(baseline==='avg') chip=movChip(v,avgVals[mi]);
+      return `<td class="px-2 py-1.5 text-center border-b border-slate-50 whitespace-nowrap">
+        <div class="mono text-[10px] ${v>0?'text-slate-700':'text-slate-300'}">${v>0?fmtQ(v):'–'}</div>
+        ${chip?`<div class="mt-0.5">${chip}</div>`:''}
+      </td>`;
+    }).join('');
+    const trendIcon=r.__slope>0?'📈':r.__slope<0?'📉':'➡';
+    const slopeColor=r.__slope>0?'text-green-600':r.__slope<0?'text-rose-600':'text-slate-400';
+    return `<tr class="hover:bg-slate-50 transition-colors cursor-pointer" onclick="showDetailByCode('${esc(r['Item Code'])}')">
+      <td class="px-3 py-2 border-b border-slate-50 sticky left-0 bg-white hover:bg-slate-50">
+        <div class="text-xs font-semibold text-slate-700 truncate" style="max-width:150px">${esc(r['Item Name']||'–')}</div>
+        <div class="mono text-[9px] text-slate-400">${esc(r['Item Code']||'')}</div>
+      </td>
+      ${cells}
+      <td class="px-2 py-1.5 text-center border-b border-slate-50">
+        <span class="text-sm">${trendIcon}</span>
+        <div class="mono text-[9px] ${slopeColor}">${r.__slope>0?'+':''}${r.__slope.toFixed(0)}/mo</div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('movementTable').innerHTML=`<table class="w-full text-xs border-collapse">${thead}<tbody>${rows}</tbody></table>`;
+}
+
+/* ════════════════ DETAIL MODAL ════════════════ */
+function showDetailByCode(code) {
+  const idx=filtered.findIndex(r=>r['Item Code']===code);
+  if(idx>=0) showDetail(idx);
+  else { const raw_idx=raw.findIndex(r=>r['Item Code']===code); if(raw_idx>=0) showDetailRaw(raw[raw_idx]); }
+}
+
+function showDetail(idx) { showDetailRaw(filtered[idx]); }
+
+function showDetailRaw(row) {
+  if(!row) return;
+  document.getElementById('mCode').textContent=row['Item Code']||'–';
+  document.getElementById('mName').textContent=row['Item Name']||'–';
+  document.getElementById('mTotal').textContent=fmtQ(row.__total);
+  const nZ=row.__vals.filter(v=>v>0);
+  const avg=nZ.length?Math.round(row.__total/nZ.length):0;
+  const peakVal=Math.max(...row.__vals);
+  const minVal=nZ.length?Math.min(...nZ):0;
+  const minM=monthCols[row.__vals.indexOf(minVal)]||'–';
+  document.getElementById('mPeak').textContent=sM(row.__peakMonth||'')+'  '+fmtQ(peakVal);
+  document.getElementById('mAvg').textContent=fmtQ(avg);
+  document.getElementById('mActive').textContent=nZ.length+'/'+monthCols.length;
+  document.getElementById('mRank').textContent='#'+(row.__rank||'–');
+  document.getElementById('mMin').textContent=sM(minM)+': '+fmtQ(minVal);
+  document.getElementById('mMax').textContent=sM(row.__peakMonth||'')+': '+fmtQ(peakVal);
+  document.getElementById('mCV').textContent=(row.__cv*100).toFixed(0)+'% CV';
+
+  document.getElementById('mMonths').innerHTML=monthCols.map((m,i)=>{
+    const v=row.__vals[i];
+    const pct=v/Math.max(...row.__vals,1);
+    const cls=v>0?(v>=p66?'bg-green-50 border-green-200':v>=p33?'bg-amber-50 border-amber-200':'bg-rose-50 border-rose-200'):'bg-slate-50 border-slate-100';
+    const vc=v>0?(v>=p66?'text-green-700':v>=p33?'text-amber-700':'text-rose-700'):'text-slate-300';
+    return `<div class="rounded-lg p-2 text-center ${cls} border">
+      <div class="text-[8px] mono text-slate-400 uppercase mb-0.5">${sM(m)}</div>
+      <div class="text-xs font-bold ${vc} mono">${v>0?fmtQ(v):'–'}</div>
+      ${v>0?`<div class="mt-1 h-1 rounded-full bg-white overflow-hidden"><div class="h-full rounded-full ${v>=p66?'bg-green-400':v>=p33?'bg-amber-400':'bg-rose-400'}" style="width:${Math.round(pct*100)}%"></div></div>`:''}
+    </div>`;
+  }).join('');
+
+  if(modalChartInst){modalChartInst.destroy();modalChartInst=null;}
+  const ctx=document.getElementById('mChart').getContext('2d');
+  modalChartInst=new Chart(ctx,{type:'bar',data:{labels:monthCols.map(sM),datasets:[{data:row.__vals,backgroundColor:row.__vals.map(v=>v>=p66?'rgba(34,197,94,0.75)':v>=p33?'rgba(245,158,11,0.75)':v>0?'rgba(244,63,94,0.75)':'rgba(203,213,225,0.4)'),borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>fmtS(v)}}}}});
+
+  document.getElementById('modalOverlay').classList.remove('hidden');
+  document.getElementById('modalOverlay').classList.add('flex');
+}
+
+function closeModal(e){
+  if(!e||e.target.id==='modalOverlay'){
+    document.getElementById('modalOverlay').classList.add('hidden');
+    document.getElementById('modalOverlay').classList.remove('flex');
+  }
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal({target:{id:'modalOverlay'}});});
+
+/* ════════════════ TABS ════════════════ */
+const TABS=['table','month','chart','compare','ranking','matrix','movement'];
+function setTab(t) {
+  TABS.forEach(id=>{
+    document.getElementById('view-'+id).classList.toggle('hidden',id!==t);
+    const btn=document.getElementById('tab-'+id);
+    btn.classList.toggle('active',id===t);
+  });
+  if(t==='chart'){renderCharts();}
+  if(t==='ranking'){renderRanking();}
+  if(t==='matrix'){renderMatrix();}
+  if(t==='compare'){renderCompare();}
+  if(t==='movement'){renderMovementCards();}
+  if(t==='month'){
+    const sel=document.getElementById('spotlightMonth');
+    if(!sel.value&&monthCols.length){sel.value=monthCols[monthCols.length-1];renderMonthSpotlight();}
+  }
+}
+
+/* ════════════════ EXPORT ════════════════ */
+function exportCSV(){
+  const cols=['Item Code','Item Name',...monthCols,'FY Total','Rank','Peak Month','CV%','Active Months'];
+  const lines=[cols,...filtered.map(r=>[r['Item Code'],r['Item Name'],...monthCols.map(m=>pn(r[m])),r.__total,r.__rank||'',r.__peakMonth||'',(r.__cv*100).toFixed(0)+'%',r.__activeMonths])];
+  const csv=lines.map(l=>l.map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  a.download='sales_qty_'+new Date().toISOString().split('T')[0]+'.csv';a.click();
+  toast('CSV exported · '+filtered.length+' rows','bg-brand-700');
+}
+
+/* ════════════════ FOOTER ════════════════ */
+function updateFooter(){
+  const grand=raw.reduce((s,r)=>s+r.__total,0);
+  document.getElementById('footerInfo').textContent=`${raw.length} products · ${monthCols.length} months · Grand Total ${fmtQ(grand)} units`;
+}
+
+// Boot
+loadData();
+</script>
+</body>
+</html>
