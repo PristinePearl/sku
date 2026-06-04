@@ -634,10 +634,19 @@
         }
 
         function formatDate(d) {
-            if(!d) return "-";
-            const parts = d.split('-');
-            return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : d;
-        }
+    if (!d) return "-";
+    // Handle yyyy-MM-dd format (from Apps Script toYMD)
+    const parts = d.split('-');
+    if (parts.length === 3 && parts[0].length === 4) {
+        // Input is yyyy-MM-dd → display as dd/MM/yyyy
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+    // Handle dd-MM-yyyy format (legacy)
+    if (parts.length === 3 && parts[2].length === 4) {
+        return `${parts[0]}/${parts[1]}/${parts[2]}`;
+    }
+    return d;
+}
 
         function showToast() {
             const t = document.getElementById('toast');
